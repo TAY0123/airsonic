@@ -20,6 +20,7 @@ class _AlbumListViewState extends State<AlbumListView>
   List<Album> albums = [];
   int offset = 0;
   bool ended = false;
+  Future<bool> _lock = Future.value(true);
 
   @override
   void initState() {
@@ -28,7 +29,7 @@ class _AlbumListViewState extends State<AlbumListView>
         AnimationController(duration: Duration(milliseconds: 250), vsync: this);
 
     _scrollController.addListener(() {
-      if (_scrollController.position.pixels ==
+      if (_scrollController.position.pixels >=
           _scrollController.position.maxScrollExtent) {
         setState(() {});
       }
@@ -42,16 +43,26 @@ class _AlbumListViewState extends State<AlbumListView>
   }
 
   Future<List<Album>> fetchAlbums() async {
+    await _lock;
     if (ended) {
       return albums;
     }
+
+    _lock = Future.delayed(Duration(seconds: 25)).then((value) => true);
     final result = (await mp.fetchAlbum(offset: offset)).albums;
     albums.addAll(result);
     if (result.isEmpty) {
       ended = true;
+      print("ended: $offset");
+
+      _lock.ignore();
+      _lock = Future.value(true);
       return albums;
     }
-    offset += albums.length;
+    offset += result.length;
+
+    _lock.ignore();
+    _lock = Future.value(true);
     return albums;
   }
 
@@ -64,6 +75,7 @@ class _AlbumListViewState extends State<AlbumListView>
         builder: ((context, snapshot) {
           if (snapshot.hasData) {
             return GridView.builder(
+                shrinkWrap: true,
                 controller: _scrollController,
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.all(8.0),
@@ -83,13 +95,23 @@ class _AlbumListViewState extends State<AlbumListView>
                           Expanded(
                             flex: 8,
                             child: FutureBuilder(
-                              future: mp.fetchCover(album.coverArt),
+                              future:
+                                  Future.delayed(Duration(milliseconds: 250))
+                                      .then((value) =>
+                                          mp.fetchCover(album.coverArt)),
                               builder: (context, snapshot) {
                                 if (snapshot.hasData) {
                                   return ClipRRect(
                                       borderRadius: BorderRadius.circular(5),
-                                      child:
-                                          Image(image: snapshot.requireData));
+                                      child: Image(
+                                        image: snapshot.requireData,
+                                        errorBuilder:
+                                            (context, error, stackTrace) =>
+                                                Container(
+                                          color: Theme.of(context)
+                                              .primaryColorDark,
+                                        ),
+                                      ));
                                 }
                                 return Container();
                               },
