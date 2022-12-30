@@ -24,7 +24,7 @@ String generateMd5(String input) {
 
 class MediaPlayer {
   /// private constructor
-  MediaPlayer._() {}
+  MediaPlayer._();
 
   /// the one and only instance of this singleton
   static final instance = MediaPlayer._();
@@ -37,6 +37,9 @@ class MediaPlayer {
   List<String> _segments = [];
   Map<String, dynamic> _param = {};
   late final Future<bool> _inited = init();
+  Future<bool> _fetchAlbumLock = Future<bool>(
+    () => true,
+  );
 
   Future<AirSonicResult> login(
       {String domain = "", String username = "", String password = ""}) async {
@@ -97,17 +100,14 @@ class MediaPlayer {
   }
 
   Future<Response> apiEndpoint(String ednpoint,
-      {Map<String, dynamic>? query}) async {
-    Map<String, dynamic> p = {};
+      {Map<String, String>? query}) async {
+    Map<String, dynamic> p = Map.from(_param);
     if (query != null) {
-      p.addAll(_param);
       p.addAll(query);
-    } else {
-      p = _param;
     }
     final a = _base.replace(
         pathSegments: _segments.followedBy([ednpoint]), queryParameters: p);
-
+    print(a);
     final resp = await http.get(a);
     if (resp.statusCode > 299 || resp.statusCode < 200) {
       throw resp.statusCode;
@@ -116,7 +116,7 @@ class MediaPlayer {
   }
 
   Future<AirSonicResult> xmlEndpoint(String endpoint,
-      {Map<String, dynamic>? query}) async {
+      {Map<String, String>? query}) async {
     final data = await apiEndpoint(endpoint, query: query);
     final root = XmlDocument.parse(data.body);
 
@@ -137,31 +137,39 @@ class MediaPlayer {
     )) {
       var albumObj = Album.fromElement(album);
       //if (album.childElements.isNotEmpty) {}
+      print(albumObj.name);
       result.albums.add(albumObj);
     }
 
     return result;
   }
 
-  Future<AirSonicResult> fetchAlbum() async {
+  Future<AirSonicResult> fetchAlbum({int offset = 0}) async {
     await _inited;
-    var result = await xmlEndpoint("getAlbumList2", query: {"type": "recent"});
+    await _fetchAlbumLock;
+    _fetchAlbumLock = Future.delayed(Duration(seconds: 30), (() => true));
+
+    var result = await xmlEndpoint("getAlbumList2",
+        query: {"type": "recent", "offset": "$offset"});
+    _fetchAlbumLock.ignore;
+    _fetchAlbumLock = Future.value(true);
     return result;
   }
 
-  fetchCover(String id) async {
+  Future<MemoryImage> fetchCover(String id) async {
     final Directory temp = await getTemporaryDirectory();
     final File imageFile = File('${temp.path}/images/$id.png');
 
     if (await imageFile.exists()) {
       // Use the cached images if it exists
+      return MemoryImage(await imageFile.readAsBytes());
     } else {
       // Image doesn't exist in cache
       final file = await imageFile.create(recursive: true);
       final data = await apiEndpoint("getCoverArt", query: {"id": id});
       file.writeAsBytes(data.bodyBytes);
       // Download the image and write to above file
-
+      return MemoryImage(data.bodyBytes);
     }
   }
 }
@@ -174,18 +182,22 @@ class AirSonicResult {
 }
 
 class Album {
-  Album(this.id, this.name, this.coverArt, {this.songs});
+  Album(this.id, this.name, this.coverArt, {this.artist, this.songs});
 
   String id;
   String name;
   String coverArt;
+  Artist? artist;
   List<Song>? songs;
 
   factory Album.fromElement(XmlElement element) {
     return Album(
         element.getAttribute("id") ?? "",
         element.getAttribute("name") ?? "",
-        element.getAttribute("coverArt") ?? "");
+        element.getAttribute("coverArt") ?? "",
+        artist: element.getAttribute("coverArt") != null
+            ? Artist.FromAlbum(element)
+            : null);
   }
 }
 
@@ -211,9 +223,7 @@ class Song {
     );
     final a = element.getAttribute("artistID");
     if (a != null) {
-      re.artist = Artist();
-      re.artist?.id = a;
-      re.artist?.name = element.getAttribute("artist") ?? "";
+      re.artist = Artist.FromSong(element);
     }
     return re;
   }
@@ -225,6 +235,31 @@ class Artist {
   String coverID = "";
   List<Album>? albums;
   int albumsCount = 0;
+
+  Artist(this.id, this.name,
+      {this.coverID = "", this.albums, this.albumsCount = 0});
+
+  factory Artist.fromElement(XmlElement element) {
+    return Artist(
+      element.getAttribute("Id") ?? "",
+      element.getAttribute("name") ?? "",
+      coverID: element.getAttribute("coverArt") ?? "",
+      albumsCount: int.parse(element.getAttribute("albumCount") ?? ""),
+    );
+  }
+
+  //TODO: implement
+  void getDetail() {}
+
+  factory Artist.FromAlbum(XmlElement element) {
+    return Artist(element.getAttribute("artistId") ?? "",
+        element.getAttribute("artist") ?? "");
+  }
+
+  factory Artist.FromSong(XmlElement element) {
+    return Artist(element.getAttribute("artistId") ?? "",
+        element.getAttribute("artist") ?? "");
+  }
 }
 
 enum AlbumListType { frequent, recent, newest }
