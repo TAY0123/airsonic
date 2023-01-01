@@ -36,10 +36,7 @@ class MediaPlayer {
   Uri _base = Uri();
   List<String> _segments = [];
   Map<String, dynamic> _param = {};
-  late final Future<bool> _inited = init();
-  Future<bool> _fetchAlbumLock = Future<bool>(
-    () => true,
-  );
+  late final Future<bool> _inited = init(); //initalize the information
 
   Future<AirSonicResult> login(
       {String domain = "", String username = "", String password = ""}) async {
@@ -47,20 +44,23 @@ class MediaPlayer {
       //remove trailing "/" due to parse will include it in segments
       domain = domain.substring(0, domain.length - 1);
     }
-    var connectionTestUri = Uri.parse(domain);
+    _base = Uri.parse(domain);
     final salt = getRandomString(20);
     final token = generateMd5(password + salt);
-    connectionTestUri = connectionTestUri.replace(
-        pathSegments:
-            connectionTestUri.pathSegments.followedBy(["rest", "ping.view"]),
-        queryParameters: {
-          "u": username,
-          "t": token,
-          "s": salt,
-          "v": "1.15",
-          "c": "flutterTest"
-        });
-    if (await init()) {
+    _segments = List<String>.of(_base.pathSegments);
+    _segments.add("rest");
+    _param = {
+      "u": username,
+      "t": token,
+      "s": salt,
+      "v": "1.15",
+      "c": "flutterTest"
+    };
+
+    final res = await _xmlEndpoint(
+      "ping.view",
+    );
+    if (res.status) {
       //write credentials to storage
       final prefs = await SharedPreferences.getInstance();
       prefs.setString("domain", domain);
@@ -94,12 +94,12 @@ class MediaPlayer {
     };
     _base = _base.replace(queryParameters: _param);
 
-    final resp = await xmlEndpoint("ping.view");
+    final resp = await _xmlEndpoint("ping.view");
 
     return resp.status;
   }
 
-  Future<Response> apiEndpoint(String ednpoint,
+  Future<Response> _apiEndpoint(String ednpoint,
       {Map<String, String>? query}) async {
     Map<String, dynamic> p = Map.from(_param);
     if (query != null) {
@@ -115,9 +115,9 @@ class MediaPlayer {
     return resp;
   }
 
-  Future<AirSonicResult> xmlEndpoint(String endpoint,
+  Future<AirSonicResult> _xmlEndpoint(String endpoint,
       {Map<String, String>? query}) async {
-    final data = await apiEndpoint(endpoint, query: query);
+    final data = await _apiEndpoint(endpoint, query: query);
     final root = XmlDocument.parse(data.body);
 
     var result = AirSonicResult();
@@ -137,26 +137,28 @@ class MediaPlayer {
     )) {
       var albumObj = Album.fromElement(album);
       //if (album.childElements.isNotEmpty) {}
-      print(albumObj.name);
       result.albums.add(albumObj);
     }
 
     return result;
   }
 
-  Future<AirSonicResult> fetchAlbum({int offset = 0}) async {
+  Future<AirSonicResult> fetchAlbum(
+      {int offset = 0,
+      int count = 0,
+      AlbumListType type = AlbumListType.recent}) async {
     await _inited;
-    await _fetchAlbumLock;
-    _fetchAlbumLock = Future.delayed(Duration(seconds: 30), (() => true));
 
-    var result = await xmlEndpoint("getAlbumList2",
-        query: {"type": "recent", "offset": "$offset"});
-    _fetchAlbumLock.ignore;
-    _fetchAlbumLock = Future.value(true);
+    var result = await _xmlEndpoint("getAlbumList2",
+        query: {"type": AlbumListType.recent.name, "offset": "$offset"});
     return result;
   }
 
-  Future<MemoryImage> fetchCover(String id) async {
+  Future<AirSonicResult> fetchAlbumInfo(String albumId) async {
+    return await _xmlEndpoint("getAlbumList2", query: {"type": "recent"});
+  }
+
+  Future<ImageProvider> fetchCover(String id) async {
     final Directory temp = await getTemporaryDirectory();
     final File imageFile = File('${temp.path}/images/$id.png');
 
@@ -166,7 +168,7 @@ class MediaPlayer {
     } else {
       // Image doesn't exist in cache
       final file = await imageFile.create(recursive: true);
-      final data = await apiEndpoint("getCoverArt", query: {"id": id});
+      final data = await _apiEndpoint("getCoverArt", query: {"id": id});
       file.writeAsBytes(data.bodyBytes);
       // Download the image and write to above file
       return MemoryImage(data.bodyBytes);
@@ -191,13 +193,24 @@ class Album {
   List<Song>? songs;
 
   factory Album.fromElement(XmlElement element) {
-    return Album(
+    final a = Album(
         element.getAttribute("id") ?? "",
         element.getAttribute("name") ?? "",
         element.getAttribute("coverArt") ?? "",
         artist: element.getAttribute("coverArt") != null
             ? Artist.FromAlbum(element)
             : null);
+
+    if (element.childElements.isNotEmpty) {
+      a.songs = [];
+      for (var song in element.childElements) {
+        final tmp = Song.fromElement(song);
+        if (tmp.id.isNotEmpty) {
+          a.songs?.add(tmp);
+        }
+      }
+    }
+    return a;
   }
 }
 
@@ -262,13 +275,25 @@ class Artist {
   }
 }
 
-enum AlbumListType { frequent, recent, newest }
+enum AlbumListType {
+  random,
+  newest,
+  frequent,
+  recent,
+  starred,
+  alphabeticalByName,
+  alphabeticalByArtist,
+  byYear,
+  byGenre
+}
 
 extension FutureExtension<T> on Future<T> {
   /// Checks if the future has returned a value, using a Completer.
   bool isCompleted() {
     final completer = Completer<T>();
-    then(completer.complete).catchError(completer.completeError);
+    then((v) {
+      return completer.complete(v);
+    }).catchError(completer.completeError);
     return completer.isCompleted;
   }
 }
