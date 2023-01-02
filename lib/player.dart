@@ -157,21 +157,29 @@ class MediaPlayer {
     return await _xmlEndpoint("getAlbumList2", query: {"type": "recent"});
   }
 
-  Future<ImageProvider> fetchCover(String id) async {
-    if (id.isEmpty) throw "no image data";
+  Future<ImageProvider> fetchCover(String id, {full = false}) async {
+    if (id.isEmpty) throw Exception("no image data");
     final Directory temp = await getTemporaryDirectory();
     final File imageFile = File('${temp.path}/images/$id.png');
 
     if (await imageFile.exists()) {
       // Use the cached images if it exists
-      return MemoryImage(await imageFile.readAsBytes());
+      if (!full) {
+        return MemoryImage(await imageFile.readAsBytes(), scale: 0.75);
+      } else {
+        return MemoryImage(await imageFile.readAsBytes());
+      }
     } else {
       // Image doesn't exist in cache
       final file = await imageFile.create(recursive: true);
       final data = await _apiEndpoint("getCoverArt", query: {"id": id});
       file.writeAsBytes(data.bodyBytes);
       // Download the image and write to above file
-      return MemoryImage(data.bodyBytes);
+      if (!full) {
+        return MemoryImage(data.bodyBytes, scale: 0.75);
+      } else {
+        return MemoryImage(data.bodyBytes);
+      }
     }
   }
 }
