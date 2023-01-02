@@ -1,8 +1,16 @@
-const routeHome = '/';
-const routeSettings = '/settings';
-const routePrefixDeviceSetup = '/setup/';
-const routeDeviceSetupStart = '/setup/$routeDeviceSetupStartPage';
-const routeDeviceSetupStartPage = 'find_devices';
-const routeDeviceSetupSelectDevicePage = 'select_device';
-const routeDeviceSetupConnectingPage = 'connecting';
-const routeDeviceSetupFinishedPage = 'finished';
+///default route
+const routeHome = '$routeRootAlbumList';
+
+///root route
+const routeSettings = '/Settings';
+const routeLogin = '/Login';
+const routeDashboard = '/Dashboard';
+const routeRootAlbumList = '/AlbumList';
+
+///subroute
+const routeDashboardAlbumList = '$routeDashboard/$routeAlbumList';
+const routeDashboardAlbumInfo = '$routeDashboard/$routeAlbumInfo';
+
+///pages
+const routeAlbumList = 'AlbumList';
+const routeAlbumInfo = 'AlbumInfo';

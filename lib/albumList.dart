@@ -93,91 +93,7 @@ class _AlbumListViewState extends State<AlbumListView>
                     childAspectRatio: 0.75, maxCrossAxisExtent: 250),
                 itemBuilder: ((context, index) {
                   final album = albums[index];
-                  return GestureDetector(
-                    onTap: () async {
-                      print("tapped");
-                      showDialog(
-                          context: context,
-                          builder: ((context) => SimpleDialog(
-                                title: Text(album.name),
-                                children: [AlbumInfo(album)],
-                              )));
-                    },
-                    child: Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Column(
-                          children: [
-                            Expanded(
-                              flex: 19,
-                              child: Center(
-                                child: ClipRRect(
-                                  borderRadius:
-                                      BorderRadius.all(Radius.circular(12)),
-                                  child: FutureBuilder(
-                                    future: Future.delayed(
-                                            const Duration(milliseconds: 400))
-                                        .then((value) =>
-                                            mp.fetchCover(album.coverArt)),
-                                    builder: (context, imgsnapshot) {
-                                      Widget child;
-                                      if (imgsnapshot.hasData) {
-                                        child = Image(
-                                          image: imgsnapshot.requireData,
-                                          errorBuilder:
-                                              (context, error, stackTrace) =>
-                                                  Container(
-                                            color: Theme.of(context)
-                                                .primaryColorDark,
-                                          ),
-                                        );
-                                      } else {
-                                        child = Container(
-                                          color: Theme.of(context)
-                                              .primaryColorDark,
-                                        );
-                                      }
-                                      return AnimatedSwitcher(
-                                          duration:
-                                              const Duration(milliseconds: 250),
-                                          child: child);
-                                    },
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const Spacer(),
-                            Expanded(
-                                flex: 6,
-                                child: Column(
-                                  children: [
-                                    Align(
-                                      alignment: Alignment.centerLeft,
-                                      child: Text(
-                                        album.name,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleMedium,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                    Align(
-                                      alignment: Alignment.centerLeft,
-                                      child: Text(
-                                        album.artist?.name ?? "N.A",
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyMedium,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ))
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
+                  return AlbumCard(album);
                 }));
 
             /*
@@ -192,5 +108,118 @@ class _AlbumListViewState extends State<AlbumListView>
             return const CircularProgressIndicator();
           }
         }));
+  }
+}
+
+class AlbumCard extends StatefulWidget {
+  final Album album;
+
+  const AlbumCard(this.album, {super.key});
+
+  @override
+  State<AlbumCard> createState() => _AlbumCardState();
+}
+
+class _AlbumCardState extends State<AlbumCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  final MediaPlayer mp = MediaPlayer.instance;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () async {
+        print("tapped");
+      },
+      child: AnimatedContainer(
+        margin: EdgeInsets.all(5),
+        decoration: BoxDecoration(
+            boxShadow: [
+              BoxShadow(
+                  color: Theme.of(context).shadowColor,
+                  spreadRadius: 0,
+                  blurRadius: 1)
+            ],
+            borderRadius: BorderRadius.circular(12.0),
+            color: Theme.of(context).secondaryHeaderColor),
+        duration: Duration(milliseconds: 750),
+        child: Column(
+          children: [
+            ClipRRect(
+              borderRadius: const BorderRadius.all(Radius.circular(12)),
+              child: FutureBuilder(
+                future: Future.delayed(const Duration(milliseconds: 400))
+                    .then((value) => mp.fetchCover(widget.album.coverArt)),
+                builder: (context, imgsnapshot) {
+                  Widget child;
+                  if (imgsnapshot.hasData) {
+                    print(widget.album.coverArt);
+
+                    child = Image(
+                      frameBuilder:
+                          (context, child, frame, wasSynchronouslyLoaded) {
+                        return AspectRatio(aspectRatio: 1, child: child);
+                      },
+                      fit: BoxFit.cover,
+                      image: imgsnapshot.requireData,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        color: Theme.of(context).primaryColorDark,
+                      ),
+                    );
+                  } else {
+                    child = AspectRatio(
+                        aspectRatio: 1,
+                        child: Container(
+                          color: Theme.of(context).primaryColorDark,
+                        ));
+                  }
+                  return AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 250),
+                      child: child);
+                },
+              ),
+            ),
+            Expanded(
+                flex: 6,
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 8, right: 8, top: 5),
+                  child: Column(
+                    children: [
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          widget.album.name,
+                          style: Theme.of(context).textTheme.titleMedium,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          widget.album.artist?.name ?? "N.A",
+                          style: Theme.of(context).textTheme.bodySmall,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ))
+          ],
+        ),
+      ),
+    );
   }
 }

@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
-import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
@@ -159,6 +158,7 @@ class MediaPlayer {
   }
 
   Future<ImageProvider> fetchCover(String id) async {
+    if (id.isEmpty) throw "no image data";
     final Directory temp = await getTemporaryDirectory();
     final File imageFile = File('${temp.path}/images/$id.png');
 
