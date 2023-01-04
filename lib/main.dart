@@ -2,8 +2,7 @@ import 'dart:ui';
 
 import 'package:airsonic/albumInfo.dart';
 import 'package:airsonic/dashboard.dart';
-import 'package:airsonic/player.dart';
-import 'package:airsonic/playerControl.dart';
+import 'package:airsonic/airsonicConnection.dart';
 import 'package:airsonic/route.dart';
 import 'package:airsonic/splitview.dart';
 import 'package:flutter/material.dart';

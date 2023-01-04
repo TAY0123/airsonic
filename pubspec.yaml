@@ -43,6 +43,10 @@ dependencies:
   path_provider: ^2.0.11
   dismissible_page: ^0.7.3
   transparent_image: ^2.0.0
+  collection: ^1.17.0
+  audio_service: ^0.18.9
+  just_audio: ^0.9.31
+  audio_session: ^0.1.13
 
 dev_dependencies:
   flutter_test:

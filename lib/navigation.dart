@@ -1,6 +1,6 @@
 import 'dart:math';
 
-import 'package:airsonic/player.dart';
+import 'package:airsonic/airsonicConnection.dart';
 import 'package:flutter/material.dart';
 
 class NavDrawer extends StatelessWidget {

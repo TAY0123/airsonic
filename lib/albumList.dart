@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:airsonic/albumInfo.dart';
-import 'package:airsonic/player.dart';
+import 'package:airsonic/airsonicConnection.dart';
 import 'package:dismissible_page/dismissible_page.dart';
 import 'package:flutter/material.dart';
 import 'package:transparent_image/transparent_image.dart';
@@ -26,9 +26,12 @@ class _AlbumListViewState extends State<AlbumListView>
 
   Completer completer = Completer();
 
+  Object? error;
+
   @override
   void initState() {
     super.initState();
+
     _controller = AnimationController(
         duration: const Duration(milliseconds: 250), vsync: this);
 
@@ -44,14 +47,18 @@ class _AlbumListViewState extends State<AlbumListView>
         }
       }
     });
-    () async {
+    init();
+  }
+
+  void init() async {
+    completer = Completer();
+    await fetchAlbums();
+    while ((!_scrollController.hasClients ||
+            _scrollController.position.maxScrollExtent == 0.0) &&
+        error == null) {
       await fetchAlbums();
-      while (!_scrollController.hasClients ||
-          _scrollController.position.maxScrollExtent == 0.0) {
-        await fetchAlbums();
-      }
-      completer.complete();
-    }();
+    }
+    completer.complete();
   }
 
   @override
@@ -64,8 +71,15 @@ class _AlbumListViewState extends State<AlbumListView>
     if (ended) {
       return true;
     }
+    late List<Album> result;
+    try {
+      result = (await mp.fetchAlbum(offset: offset)).albums;
+    } catch (e) {
+      error = e;
+      _dataController.add([]); //trigger redraw from streambuilder
+      return true;
+    }
 
-    final result = (await mp.fetchAlbum(offset: offset)).albums;
     if (result.isEmpty) {
       ended = true;
       return true;
@@ -85,6 +99,22 @@ class _AlbumListViewState extends State<AlbumListView>
         stream: _dataController.stream,
         builder: ((context, snapshot) {
           if (snapshot.hasData) {
+            if (error != null) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(error.toString()),
+                    FloatingActionButton.small(
+                        child: Icon(Icons.refresh),
+                        onPressed: () {
+                          error = null;
+                          init();
+                        })
+                  ],
+                ),
+              );
+            }
             albums.addAll(snapshot.data ?? []);
             return GridView.builder(
                 controller: _scrollController,

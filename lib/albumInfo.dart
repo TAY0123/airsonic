@@ -1,8 +1,9 @@
 import 'package:airsonic/albumList.dart';
-import 'package:airsonic/player.dart';
+import 'package:airsonic/airsonicConnection.dart';
 import 'package:airsonic/route.dart';
 import 'package:flutter/material.dart';
 import 'package:transparent_image/transparent_image.dart';
+import 'package:collection/collection.dart';
 
 ///although it accept an album but a empty album with only id inside should work
 class AlbumInfo extends StatefulWidget {
@@ -44,10 +45,21 @@ class _AlbumInfoState extends State<AlbumInfo>
     super.dispose();
   }
 
+  String _printDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, "0");
+    String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));
+    String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60));
+    if (duration.inHours > 0) {
+      return "${twoDigits(duration.inHours)}:$twoDigitMinutes:$twoDigitSeconds";
+    } else {
+      return "$twoDigitMinutes:$twoDigitSeconds";
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (context, constraints) {
-      if (constraints.maxWidth > breakpoint) {
+      if (constraints.maxWidth > breakpoint - 90) {
         return Container(
           color: Theme.of(context).cardColor,
           child: FractionallySizedBox(
@@ -146,6 +158,10 @@ class _AlbumInfoState extends State<AlbumInfo>
                           itemBuilder: (context, index) {
                             final song = snapshot.requireData.songs![index];
                             return ListTile(
+                              onTap: () {
+                                mp.playPlaylist(snapshot.requireData.songs!,
+                                    index: index);
+                              },
                               leading: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: const [
@@ -156,11 +172,18 @@ class _AlbumInfoState extends State<AlbumInfo>
                               subtitle: Text(song.artist?.name ??
                                   snapshot.requireData.artist?.name ??
                                   "Unknown"),
+                              trailing: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(_printDuration(
+                                      Duration(seconds: song.duration)))
+                                ],
+                              ),
                             );
                           },
                         );
                       } else {
-                        return const CircularProgressIndicator();
+                        return const Center(child: CircularProgressIndicator());
                       }
                     },
                   ),
@@ -237,8 +260,12 @@ class _AlbumInfoState extends State<AlbumInfo>
                   if (snapshot.hasData) {
                     return Column(
                       children: snapshot.requireData.songs
-                              ?.map((e) {
+                              ?.mapIndexed(((i, e) {
                                 return ListTile(
+                                  onTap: () {
+                                    mp.playPlaylist(snapshot.requireData.songs!,
+                                        index: i);
+                                  },
                                   leading: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: const [
@@ -250,7 +277,7 @@ class _AlbumInfoState extends State<AlbumInfo>
                                       snapshot.requireData.artist?.name ??
                                       "Unknown"),
                                 );
-                              })
+                              }))
                               .expand<Widget>((e) sync* {
                                 yield e;
                                 yield const Divider();
@@ -260,7 +287,11 @@ class _AlbumInfoState extends State<AlbumInfo>
                           [],
                     );
                   } else {
-                    return const CircularProgressIndicator();
+                    return Column(
+                      children: const [
+                        CircularProgressIndicator(),
+                      ],
+                    );
                   }
                 },
               )
