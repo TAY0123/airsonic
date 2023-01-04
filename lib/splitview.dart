@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart';
 
 import 'navigation.dart';
+import 'route.dart';
 
 class SplitView extends StatefulWidget {
   final Widget content;
@@ -36,7 +37,7 @@ class _SplitViewState extends State<SplitView>
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    const breakpoint = 800.0;
+
     if (screenWidth >= breakpoint) {
       if (!_large) {
         _large = true;

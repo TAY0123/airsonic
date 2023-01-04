@@ -154,11 +154,11 @@ class MediaPlayer {
   }
 
   Future<AirSonicResult> fetchAlbumInfo(String albumId) async {
-    return await _xmlEndpoint("getAlbumList2", query: {"type": "recent"});
+    return await _xmlEndpoint("getAlbum", query: {"id": albumId});
   }
 
-  Future<ImageProvider> fetchCover(String id, {full = false}) async {
-    if (id.isEmpty) throw Exception("no image data");
+  Future<ImageProvider?> fetchCover(String id, {full = false}) async {
+    if (id.isEmpty) return Future.error(Exception("no image data"));
     final Directory temp = await getTemporaryDirectory();
     final File imageFile = File('${temp.path}/images/$id.png');
 
@@ -205,7 +205,7 @@ class Album {
         element.getAttribute("id") ?? "",
         element.getAttribute("name") ?? "",
         element.getAttribute("coverArt") ?? "",
-        artist: element.getAttribute("coverArt") != null
+        artist: element.getAttribute("artistId") != null
             ? Artist.FromAlbum(element)
             : null);
 
@@ -240,9 +240,9 @@ class Song {
       element.getAttribute("title") ?? "",
       element.getAttribute("coverArt") ?? "",
       int.parse(element.getAttribute("duration") ?? ""),
-      track: int.parse(element.getAttribute("track") ?? ""),
+      track: int.tryParse(element.getAttribute("track") ?? "") ?? 0,
     );
-    final a = element.getAttribute("artistID");
+    final a = element.getAttribute("artistId");
     if (a != null) {
       re.artist = Artist.FromSong(element);
     }

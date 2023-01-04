@@ -1,3 +1,6 @@
+import 'dart:ui';
+
+import 'package:airsonic/albumInfo.dart';
 import 'package:airsonic/dashboard.dart';
 import 'package:airsonic/player.dart';
 import 'package:airsonic/playerControl.dart';
@@ -30,27 +33,59 @@ class MyApp extends StatelessWidget {
           // or simply save your changes to "hot reload" in a Flutter IDE).
           // Notice that the counter didn't reset back to zero; the application
           // is not restarted.
-          brightness: Brightness.dark,
+          brightness: Brightness.light,
           primarySwatch: Colors.blue,
           useMaterial3: true),
-      onGenerateRoute: (settings) {
-        late Widget page;
-        if (settings.name == routeDashboard) {
-          page = Dashboard();
-        } else if (settings.name == routeRootAlbumList ||
-            settings.name == "/") {
-          page = AlbumListView();
-        } else if (settings.name!.startsWith(routeDashboardAlbumInfo)) {
-          final subRoute =
-              settings.name!.substring(routeDashboardAlbumInfo.length);
-        }
+      home: SplitView(
+        Navigator(
+          observers: [
+            HeroController(),
+          ],
+          key: GlobalKey(debugLabel: "navigator"),
+          initialRoute: "/album",
+          onGenerateRoute: (settings) {
+            print(settings.name);
+            late Widget page;
 
-        return MaterialPageRoute(
-            settings: settings,
-            builder: (context) {
-              return SplitView(page);
-            });
-      },
+            if (settings.name == "/") {
+              page = Container();
+            }
+
+            //handle /Dashboard
+            if (settings.name == routeDashboard) {
+              page = Dashboard();
+              //handle / and /AlbumList
+            } else if (settings.name == routeRootAlbum) {
+              page = AlbumListView();
+            }
+
+            // Handle '/album/:id'
+            var uri = Uri.parse(settings.name ?? "");
+            if (uri.pathSegments.length == 2 &&
+                uri.pathSegments.first == 'album') {
+              var id = uri.pathSegments[1];
+              if (settings.arguments != null) {
+                print((settings.arguments as Album).name);
+                page = AlbumInfo(settings.arguments as Album);
+              } else {
+                page = AlbumInfo(Album(id, "", ""));
+              }
+            }
+
+            return MaterialPageRoute(
+                settings: settings,
+                builder: (context) {
+                  return page;
+                });
+
+            return PageRouteBuilder(
+                settings: settings,
+                pageBuilder: (context, a, b) {
+                  return page;
+                });
+          },
+        ),
+      ),
     );
   }
 }
