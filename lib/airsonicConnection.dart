@@ -176,7 +176,7 @@ class MediaPlayer {
     final Directory temp = await getTemporaryDirectory();
     final File imageFile = File('${temp.path}/images/$id.png');
 
-    if (await imageFile.exists()) {
+    if (await imageFile.exists() && await imageFile.length() != 0) {
       // Use the cached images if it exists
       if (!full) {
         return MemoryImage(await imageFile.readAsBytes(), scale: 0.75);
@@ -207,7 +207,7 @@ class MediaPlayer {
     final Directory temp = await getTemporaryDirectory();
     final File imageFile = File('${temp.path}/images/$id.png');
 
-    if (await imageFile.exists()) {
+    if (await imageFile.exists() && await imageFile.length() != 0) {
       // Use the cached images if it exists
     } else {
       // Image doesn't exist in cache
@@ -226,25 +226,25 @@ class MediaPlayer {
 
   void playPlaylist(List<Song> playlist, {int index = 0}) async {
     final player = await _player;
-    final Directory temp = await getTemporaryDirectory();
-    for (int i = index; i < playlist.length;) {
-      final song = playlist[i];
-      final v = MediaItem(
+    List<MediaItem> res = [];
+    for (Song song in playlist.skip(index)) {
+      res.add(MediaItem(
         id: song.id,
         artUri: await _coverUri(song.coverArt),
         title: song.title,
         duration: Duration(seconds: song.duration),
         artist: song.artist?.name ?? song.album?.artist?.name ?? "Unknown",
         album: song.album?.name ?? "testalum",
-      );
-      await player.addQueueItems([v]);
-      /*
+      ));
+    }
+    await player.addQueueItems(res);
+
+    /*
       player.playFromUri(_apiEndpointUrl("stream",
           query: {"id": playlist[i].id, "format": "mp3"}));
           */
-      await player.play();
-      return;
-    }
+
+    player.play();
   }
 }
 

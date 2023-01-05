@@ -43,6 +43,8 @@ class MyAudioHandler extends BaseAudioHandler {
   MyAudioHandler() {
     _loadEmptyPlaylist();
     _listenForDurationChanges();
+    _notifyAudioHandlerAboutPlaybackEvents();
+    _listenForCurrentSongIndexChanges();
 
     //init
     inited = _init();
@@ -82,6 +84,36 @@ class MyAudioHandler extends BaseAudioHandler {
     }
   }
 
+  void _notifyAudioHandlerAboutPlaybackEvents() {
+    _player.playbackEventStream.listen((PlaybackEvent event) {
+      final playing = _player.playing;
+      playbackState.add(playbackState.value.copyWith(
+        controls: [
+          MediaControl.skipToPrevious,
+          if (playing) MediaControl.pause else MediaControl.play,
+          MediaControl.stop,
+          MediaControl.skipToNext,
+        ],
+        systemActions: const {
+          MediaAction.seek,
+        },
+        androidCompactActionIndices: const [0, 1, 3],
+        processingState: const {
+          ProcessingState.idle: AudioProcessingState.idle,
+          ProcessingState.loading: AudioProcessingState.loading,
+          ProcessingState.buffering: AudioProcessingState.buffering,
+          ProcessingState.ready: AudioProcessingState.ready,
+          ProcessingState.completed: AudioProcessingState.completed,
+        }[_player.processingState]!,
+        playing: playing,
+        updatePosition: _player.position,
+        bufferedPosition: _player.bufferedPosition,
+        speed: _player.speed,
+        queueIndex: event.currentIndex,
+      ));
+    });
+  }
+
   void _listenForDurationChanges() {
     _player.durationStream.listen((duration) {
       final index = _player.currentIndex;
@@ -100,15 +132,11 @@ class MyAudioHandler extends BaseAudioHandler {
     await inited;
     // manage Just Audio
     final audioSource = mediaItems.map(_createAudioSource);
+    _playlist.clear();
     _playlist.addAll(audioSource.toList());
     // notify system
     final newQueue = queue.value..addAll(mediaItems);
     queue.add(newQueue);
-    try {
-      await _player.setAudioSource(audioSource.first);
-    } catch (e) {
-      print(e);
-    }
   }
 
   UriAudioSource _createAudioSource(MediaItem mediaItem) {
@@ -118,79 +146,35 @@ class MyAudioHandler extends BaseAudioHandler {
     );
   }
 
+  void _listenForCurrentSongIndexChanges() {
+    _player.currentIndexStream.listen((index) {
+      final playlist = queue.value;
+      if (index == null || playlist.isEmpty) return;
+      print(playlist[index].artUri);
+      mediaItem.add(playlist[index]);
+    });
+  }
+
   @override
   Future<void> play() async {
     _player.play();
-
-    playbackState.add(PlaybackState(
-      // Which buttons should appear in the notification now
-      controls: [
-        MediaControl.skipToPrevious,
-        MediaControl.pause,
-        MediaControl.stop,
-        MediaControl.skipToNext,
-      ],
-      // Which other actions should be enabled in the notification
-      systemActions: const {
-        MediaAction.seek,
-        MediaAction.seekForward,
-        MediaAction.seekBackward,
-      },
-      // Which controls to show in Android's compact view.
-      androidCompactActionIndices: const [0, 1, 3],
-      // Whether audio is ready, buffering, ...
-      processingState: AudioProcessingState.ready,
-      // Whether audio is playing
-      playing: true,
-      // The current position as of this update. You should not broadcast
-      // position changes continuously because listeners will be able to
-      // project the current position after any elapsed time based on the
-      // current speed and whether audio is playing and ready. Instead, only
-      // broadcast position updates when they are different from expected (e.g.
-      // buffering, or seeking).
-      updatePosition: _player.position,
-      // The current speed
-      speed: 1.0,
-      // The current queue position
-      queueIndex: 0,
-    ));
   }
 
   @override
   Future<void> pause() async {
     _player.pause();
-
-    playbackState.add(PlaybackState(
-      // Which buttons should appear in the notification now
-      controls: [
-        MediaControl.skipToPrevious,
-        MediaControl.play,
-        MediaControl.stop,
-        MediaControl.skipToNext,
-      ],
-      // Which other actions should be enabled in the notification
-      systemActions: const {
-        MediaAction.seek,
-        MediaAction.seekForward,
-        MediaAction.seekBackward,
-      },
-      // Which controls to show in Android's compact view.
-      androidCompactActionIndices: const [0, 1, 3],
-      // Whether audio is ready, buffering, ...
-      processingState: AudioProcessingState.ready,
-      // Whether audio is playing
-      playing: false,
-      // The current position as of this update. You should not broadcast
-      // position changes continuously because listeners will be able to
-      // project the current position after any elapsed time based on the
-      // current speed and whether audio is playing and ready. Instead, only
-      // broadcast position updates when they are different from expected (e.g.
-      // buffering, or seeking).
-      updatePosition: _player.position,
-      // The current speed
-      speed: 1.0,
-      // The current queue position
-      queueIndex: 0,
-    ));
   }
+
+  @override
+  Future<void> skipToNext() async {
+    await _player.seekToNext();
+  }
+
+  @override
+  Future<void> skipToPrevious() async {
+    await _player.seekToPrevious();
+  }
+
+  @override
+  Future<void> seek(Duration position) => _player.seek(position);
 }
