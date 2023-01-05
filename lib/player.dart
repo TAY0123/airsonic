@@ -137,6 +137,7 @@ class MyAudioHandler extends BaseAudioHandler {
     // notify system
     final newQueue = queue.value..addAll(mediaItems);
     queue.add(newQueue);
+    _player.load();
   }
 
   UriAudioSource _createAudioSource(MediaItem mediaItem) {

@@ -117,17 +117,6 @@ class MediaPlayer {
     return resp;
   }
 
-  Uri _apiEndpointUrl(String ednpoint, {Map<String, String>? query}) {
-    Map<String, dynamic> p = Map.from(_param);
-    if (query != null) {
-      p.addAll(query);
-    }
-    final a = _base.replace(
-        pathSegments: _segments.followedBy([ednpoint]), queryParameters: p);
-    print(a.toString());
-    return a;
-  }
-
   Future<AirSonicResult> _xmlEndpoint(String endpoint,
       {Map<String, String>? query}) async {
     final data = await _apiEndpoint(endpoint, query: query);
