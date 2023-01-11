@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/http.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:rxdart/rxdart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:xml/xml.dart';
 
@@ -24,8 +25,75 @@ String generateMd5(String input) {
 }
 
 class MediaPlayer {
+  late Future<ValueStream<MediaItem?>> currentItem;
+  late Future<ValueStream<List<MediaItem>>> playlist;
+  late Future<Stream<Duration>> currentPosition;
+
   /// private constructor
-  MediaPlayer._();
+  MediaPlayer._() {
+    () async {
+      _listenToChangesInSong();
+      _listenToChangesInPlaylist();
+      _listenToCurrentPosition();
+    }();
+  }
+  void _listenToChangesInSong() {
+    currentItem = () async {
+      final player = await futurePlayer;
+      return player.mediaItem;
+    }();
+    /*
+    final player = await futurePlayer;
+    current = player.mediaItem;
+    player.mediaItem.listen((mediaItem) {
+      print(mediaItem?.duration?.inSeconds);
+      currentItem.value = mediaItem ?? const MediaItem(id: "", title: "");
+      _updateSkipButtons();
+    });
+    */
+  }
+
+  void _updateSkipButtons() async {
+    final player = await futurePlayer;
+    final mediaItem = player.mediaItem.value;
+    final playlist = player.queue.value;
+    if (playlist.length < 2 || mediaItem == null) {
+      //isFirstSongNotifier.value = true;
+      //isLastSongNotifier.value = true;
+    } else {
+      //isFirstSongNotifier.value = playlist.first == mediaItem;
+      //isLastSongNotifier.value = playlist.last == mediaItem;
+    }
+  }
+
+  void _listenToChangesInPlaylist() {
+    playlist = () async {
+      final player = await futurePlayer;
+      return player.queue;
+    }();
+    /*
+    final player = await futurePlayer;
+    player.queue.listen((playlist) {
+      if (playlist.isEmpty) return;
+      final newList = playlist.map((item) => item.title).toList();
+    });
+    */
+  }
+
+  void _listenToCurrentPosition() {
+    currentPosition = () async {
+      await futurePlayer;
+      return AudioService.position;
+    }();
+    /*
+    await futurePlayer;
+    AudioService.position.listen((position) {
+      currentPos.value = position;
+    });
+    */
+  }
+
+  ValueNotifier<Duration> currentPos = ValueNotifier(Duration.zero);
 
   /// the one and only instance of this singleton
   static final instance = MediaPlayer._();
@@ -38,7 +106,7 @@ class MediaPlayer {
   List<String> _segments = [];
   Map<String, dynamic> _param = {};
   late final Future<bool> _inited = init(); //initalize the information
-  late final Future<AudioHandler> _player = initAudioService();
+  late final Future<AudioHandler> futurePlayer = initAudioService();
 
   Future<AirSonicResult> login(
       {String domain = "", String username = "", String password = ""}) async {
@@ -56,7 +124,7 @@ class MediaPlayer {
       "t": token,
       "s": salt,
       "v": "1.15",
-      "c": "flutterTest"
+      "c": "flutsonic"
     };
 
     final res = await _xmlEndpoint(
@@ -92,7 +160,7 @@ class MediaPlayer {
       "t": token,
       "s": salt,
       "v": "1.15",
-      "c": "flutterTest"
+      "c": "flutsonic"
     };
     _base = _base.replace(queryParameters: _param);
 
@@ -145,14 +213,19 @@ class MediaPlayer {
     return result;
   }
 
-  Future<AirSonicResult> fetchAlbum(
+  Future<AirSonicResult> fetchAlbumList(
       {int offset = 0,
       int count = 0,
-      AlbumListType type = AlbumListType.recent}) async {
+      AlbumListType type = AlbumListType.recent,
+      String folderId = ""}) async {
     await _inited;
-
-    var result = await _xmlEndpoint("getAlbumList2",
-        query: {"type": AlbumListType.recent.name, "offset": "$offset"});
+    Map<String, String> q = {};
+    if (folderId.isNotEmpty) {
+      q["musicFolderId"] = folderId;
+    }
+    q["type"] = AlbumListType.recent.name;
+    q["offset"] = "$offset";
+    var result = await _xmlEndpoint("getAlbumList2", query: q);
     return result;
   }
 
@@ -160,12 +233,21 @@ class MediaPlayer {
     return await _xmlEndpoint("getAlbum", query: {"id": albumId});
   }
 
+  Future<AirSonicResult> fetchFolder(String folderId) async {
+    var albumlist = await _xmlEndpoint("getAlbum", query: {"id": folderId});
+    AirSonicResult result = AirSonicResult();
+    for (final album in albumlist.albums) {
+      result.albums.addAll((await fetchAlbumInfo(album.id)).albums);
+    }
+    return result;
+  }
+
   Future<ImageProvider?> fetchCover(String id, {full = false}) async {
     if (id.isEmpty) return Future.error(Exception("no image data"));
     final Directory temp = await getTemporaryDirectory();
     final File imageFile = File('${temp.path}/images/$id.png');
 
-    if (await imageFile.exists() && await imageFile.length() != 0) {
+    if ((await imageFile.exists()) && (await imageFile.length()) != 0) {
       // Use the cached images if it exists
       if (!full) {
         return MemoryImage(await imageFile.readAsBytes(), scale: 0.75);
@@ -196,7 +278,7 @@ class MediaPlayer {
     final Directory temp = await getTemporaryDirectory();
     final File imageFile = File('${temp.path}/images/$id.png');
 
-    if (await imageFile.exists() && await imageFile.length() != 0) {
+    if ((await imageFile.exists()) && (await imageFile.length()) != 0) {
       // Use the cached images if it exists
     } else {
       // Image doesn't exist in cache
@@ -214,7 +296,7 @@ class MediaPlayer {
   }
 
   void playPlaylist(List<Song> playlist, {int index = 0}) async {
-    final player = await _player;
+    final fplayer = await futurePlayer;
     List<MediaItem> res = [];
     for (Song song in playlist.skip(index)) {
       res.add(MediaItem(
@@ -223,17 +305,17 @@ class MediaPlayer {
         title: song.title,
         duration: Duration(seconds: song.duration),
         artist: song.artist?.name ?? song.album?.artist?.name ?? "Unknown",
-        album: song.album?.name ?? "testalum",
+        album: song.album?.name ?? "test album",
       ));
     }
-    await player.addQueueItems(res);
+    await fplayer.updateQueue(res);
 
     /*
       player.playFromUri(_apiEndpointUrl("stream",
           query: {"id": playlist[i].id, "format": "mp3"}));
           */
 
-    player.play();
+    fplayer.play();
   }
 }
 
@@ -265,7 +347,7 @@ class Album {
     if (element.childElements.isNotEmpty) {
       a.songs = [];
       for (var song in element.childElements) {
-        final tmp = Song.fromElement(song);
+        final tmp = Song.fromAlbum(a, song);
         if (tmp.id.isNotEmpty) {
           a.songs?.add(tmp);
         }
@@ -287,14 +369,14 @@ class Song {
   Song(this.id, this.title, this.coverArt, this.duration,
       {this.track = 0, this.album, this.artist});
 
-  factory Song.fromElement(XmlElement element) {
+  factory Song.fromAlbum(Album album, XmlElement element) {
     var re = Song(
-      element.getAttribute("id") ?? "",
-      element.getAttribute("title") ?? "",
-      element.getAttribute("coverArt") ?? "",
-      int.parse(element.getAttribute("duration") ?? ""),
-      track: int.tryParse(element.getAttribute("track") ?? "") ?? 0,
-    );
+        element.getAttribute("id") ?? "",
+        element.getAttribute("title") ?? "",
+        element.getAttribute("coverArt") ?? "",
+        int.parse(element.getAttribute("duration") ?? ""),
+        track: int.tryParse(element.getAttribute("track") ?? "") ?? 0,
+        album: album);
     final a = element.getAttribute("artistId");
     if (a != null) {
       re.artist = Artist.FromSong(element);

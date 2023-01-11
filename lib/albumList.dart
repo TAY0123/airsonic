@@ -55,7 +55,8 @@ class _AlbumListViewState extends State<AlbumListView>
     await fetchAlbums();
     while ((!_scrollController.hasClients ||
             _scrollController.position.maxScrollExtent == 0.0) &&
-        error == null) {
+        error == null &&
+        !ended) {
       await fetchAlbums();
     }
     completer.complete();
@@ -73,7 +74,7 @@ class _AlbumListViewState extends State<AlbumListView>
     }
     late List<Album> result;
     try {
-      result = (await mp.fetchAlbum(offset: offset)).albums;
+      result = (await mp.fetchAlbumList(offset: offset)).albums;
     } catch (e) {
       error = e;
       _dataController.add([]); //trigger redraw from streambuilder
@@ -121,7 +122,10 @@ class _AlbumListViewState extends State<AlbumListView>
                 physics: const AlwaysScrollableScrollPhysics(),
                 itemCount: albums.length,
                 gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                    childAspectRatio: 0.75, maxCrossAxisExtent: 250),
+                    childAspectRatio: 0.75,
+                    maxCrossAxisExtent: 250,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16),
                 itemBuilder: ((context, index) {
                   final album = albums[index];
                   return AlbumCard(album);

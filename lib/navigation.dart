@@ -86,6 +86,8 @@ class NavRail extends StatelessWidget {
               icon: Icon(Icons.playlist_play), label: Text("Playlist")),
           NavigationRailDestination(
               icon: Icon(Icons.settings), label: Text("Settings")),
+          NavigationRailDestination(
+              icon: Icon(Icons.input), label: Text("Sources")),
         ],
         selectedIndex: 0);
   }

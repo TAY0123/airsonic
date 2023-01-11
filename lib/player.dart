@@ -18,6 +18,7 @@ Future<AudioHandler> initAudioService() async {
   );
 }
 
+//TODO: prev info not correct
 class MyAudioHandler extends BaseAudioHandler {
   final _player = AudioPlayer();
   final _playlist = ConcatenatingAudioSource(children: []);
@@ -69,7 +70,7 @@ class MyAudioHandler extends BaseAudioHandler {
       "t": token,
       "s": salt,
       "v": "1.15",
-      "c": "flutterTest"
+      "c": "flutsonic"
     };
     _base = _base.replace(queryParameters: _param);
 
@@ -132,17 +133,32 @@ class MyAudioHandler extends BaseAudioHandler {
     await inited;
     // manage Just Audio
     final audioSource = mediaItems.map(_createAudioSource);
-    _playlist.clear();
     _playlist.addAll(audioSource.toList());
     // notify system
     final newQueue = queue.value..addAll(mediaItems);
+    //final newQueue = mediaItems;
+    queue.add(newQueue);
+    _player.load();
+  }
+
+  @override
+  Future<void> updateQueue(List<MediaItem> mediaItems) async {
+    await inited;
+    // manage Just Audio
+    final audioSource = mediaItems.map(_createAudioSource);
+    //clear playlist
+    _playlist.clear();
+    _playlist.addAll(audioSource.toList());
+    // notify system
+    //final newQueue = queue.value..addAll(mediaItems);
+    final newQueue = mediaItems;
     queue.add(newQueue);
     _player.load();
   }
 
   UriAudioSource _createAudioSource(MediaItem mediaItem) {
     return AudioSource.uri(
-      _apiEndpointUrl("stream", query: {"id": mediaItem.id, "format": "mp3"}),
+      _apiEndpointUrl("stream", query: {"id": mediaItem.id, "format": "raw"}),
       tag: mediaItem,
     );
   }
