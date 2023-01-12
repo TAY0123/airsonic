@@ -270,7 +270,7 @@ class _AlbumInfoState extends State<AlbumInfo>
                                   return ListTile(
                                     onTap: () {
                                       mp.playPlaylist(
-                                          snapshot.requireData.songs!,
+                                          snapshot.requireData.songs,
                                           index: i);
                                     },
                                     leading: Column(

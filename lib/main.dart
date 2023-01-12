@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:airsonic/albumInfo.dart';
 import 'package:airsonic/dashboard.dart';
 import 'package:airsonic/airsonicConnection.dart';
@@ -13,12 +15,13 @@ void main() async {
   // Must add this line.
   await windowManager.ensureInitialized();
 
-  WindowOptions windowOptions = const WindowOptions(
-    size: Size(1280, 720),
+  WindowOptions windowOptions = WindowOptions(
+    size: const Size(1280, 720),
     center: true,
     backgroundColor: Colors.transparent,
     skipTaskbar: false,
-    titleBarStyle: TitleBarStyle.hidden,
+    titleBarStyle:
+        Platform.isMacOS ? TitleBarStyle.hidden : TitleBarStyle.normal,
   );
   windowManager.waitUntilReadyToShow(windowOptions, () async {
     await windowManager.show();

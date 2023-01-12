@@ -86,7 +86,8 @@ class _AlbumListViewState extends State<AlbumListView>
       return true;
     }
 
-    _dataController.add(result);
+    albums.addAll(result);
+    _dataController.add(albums);
     offset += result.length;
 
     return true;
@@ -96,53 +97,76 @@ class _AlbumListViewState extends State<AlbumListView>
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder(
-        stream: _dataController.stream,
-        builder: ((context, snapshot) {
-          if (snapshot.hasData) {
-            if (error != null) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(error.toString()),
-                    FloatingActionButton.small(
-                        child: Icon(Icons.refresh),
-                        onPressed: () {
-                          error = null;
-                          init();
-                        })
-                  ],
-                ),
-              );
-            }
-            albums.addAll(snapshot.data ?? []);
-            return GridView.builder(
-                controller: _scrollController,
-                physics: const AlwaysScrollableScrollPhysics(),
-                itemCount: albums.length,
-                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                    childAspectRatio: 0.75,
-                    maxCrossAxisExtent: 250,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16),
-                itemBuilder: ((context, index) {
-                  final album = albums[index];
-                  return AlbumCard(album);
-                }));
+    return NotificationListener<SizeChangedLayoutNotification>(
+      onNotification: (notification) {
+        print("layout changed");
+        () async {
+          await completer.future;
 
-            /*
-            ListView(
-                children: snapshot.data?.albums.map((e) {
-                      print(e.name);
-                      return Text(e.name);
-                    }).toList() ??
-                    []);
-                    */
-          } else {
-            return const Center(child: CircularProgressIndicator());
+          completer = Completer();
+          while ((!_scrollController.hasClients ||
+                  _scrollController.position.maxScrollExtent == 0.0) &&
+              error == null &&
+              !ended) {
+            await fetchAlbums();
           }
-        }));
+          completer.complete();
+        }();
+
+        return true;
+      },
+      child: SizeChangedLayoutNotifier(
+        child: LayoutBuilder(builder: (context, constraints) {
+          return StreamBuilder(
+              stream: _dataController.stream,
+              builder: ((context, snapshot) {
+                if (snapshot.hasData) {
+                  if (error != null) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(error.toString()),
+                          FloatingActionButton.small(
+                              child: Icon(Icons.refresh),
+                              onPressed: () {
+                                error = null;
+                                init();
+                              })
+                        ],
+                      ),
+                    );
+                  }
+                  return GridView.builder(
+                      controller: _scrollController,
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      itemCount: snapshot.data!.length,
+                      gridDelegate:
+                          const SliverGridDelegateWithMaxCrossAxisExtent(
+                              childAspectRatio: 0.75,
+                              maxCrossAxisExtent: 250,
+                              crossAxisSpacing: 16,
+                              mainAxisSpacing: 16),
+                      itemBuilder: ((context, index) {
+                        final album = snapshot.data![index];
+                        return AlbumCard(album);
+                      }));
+
+                  /*
+                    ListView(
+                        children: snapshot.data?.albums.map((e) {
+                              print(e.name);
+                              return Text(e.name);
+                            }).toList() ??
+                            []);
+                            */
+                } else {
+                  return const Center(child: CircularProgressIndicator());
+                }
+              }));
+        }),
+      ),
+    );
   }
 }
 

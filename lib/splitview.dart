@@ -32,8 +32,7 @@ class _SplitViewState extends State<SplitView>
     super.dispose();
   }
 
-  final bool _desktop =
-      Platform.isMacOS || Platform.isLinux || Platform.isWindows;
+  final bool _mac = Platform.isMacOS;
 
   bool _maximize = false;
   @override
@@ -46,25 +45,26 @@ class _SplitViewState extends State<SplitView>
             child: LayoutBuilder(builder: (context, constraints) {
               return Column(
                 children: [
-                  SizedBox(
-                    width: constraints.maxWidth,
-                    height: 25,
-                    child: GestureDetector(
-                      onDoubleTap: () {
-                        if (_maximize) {
-                          _maximize = false;
-                          windowManager.unmaximize();
-                        } else {
-                          _maximize = true;
-                          windowManager.maximize();
-                        }
-                      },
+                  if (_mac)
+                    SizedBox(
+                      width: constraints.maxWidth,
+                      height: 25,
+                      child: GestureDetector(
+                        onDoubleTap: () {
+                          if (_maximize) {
+                            _maximize = false;
+                            windowManager.unmaximize();
+                          } else {
+                            _maximize = true;
+                            windowManager.maximize();
+                          }
+                        },
+                      ),
                     ),
-                  ),
                   SizedBox(
                     width: constraints.maxWidth,
                     height:
-                        _desktop // reserve space for title bar gesture detection
+                        _mac // reserve space for title bar gesture detection
                             ? constraints.maxHeight - 25
                             : constraints.maxHeight,
                     child: Row(

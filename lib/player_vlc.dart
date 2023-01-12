@@ -1,47 +1,20 @@
-import 'dart:io';
-
-import 'package:airsonic/player_vlc.dart';
 import 'package:audio_service/audio_service.dart';
-import 'package:audio_session/audio_session.dart';
-import 'package:dart_vlc/dart_vlc.dart';
-import 'package:just_audio/just_audio.dart';
+import 'package:dart_vlc/dart_vlc.dart' as vlc;
 import 'package:shared_preferences/shared_preferences.dart';
 
-Future<AudioHandler> initAudioService() async {
-  if (Platform.isIOS || Platform.isMacOS) {
-    final session = await AudioSession.instance;
-    await session.configure(const AudioSessionConfiguration.music());
-  }
-  if (Platform.isWindows || Platform.isLinux) {
-    DartVLC.initialize();
-    return await AudioService.init(
-      builder: () => VlcAudioHandler(),
-      config: const AudioServiceConfig(
-        androidNotificationChannelId: 'com.mycompany.myapp.audio',
-        androidNotificationChannelName: 'Audio Service Demo',
-      ),
-    );
-  } else {
-    return await AudioService.init(
-      builder: () => MyAudioHandler(),
-      config: const AudioServiceConfig(
-        androidNotificationChannelId: 'com.mycompany.myapp.audio',
-        androidNotificationChannelName: 'Audio Service Demo',
-      ),
-    );
-  }
-}
-
-//TODO: prev info not correct
-
-class MyAudioHandler extends BaseAudioHandler {
-  final _player = AudioPlayer();
-  final _playlist = ConcatenatingAudioSource(children: []);
+class VlcAudioHandler extends BaseAudioHandler {
+  final _player = vlc.Player(
+    id: 69420,
+    commandlineArguments: ['--no-video'],
+  );
+  var _playlist = vlc.Playlist(medias: []);
 
   //private
   Uri _base = Uri();
   List<String> _segments = [];
   Map<String, dynamic> _param = {};
+
+  int index = 0;
 
   late Future<bool> inited;
 
@@ -56,8 +29,7 @@ class MyAudioHandler extends BaseAudioHandler {
     return a;
   }
 
-  MyAudioHandler() {
-    _loadEmptyPlaylist();
+  VlcAudioHandler() {
     _listenForDurationChanges();
     _notifyAudioHandlerAboutPlaybackEvents();
     _listenForCurrentSongIndexChanges();
@@ -94,16 +66,20 @@ class MyAudioHandler extends BaseAudioHandler {
 
   Future<void> _loadEmptyPlaylist() async {
     try {
-      await _player.setAudioSource(_playlist);
+      _player.open(_playlist);
     } catch (e) {
       print("Error: $e");
     }
   }
 
   void _notifyAudioHandlerAboutPlaybackEvents() {
-    _player.playbackEventStream.listen((PlaybackEvent event) {
-      final playing = _player.playing;
+    _player.playbackStream.listen((vlc.PlaybackState state) {
+      final playing = state.isPlaying;
+      state.isSeekable;
+      state.isCompleted;
+
       playbackState.add(playbackState.value.copyWith(
+        playing: playing,
         controls: [
           MediaControl.skipToPrevious,
           if (playing) MediaControl.pause else MediaControl.play,
@@ -113,30 +89,29 @@ class MyAudioHandler extends BaseAudioHandler {
         systemActions: const {
           MediaAction.seek,
         },
-        androidCompactActionIndices: const [0, 1, 3],
-        processingState: const {
-          ProcessingState.idle: AudioProcessingState.idle,
-          ProcessingState.loading: AudioProcessingState.loading,
-          ProcessingState.buffering: AudioProcessingState.buffering,
-          ProcessingState.ready: AudioProcessingState.ready,
-          ProcessingState.completed: AudioProcessingState.completed,
-        }[_player.processingState]!,
-        playing: playing,
-        updatePosition: _player.position,
-        bufferedPosition: _player.bufferedPosition,
-        speed: _player.speed,
-        queueIndex: event.currentIndex,
       ));
+    });
+    _player.currentStream.listen((event) {
+      playbackState.add(playbackState.value.copyWith(
+        queueIndex: event.index,
+      ));
+
+      index = event.index ?? 0;
     });
   }
 
   void _listenForDurationChanges() {
-    _player.durationStream.listen((duration) {
-      final index = _player.currentIndex;
+    //update position and duration
+    _player.positionStream.listen((vlc.PositionState state) {
+      playbackState.add(playbackState.value.copyWith(
+        updatePosition: state.position ?? const Duration(seconds: 0),
+      ));
       final newQueue = queue.value;
-      if (index == null || newQueue.isEmpty) return;
+      if (newQueue.isEmpty) {
+        return;
+      }
       final oldMediaItem = newQueue[index];
-      final newMediaItem = oldMediaItem.copyWith(duration: duration);
+      final newMediaItem = oldMediaItem.copyWith(duration: state.duration);
       newQueue[index] = newMediaItem;
       queue.add(newQueue);
       mediaItem.add(newMediaItem);
@@ -145,6 +120,7 @@ class MyAudioHandler extends BaseAudioHandler {
 
   @override
   Future<void> addQueueItems(List<MediaItem> mediaItems) async {
+    /*
     await inited;
     // manage Just Audio
     final audioSource = mediaItems.map(_createAudioSource);
@@ -154,6 +130,17 @@ class MyAudioHandler extends BaseAudioHandler {
     //final newQueue = mediaItems;
     queue.add(newQueue);
     _player.load();
+    */
+    await inited;
+    // manage Just Audio
+    final audioSource = mediaItems.map(_createAudioSource);
+    //clear playlist
+    _playlist = vlc.Playlist(medias: audioSource.toList());
+    _player.open(_playlist);
+    // notify system
+    //final newQueue = queue.value..addAll(mediaItems);
+    final newQueue = mediaItems;
+    queue.add(newQueue);
   }
 
   @override
@@ -162,28 +149,26 @@ class MyAudioHandler extends BaseAudioHandler {
     // manage Just Audio
     final audioSource = mediaItems.map(_createAudioSource);
     //clear playlist
-    _playlist.clear();
-    _playlist.addAll(audioSource.toList());
+    _playlist = vlc.Playlist(medias: audioSource.toList());
+    _player.open(_playlist);
     // notify system
     //final newQueue = queue.value..addAll(mediaItems);
     final newQueue = mediaItems;
     queue.add(newQueue);
-    _player.load();
   }
 
-  UriAudioSource _createAudioSource(MediaItem mediaItem) {
-    return AudioSource.uri(
+  vlc.Media _createAudioSource(MediaItem mediaItem) {
+    return vlc.Media.network(
       _apiEndpointUrl("stream", query: {"id": mediaItem.id, "format": "raw"}),
-      tag: mediaItem,
     );
   }
 
   void _listenForCurrentSongIndexChanges() {
-    _player.currentIndexStream.listen((index) {
+    _player.currentStream.listen((index) {
       final playlist = queue.value;
       if (index == null || playlist.isEmpty) return;
-      print(playlist[index].artUri);
-      mediaItem.add(playlist[index]);
+      print(playlist[index.index ?? 0].artUri);
+      mediaItem.add(playlist[index.index ?? 0]);
     });
   }
 
@@ -199,14 +184,16 @@ class MyAudioHandler extends BaseAudioHandler {
 
   @override
   Future<void> skipToNext() async {
-    await _player.seekToNext();
+    _player.next();
   }
 
   @override
   Future<void> skipToPrevious() async {
-    await _player.seekToPrevious();
+    _player.previous();
   }
 
   @override
-  Future<void> seek(Duration position) => _player.seek(position);
+  Future<void> seek(Duration position) async {
+    _player.seek(position);
+  }
 }
