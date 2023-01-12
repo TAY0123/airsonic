@@ -1,5 +1,6 @@
 import 'package:audio_service/audio_service.dart';
 import 'package:dart_vlc/dart_vlc.dart' as vlc;
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class VlcAudioHandler extends BaseAudioHandler {
@@ -25,17 +26,35 @@ class VlcAudioHandler extends BaseAudioHandler {
     }
     final a = _base.replace(
         pathSegments: _segments.followedBy([ednpoint]), queryParameters: p);
-    print(a.toString());
     return a;
   }
 
   VlcAudioHandler() {
+    HardwareKeyboard.instance.addHandler(_mediakeyHandler);
     _listenForDurationChanges();
     _notifyAudioHandlerAboutPlaybackEvents();
     _listenForCurrentSongIndexChanges();
 
     //init
     inited = _init();
+  }
+
+  bool _mediakeyHandler(KeyEvent e) {
+    if (e is KeyDownEvent) {
+      switch (e.logicalKey.keyId) {
+        case 4294969861: //play pause
+          _player.playOrPause();
+          break;
+        case 176:
+          skipToNext();
+          break;
+        case 177:
+          skipToPrevious();
+          break;
+        default:
+      }
+    }
+    return false;
   }
 
   Future<bool> _init() async {
@@ -62,14 +81,6 @@ class VlcAudioHandler extends BaseAudioHandler {
     _base = _base.replace(queryParameters: _param);
 
     return true;
-  }
-
-  Future<void> _loadEmptyPlaylist() async {
-    try {
-      _player.open(_playlist);
-    } catch (e) {
-      print("Error: $e");
-    }
   }
 
   void _notifyAudioHandlerAboutPlaybackEvents() {

@@ -99,7 +99,6 @@ class _AlbumListViewState extends State<AlbumListView>
   Widget build(BuildContext context) {
     return NotificationListener<SizeChangedLayoutNotification>(
       onNotification: (notification) {
-        print("layout changed");
         () async {
           await completer.future;
 
