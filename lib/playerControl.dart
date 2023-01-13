@@ -5,6 +5,7 @@ import 'dart:math';
 import 'package:airsonic/airsonicConnection.dart';
 import 'package:airsonic/albumInfo.dart';
 import 'package:airsonic/albumList.dart';
+import 'package:airsonic/main.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:dismissible_page/dismissible_page.dart';
 import 'package:flutter/material.dart';
@@ -127,6 +128,13 @@ class _PlayBackControlState extends State<PlayBackControl>
           GestureDetector(
             behavior: HitTestBehavior.translucent,
             onTap: () {
+              ModalRoute.of(context)?.addLocalHistoryEntry(LocalHistoryEntry(
+                onRemove: () {
+                  print("removed");
+                  close();
+                },
+              ));
+
               if (!animationEnded) {
                 return;
               }
@@ -243,129 +251,136 @@ class _PlayBackControlState extends State<PlayBackControl>
                   ),
                 //bottomsheet body
                 if ((!opened && !dragFinish) || (opened && dragFinish))
-                  Container(
-                    child: Opacity(
-                      opacity: dragFinish ? 1 : 0,
-                      child: Center(
-                        child: FractionallySizedBox(
-                          widthFactor: 0.9,
-                          child: Column(
-                            children: [
-                              Expanded(
-                                  child: Row(
-                                children: [
-                                  FloatingActionButton(
-                                      child: const Icon(Icons.close),
-                                      onPressed: close)
-                                ],
-                              )),
-                              Expanded(
-                                flex: 3,
-                                child: Row(
+                  WillPopScope(
+                    onWillPop: () async {
+                      Navigator.of(context).pop();
+                      return true;
+                    },
+                    child: Container(
+                      child: Opacity(
+                        opacity: dragFinish ? 1 : 0,
+                        child: Center(
+                          child: FractionallySizedBox(
+                            widthFactor: 0.9,
+                            child: Column(
+                              children: [
+                                Expanded(
+                                    child: Row(
                                   children: [
-                                    Container(
-                                        child: AspectRatio(
-                                            aspectRatio: 1,
-                                            child: Center(
-                                              child: AfterLayout(
-                                                  callback: (value) {
-                                                    setState(() {
-                                                      coverImage.transition
-                                                              .endPoint =
-                                                          _getRect(value);
-                                                    });
-                                                  },
-                                                  child: coverImage.child),
-                                            ))),
-                                    const Spacer(),
-                                    Expanded(
-                                      flex: 4,
-                                      child: Padding(
-                                        padding:
-                                            const EdgeInsets.only(left: 20.0),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.start,
-                                          children: [
-                                            Row(
-                                              children: [
-                                                Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.start,
-                                                  children: [
-                                                    Text(
-                                                      current.title,
-                                                      maxLines: 1,
-                                                      style: Theme.of(context)
-                                                          .textTheme
-                                                          .titleLarge,
-                                                    ),
-                                                    Text(
-                                                      current.artist ?? "",
-                                                      maxLines: 1,
-                                                      style: Theme.of(context)
-                                                          .textTheme
-                                                          .bodyLarge,
-                                                    )
-                                                  ],
-                                                ),
-                                              ],
-                                            ),
-                                            const Spacer(),
-                                            //media control on full screen
-                                            Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
-                                              children: [
-                                                const Spacer(),
-                                                IconButton(
-                                                    iconSize: 48,
-                                                    onPressed: () {},
-                                                    icon: const Icon(
-                                                        Icons.skip_previous)),
-                                                IconButton(
-                                                    iconSize: 48,
-                                                    onPressed: () {},
-                                                    icon: const Icon(
-                                                        Icons.play_arrow)),
-                                                IconButton(
-                                                    iconSize: 48,
-                                                    onPressed: () {},
-                                                    icon: const Icon(
-                                                        Icons.skip_next)),
-                                                const Spacer(),
-                                              ],
-                                            ),
-                                            //progress bar
-                                            progressBar.child!,
-                                            Row(
-                                              children: [
-                                                Text(printDuration(pos)),
-                                                const Spacer(
-                                                  flex: 3,
-                                                ),
-                                                Text(printDuration(
-                                                    duration - pos))
-                                              ],
-                                            )
-                                          ],
+                                    FloatingActionButton(
+                                        child: const Icon(Icons.close),
+                                        onPressed: close)
+                                  ],
+                                )),
+                                Expanded(
+                                  flex: 3,
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                          child: AspectRatio(
+                                              aspectRatio: 1,
+                                              child: Center(
+                                                child: AfterLayout(
+                                                    callback: (value) {
+                                                      setState(() {
+                                                        coverImage.transition
+                                                                .endPoint =
+                                                            _getRect(value);
+                                                      });
+                                                    },
+                                                    child: coverImage.child),
+                                              ))),
+                                      const Spacer(),
+                                      Expanded(
+                                        flex: 4,
+                                        child: Padding(
+                                          padding:
+                                              const EdgeInsets.only(left: 20.0),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment.start,
+                                                    children: [
+                                                      Text(
+                                                        current.title,
+                                                        maxLines: 1,
+                                                        style: Theme.of(context)
+                                                            .textTheme
+                                                            .titleLarge,
+                                                      ),
+                                                      Text(
+                                                        current.artist ?? "",
+                                                        maxLines: 1,
+                                                        style: Theme.of(context)
+                                                            .textTheme
+                                                            .bodyLarge,
+                                                      )
+                                                    ],
+                                                  ),
+                                                ],
+                                              ),
+                                              const Spacer(),
+                                              //media control on full screen
+                                              Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                children: [
+                                                  const Spacer(),
+                                                  IconButton(
+                                                      iconSize: 48,
+                                                      onPressed: () {},
+                                                      icon: const Icon(
+                                                          Icons.skip_previous)),
+                                                  IconButton(
+                                                      iconSize: 48,
+                                                      onPressed: () {},
+                                                      icon: const Icon(
+                                                          Icons.play_arrow)),
+                                                  IconButton(
+                                                      iconSize: 48,
+                                                      onPressed: () {},
+                                                      icon: const Icon(
+                                                          Icons.skip_next)),
+                                                  const Spacer(),
+                                                ],
+                                              ),
+                                              //progress bar
+                                              progressBar.child!,
+                                              Row(
+                                                children: [
+                                                  Text(printDuration(pos)),
+                                                  const Spacer(
+                                                    flex: 3,
+                                                  ),
+                                                  Text(printDuration(
+                                                      duration - pos))
+                                                ],
+                                              )
+                                            ],
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              Expanded(
-                                child: Row(
-                                  children: const [],
-                                ),
-                              )
-                            ],
+                                Expanded(
+                                  child: Row(
+                                    children: const [],
+                                  ),
+                                )
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -392,6 +407,10 @@ class _PlayBackControlState extends State<PlayBackControl>
                                   AfterLayout(
                                       callback: (value) {
                                         coverImage.transition.startObj = value;
+
+                                        ///trigger refresh position when exit from fulscreen
+                                        coverImage.transition.startPoint =
+                                            _getRect(value);
                                       },
                                       child: dragFinish
                                           ? AspectRatio(

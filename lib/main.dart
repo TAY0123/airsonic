@@ -71,51 +71,47 @@ class MyApp extends StatelessWidget {
 
           primarySwatch: Colors.blue,
           useMaterial3: true),
+      initialRoute: "/album",
+      onGenerateRoute: (settings) {
+        print(settings.name);
+        late Widget page;
+
+        if (settings.name == "/") {
+          page = Container();
+        }
+
+        //handle /Dashboard
+        if (settings.name == routeDashboard) {
+          page = const Dashboard();
+          //handle / and /AlbumList
+        } else if (settings.name == routeRootAlbum) {
+          page = const AlbumListView();
+        }
+
+        // Handle '/album/:id'
+        var uri = Uri.parse(settings.name ?? "");
+        if (uri.pathSegments.length == 2 && uri.pathSegments.first == 'album') {
+          var id = uri.pathSegments[1];
+          if (settings.arguments != null) {
+            print((settings.arguments as Album).name);
+            page = AlbumInfo(settings.arguments as Album);
+          } else {
+            page = AlbumInfo(Album(id, "", ""));
+          }
+        }
+
+        return MaterialPageRoute(
+            settings: settings,
+            builder: (context) {
+              return page;
+            });
+      },
       themeMode: ThemeMode.system,
-      home: SplitView(
-        Navigator(
-          observers: [
-            HeroController(),
-          ],
-          key: GlobalKey(),
-          initialRoute: "/album",
-          onGenerateRoute: (settings) {
-            print(settings.name);
-            late Widget page;
-
-            if (settings.name == "/") {
-              page = Container();
-            }
-
-            //handle /Dashboard
-            if (settings.name == routeDashboard) {
-              page = const Dashboard();
-              //handle / and /AlbumList
-            } else if (settings.name == routeRootAlbum) {
-              page = const AlbumListView();
-            }
-
-            // Handle '/album/:id'
-            var uri = Uri.parse(settings.name ?? "");
-            if (uri.pathSegments.length == 2 &&
-                uri.pathSegments.first == 'album') {
-              var id = uri.pathSegments[1];
-              if (settings.arguments != null) {
-                print((settings.arguments as Album).name);
-                page = AlbumInfo(settings.arguments as Album);
-              } else {
-                page = AlbumInfo(Album(id, "", ""));
-              }
-            }
-
-            return MaterialPageRoute(
-                settings: settings,
-                builder: (context) {
-                  return page;
-                });
-          },
-        ),
-      ),
+      builder: (context, child) {
+        return SplitView(child);
+      },
     );
   }
 }
+
+var Navi = GlobalKey();
