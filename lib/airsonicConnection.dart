@@ -28,6 +28,7 @@ class MediaPlayer {
   late Future<ValueStream<MediaItem?>> currentItem;
   late Future<ValueStream<List<MediaItem>>> playlist;
   late Future<Stream<Duration>> currentPosition;
+  late Future<ValueStream<PlaybackState>> playerStatus;
 
   /// private constructor
   MediaPlayer._() {
@@ -35,6 +36,7 @@ class MediaPlayer {
       _listenToChangesInSong();
       _listenToChangesInPlaylist();
       _listenToCurrentPosition();
+      _listenToPlayerStatus();
     }();
   }
   void _listenToChangesInSong() {
@@ -93,6 +95,19 @@ class MediaPlayer {
     */
   }
 
+  void _listenToPlayerStatus() {
+    playerStatus = () async {
+      final player = await futurePlayer;
+      return player.playbackState;
+    }();
+    /*
+    await futurePlayer;
+    AudioService.position.listen((position) {
+      currentPos.value = position;
+    });
+    */
+  }
+
   ValueNotifier<Duration> currentPos = ValueNotifier(Duration.zero);
 
   /// the one and only instance of this singleton
@@ -114,7 +129,11 @@ class MediaPlayer {
       //remove trailing "/" due to parse will include it in segments
       domain = domain.substring(0, domain.length - 1);
     }
-    _base = Uri.parse(domain);
+
+    try {
+      _base = Uri.parse(domain);
+    } catch (e) {}
+
     final salt = getRandomString(20);
     final token = generateMd5(password + salt);
     _segments = List<String>.of(_base.pathSegments);
