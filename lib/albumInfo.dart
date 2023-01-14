@@ -193,118 +193,145 @@ class _AlbumInfoState extends State<AlbumInfo>
         } else {
           return Container(
             color: Theme.of(context).cardColor,
-            child: ListView(
-              padding: const EdgeInsets.all(10),
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(top: 8.0, bottom: 8),
-                  child: Row(
-                    children: [
-                      FloatingActionButton(
-                        child: const Icon(Icons.close),
-                        onPressed: () => Navigator.pop(context),
-                      )
-                    ],
-                  ),
-                ),
-                Hero(
-                  tag: "${widget.album.id}-Cover}",
-                  child: ClipRRect(
-                    borderRadius: const BorderRadius.all(Radius.circular(12)),
-                    child: Container(
-                        color: Theme.of(context).primaryColorDark,
-                        child: widget.img == null
-                            ? Container()
-                            : Image(
-                                image: widget.img!,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    Container(),
-                              )),
-                  ),
-                ),
-                const Padding(
-                  padding: EdgeInsets.only(top: 8),
-                ),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Hero(
-                    tag: "${widget.album.id}-Title}",
-                    child: Text(
-                      widget.album.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.headlineMedium,
+            child: FractionallySizedBox(
+              widthFactor: 0.9,
+              child: ListView(
+                padding: const EdgeInsets.all(10),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0, bottom: 8),
+                    child: Row(
+                      children: [
+                        FloatingActionButton(
+                          child: const Icon(Icons.close),
+                          onPressed: () => Navigator.pop(context),
+                        )
+                      ],
                     ),
                   ),
-                ),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Hero(
-                    tag: "${widget.album.id}-Artist}",
-                    child: Text(
-                      widget.album.artist?.name ?? "",
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleLarge,
+                  Hero(
+                    tag: "${widget.album.id}-Cover}",
+                    child: AspectRatio(
+                      aspectRatio: 1,
+                      child: Container(
+                        child: Center(
+                          child: ClipRRect(
+                              borderRadius:
+                                  const BorderRadius.all(Radius.circular(12)),
+                              child: widget.img == null
+                                  ? Container(
+                                      color: Theme.of(context).primaryColorDark,
+                                    )
+                                  : Image(
+                                      fit: BoxFit.contain,
+                                      image: widget.img!,
+                                      errorBuilder:
+                                          (context, error, stackTrace) =>
+                                              Container(
+                                        color:
+                                            Theme.of(context).primaryColorDark,
+                                      ),
+                                    )),
+                        ),
+                      ),
                     ),
                   ),
-                ),
-                const Padding(padding: EdgeInsets.only(top: 10)),
-                const Align(
-                    alignment: Alignment.centerLeft, child: Text("Songs")),
-                FutureBuilder(
-                  future: album,
-                  builder: (context, snapshot) {
-                    if (snapshot.hasData) {
-                      int count = snapshot.requireData.albums
-                          .map((e) => e.songs?.length ?? 0)
-                          .sum;
-                      List<Song> songs = [];
-                      songs.addAll(snapshot.requireData.albums
-                          .map((e) => e.songs ?? [])
-                          .flattened);
-                      songs.addAll(snapshot.requireData.songs.map((e) => e));
-                      return Column(
-                        children: songs
-                                .mapIndexed(((i, e) {
-                                  return ListTile(
-                                    onTap: () {
-                                      mp.playPlaylist(
-                                          snapshot.requireData.songs,
-                                          index: i);
-                                    },
-                                    leading: Column(
+                  const Padding(
+                    padding: EdgeInsets.only(top: 8),
+                  ),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Hero(
+                      tag: "${widget.album.id}-Title}",
+                      child: Text(
+                        widget.album.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.headlineMedium,
+                      ),
+                    ),
+                  ),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Hero(
+                      tag: "${widget.album.id}-Artist}",
+                      child: Text(
+                        widget.album.artist?.name ?? "",
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                    ),
+                  ),
+                  const Padding(padding: EdgeInsets.only(top: 10)),
+                  const Align(
+                      alignment: Alignment.centerLeft, child: Text("Songs")),
+                  FutureBuilder(
+                    future: album,
+                    builder: (context, snapshot) {
+                      if (snapshot.hasData) {
+                        int count = snapshot.requireData.albums
+                            .map((e) => e.songs?.length ?? 0)
+                            .sum;
+                        List<Song> songs = [];
+                        songs.addAll(snapshot.requireData.albums
+                            .map((e) => e.songs ?? [])
+                            .flattened);
+                        songs.addAll(snapshot.requireData.songs.map((e) => e));
+                        return Column(
+                          children: songs
+                              .mapIndexed(((i, e) {
+                                return ListTile(
+                                  onTap: () {
+                                    mp.playPlaylist(snapshot.requireData.songs,
+                                        index: i);
+                                  },
+                                  leading: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: const [
+                                      Icon(Icons.play_arrow_rounded)
+                                    ],
+                                  ),
+                                  trailing: Column(
                                       mainAxisAlignment:
                                           MainAxisAlignment.center,
-                                      children: const [
-                                        Icon(Icons.play_arrow_rounded)
-                                      ],
-                                    ),
-                                    title: Text(e.title),
-                                    subtitle: Text(e.artist?.name ??
+                                      children: [
+                                        Text(printDuration(
+                                            Duration(seconds: e.duration)))
+                                      ]),
+                                  title: Text(
+                                    e.title,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  subtitle: Text(
+                                    e.artist?.name ??
                                         snapshot.requireData.albums[0].artist
                                             ?.name ??
-                                        "Unknown"),
-                                  );
-                                }))
-                                .expand<Widget>((e) sync* {
-                                  yield e;
-                                  yield const Divider();
-                                })
-                                .take(songs.length * 2 - 1)
-                                .toList() ??
-                            [],
-                      );
-                    } else {
-                      return Column(
-                        children: const [
-                          CircularProgressIndicator(),
-                        ],
-                      );
-                    }
-                  },
-                )
-              ],
+                                        "Unknown",
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                );
+                              }))
+                              .expand<Widget>((e) sync* {
+                                yield e;
+                                yield const Divider();
+                              })
+                              .take(songs.length * 2 - 1)
+                              .toList(),
+                        );
+                      } else {
+                        return Column(
+                          children: const [
+                            CircularProgressIndicator(),
+                          ],
+                        );
+                      }
+                    },
+                  )
+                ],
+              ),
             ),
           );
         }

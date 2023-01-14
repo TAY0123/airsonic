@@ -1,11 +1,14 @@
 import 'dart:io';
+import 'dart:math';
 
 import 'package:airsonic/albumInfo.dart';
 import 'package:airsonic/dashboard.dart';
 import 'package:airsonic/airsonicConnection.dart';
+import 'package:airsonic/login.dart';
 import 'package:airsonic/route.dart';
 import 'package:airsonic/splitview.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:window_manager/window_manager.dart';
 
 import 'albumList.dart';
@@ -17,6 +20,7 @@ void main() async {
 
   WindowOptions windowOptions = WindowOptions(
     size: const Size(1280, 720),
+    minimumSize: const Size(650, 720),
     center: true,
     backgroundColor: Colors.transparent,
     skipTaskbar: false,
@@ -28,16 +32,24 @@ void main() async {
     await windowManager.focus();
   });
 
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  MyApp({super.key}) {
+    () async {
+      login = SharedPreferences.getInstance()
+          .then((value) => value.getBool("login") ?? (false));
+    }();
+  }
+
+  late Future<bool> login;
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Flutter Demo',
+      navigatorKey: Navi,
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
           brightness: Brightness.light,
@@ -71,7 +83,7 @@ class MyApp extends StatelessWidget {
 
           primarySwatch: Colors.blue,
           useMaterial3: true),
-      initialRoute: "/album",
+      initialRoute: "/login",
       onGenerateRoute: (settings) {
         print(settings.name);
         late Widget page;
@@ -85,7 +97,11 @@ class MyApp extends StatelessWidget {
           page = const Dashboard();
           //handle / and /AlbumList
         } else if (settings.name == routeRootAlbum) {
+          //page = const AlbumListView();
           page = const AlbumListView();
+        }
+        if (settings.name == "/login") {
+          page = const LoginPage();
         }
 
         // Handle '/album/:id'
@@ -108,10 +124,38 @@ class MyApp extends StatelessWidget {
       },
       themeMode: ThemeMode.system,
       builder: (context, child) {
-        return SplitView(child);
+        return FutureBuilder(
+          future: login,
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              if (snapshot.requireData) {
+                return SplitView(child);
+              } else {
+                return child!;
+              }
+            } else {
+              return Scaffold(
+                body: Center(
+                  child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircularProgressIndicator(),
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Text(
+                            "App is now loading...",
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        ),
+                      ]),
+                ),
+              );
+            }
+          },
+        );
       },
     );
   }
 }
 
-var Navi = GlobalKey();
+GlobalKey<NavigatorState>? Navi = GlobalKey();

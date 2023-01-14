@@ -74,10 +74,12 @@ class NavRail extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return NavigationRail(
-        groupAlignment: -0.825,
+        groupAlignment: 0,
         extended: false,
-        labelType: NavigationRailLabelType.all,
+        labelType: NavigationRailLabelType.selected,
         destinations: const [
+          NavigationRailDestination(
+              icon: Icon(Icons.home), label: Text("Home")),
           NavigationRailDestination(
               icon: Icon(Icons.album), label: Text("Albums")),
           NavigationRailDestination(
@@ -87,7 +89,7 @@ class NavRail extends StatelessWidget {
           NavigationRailDestination(
               icon: Icon(Icons.settings), label: Text("Settings")),
           NavigationRailDestination(
-              icon: Icon(Icons.input), label: Text("Sources")),
+              icon: Icon(Icons.view_list), label: Text("Sources")),
         ],
         selectedIndex: 0);
   }

@@ -49,8 +49,9 @@ dependencies:
   audio_session: ^0.1.13
   window_manager: ^0.2.9
   rxdart: ^0.27.7
-  text_scroll: ^0.1.2
   dart_vlc: ^0.4.0
+  text_scroll: ^0.1.2
+  simple_animations: ^5.0.0+3
 
 dev_dependencies:
   flutter_test:
