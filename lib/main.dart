@@ -38,12 +38,12 @@ void main() async {
 class MyApp extends StatelessWidget {
   MyApp({super.key}) {
     () async {
-      login = SharedPreferences.getInstance()
+      login.add = SharedPreferences.getInstance()
           .then((value) => value.getBool("login") ?? (false));
     }();
   }
 
-  late Future<bool> login;
+  late Stream<bool> login;
 
   @override
   Widget build(BuildContext context) {
@@ -124,8 +124,8 @@ class MyApp extends StatelessWidget {
       },
       themeMode: ThemeMode.system,
       builder: (context, child) {
-        return FutureBuilder(
-          future: login,
+        return StreamBuilder(
+          stream: login,
           builder: (context, snapshot) {
             if (snapshot.hasData) {
               if (snapshot.requireData) {

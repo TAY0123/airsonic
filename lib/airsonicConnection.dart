@@ -132,7 +132,9 @@ class MediaPlayer {
 
     try {
       _base = Uri.parse(domain);
-    } catch (e) {}
+    } catch (e) {
+      throw "invalid url";
+    }
 
     final salt = getRandomString(20);
     final token = generateMd5(password + salt);
@@ -157,7 +159,7 @@ class MediaPlayer {
       prefs.setString("token", token);
       prefs.setString("salt", salt);
     }
-    return AirSonicResult();
+    return res;
   }
 
   Future<bool> init() async {
@@ -197,7 +199,12 @@ class MediaPlayer {
     final a = _base.replace(
         pathSegments: _segments.followedBy([ednpoint]), queryParameters: p);
     print(a);
-    final resp = await http.get(a);
+    late Response resp;
+    try {
+      resp = await http.get(a);
+    } catch (e) {
+      throw e;
+    }
     if (resp.statusCode > 299 || resp.statusCode < 200) {
       throw resp.statusCode;
     }

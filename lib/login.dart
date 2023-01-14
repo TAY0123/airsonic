@@ -22,10 +22,14 @@ class _LoginPageState extends State<LoginPage> {
   var username = "";
   var password = "";
 
+  var passwordo = true;
+
   String? errorMsg;
 
+  var formkey = GlobalKey<FormState>();
+
   void loginAction() async {
-    print("press");
+    if (!formkey.currentState!.validate()) return;
     setState(() {
       login = false;
     });
@@ -33,18 +37,24 @@ class _LoginPageState extends State<LoginPage> {
     try {
       final result = await mp.login(
           domain: domain, username: username, password: password);
+      print(result.status);
       success = result.status;
     } catch (e) {
       setState(() {
-        errorMsg = e.toString();
+        errorMsg = "Error: ${e.toString()}";
         login = true;
       });
     }
 
     print(success);
     if (success) {
+      Navigator.of(context).popAndPushNamed("/album");
       //login failed
     } else {
+      setState(() {
+        errorMsg = "Error: login credentials error";
+        login = true;
+      });
       //(await SharedPreferences.getInstance()).setBool("login", true);
     }
   }
@@ -64,80 +74,116 @@ class _LoginPageState extends State<LoginPage> {
                 child: Column(
                   children: [
                     Spacer(),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Container(
-                            color: Theme.of(context).colorScheme.primary,
-                            child: const Icon(
-                              Icons.music_note,
-                              size: 48,
+                    Form(
+                      key: formkey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              color: Theme.of(context).colorScheme.primary,
+                              child: const Icon(
+                                Icons.music_note,
+                                size: 48,
+                              ),
                             ),
                           ),
-                        ),
-                        Text(
-                          "Welcome to Flutsonic",
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        if (errorMsg != null)
                           Text(
-                            errorMsg!,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium!
-                                .copyWith(color: Colors.red),
+                            "Welcome to Flutsonic",
+                            style: Theme.of(context).textTheme.titleLarge,
                           ),
-                        TextField(
-                          enabled: login,
-                          decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                            labelText: 'Server',
+                          if (errorMsg != null)
+                            Text(
+                              errorMsg!,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium!
+                                  .copyWith(color: Colors.red),
+                            ),
+                          TextFormField(
+                            enabled: login,
+                            decoration: const InputDecoration(
+                              border: OutlineInputBorder(),
+                              labelText: 'Server',
+                            ),
+                            onChanged: (value) => domain = value,
+                            validator: (url) {
+                              try {
+                                final test = Uri.parse(url ?? "").isAbsolute;
+                                if (!test) {
+                                  return "Please enter a valid url";
+                                }
+                              } catch (e) {
+                                return "Please enter a valid url";
+                              }
+                              return null;
+                            },
                           ),
-                          onChanged: (value) => domain = value,
-                        ),
-                        TextField(
-                          enabled: login,
-                          decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                            labelText: 'Username',
+                          TextFormField(
+                            enabled: login,
+                            decoration: const InputDecoration(
+                              border: OutlineInputBorder(),
+                              labelText: 'Username',
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return "Please input username";
+                              }
+                              return null;
+                            },
+                            onChanged: (value) => username = value,
                           ),
-                          onChanged: (value) => username = value,
-                        ),
-                        TextField(
-                          enabled: login,
-                          obscureText: true,
-                          decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                            labelText: 'Password',
+                          TextFormField(
+                            enabled: login,
+                            obscureText: passwordo,
+                            decoration: InputDecoration(
+                              suffixIcon: IconButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      passwordo = !passwordo;
+                                    });
+                                  },
+                                  icon: Icon(passwordo
+                                      ? Icons.visibility
+                                      : Icons.visibility_off)),
+                              border: OutlineInputBorder(),
+                              labelText: 'Password',
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return "Please input password";
+                              }
+                              return null;
+                            },
+                            onChanged: (value) => password = value,
                           ),
-                          onChanged: (value) => password = value,
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(top: 10),
-                          child: AnimatedSwitcher(
-                              duration: const Duration(milliseconds: 250),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: login
-                                        ? ElevatedButton.icon(
-                                            icon: const Icon(Icons.login),
-                                            onPressed: loginAction,
-                                            label: const Text("Login"))
-                                        : const Center(
-                                            child: CircularProgressIndicator()),
-                                  ),
-                                ],
-                              )),
-                        )
-                      ].map((e) {
-                        return Padding(
-                          padding: EdgeInsets.only(bottom: 10),
-                          child: e,
-                        );
-                      }).toList(),
+                          Padding(
+                            padding: const EdgeInsets.only(top: 10),
+                            child: AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 250),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: login
+                                          ? ElevatedButton.icon(
+                                              icon: const Icon(Icons.login),
+                                              onPressed: loginAction,
+                                              label: const Text("Login"))
+                                          : const Center(
+                                              child:
+                                                  CircularProgressIndicator()),
+                                    ),
+                                  ],
+                                )),
+                          )
+                        ].map((e) {
+                          return Padding(
+                            padding: EdgeInsets.only(bottom: 10),
+                            child: e,
+                          );
+                        }).toList(),
+                      ),
                     ),
                     Spacer()
                   ],
