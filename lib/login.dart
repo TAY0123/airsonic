@@ -28,6 +28,17 @@ class _LoginPageState extends State<LoginPage> {
 
   var formkey = GlobalKey<FormState>();
 
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    () async {
+      if ((await SharedPreferences.getInstance()).getBool("login") ?? false) {
+        Navigator.of(context).popAndPushNamed("/album");
+      }
+    }();
+  }
+
   void loginAction() async {
     if (!formkey.currentState!.validate()) return;
     setState(() {
@@ -48,6 +59,7 @@ class _LoginPageState extends State<LoginPage> {
 
     print(success);
     if (success) {
+      (await SharedPreferences.getInstance()).setBool("login", true);
       Navigator.of(context).popAndPushNamed("/album");
       //login failed
     } else {

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 
@@ -38,12 +39,12 @@ void main() async {
 class MyApp extends StatelessWidget {
   MyApp({super.key}) {
     () async {
-      login.add = SharedPreferences.getInstance()
-          .then((value) => value.getBool("login") ?? (false));
+      login.add(await SharedPreferences.getInstance()
+          .then((value) => value.getBool("login") ?? (false)));
     }();
   }
 
-  late Stream<bool> login;
+  StreamController<bool> login = StreamController();
 
   @override
   Widget build(BuildContext context) {
@@ -83,13 +84,13 @@ class MyApp extends StatelessWidget {
 
           primarySwatch: Colors.blue,
           useMaterial3: true),
-      initialRoute: "/login",
+      initialRoute: "/",
       onGenerateRoute: (settings) {
         print(settings.name);
         late Widget page;
 
         if (settings.name == "/") {
-          page = Container();
+          page = InitPage();
         }
 
         //handle /Dashboard
@@ -125,12 +126,16 @@ class MyApp extends StatelessWidget {
       themeMode: ThemeMode.system,
       builder: (context, child) {
         return StreamBuilder(
-          stream: login,
+          stream: login.stream,
           builder: (context, snapshot) {
             if (snapshot.hasData) {
               if (snapshot.requireData) {
                 return SplitView(child);
               } else {
+                () async {
+                  login.add(await SharedPreferences.getInstance()
+                      .then((value) => value.getBool("login") ?? (false)));
+                }();
                 return child!;
               }
             } else {
@@ -159,3 +164,19 @@ class MyApp extends StatelessWidget {
 }
 
 GlobalKey<NavigatorState>? Navi = GlobalKey();
+
+class InitPage extends StatelessWidget {
+  const InitPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    () async {
+      if ((await SharedPreferences.getInstance()).getBool("login") ?? false) {
+        Navigator.of(context).popAndPushNamed("/album");
+      } else {
+        Navigator.of(context).popAndPushNamed("/login");
+      }
+    }();
+    return const Scaffold();
+  }
+}
