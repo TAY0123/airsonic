@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:airsonic/player_vlc.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:audio_session/audio_session.dart';
-import 'package:dart_vlc/dart_vlc.dart';
+import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -12,8 +12,7 @@ Future<AudioHandler> initAudioService() async {
     final session = await AudioSession.instance;
     await session.configure(const AudioSessionConfiguration.music());
   }
-  if (Platform.isWindows || Platform.isLinux) {
-    DartVLC.initialize();
+  if ((Platform.isWindows || Platform.isLinux) && !kIsWeb) {
     return await AudioService.init(
       builder: () => VlcAudioHandler(),
       config: const AudioServiceConfig(
@@ -153,7 +152,11 @@ class MyAudioHandler extends BaseAudioHandler {
     final newQueue = queue.value..addAll(mediaItems);
     //final newQueue = mediaItems;
     queue.add(newQueue);
-    _player.load();
+    try {
+      _player.load();
+    } catch (e) {
+      print(e);
+    }
   }
 
   @override
@@ -168,7 +171,11 @@ class MyAudioHandler extends BaseAudioHandler {
     //final newQueue = queue.value..addAll(mediaItems);
     final newQueue = mediaItems;
     queue.add(newQueue);
-    _player.load();
+    try {
+      _player.load();
+    } catch (e) {
+      print(e);
+    }
   }
 
   UriAudioSource _createAudioSource(MediaItem mediaItem) {
@@ -189,7 +196,11 @@ class MyAudioHandler extends BaseAudioHandler {
 
   @override
   Future<void> play() async {
-    _player.play();
+    try {
+      _player.play();
+    } catch (e) {
+      print(e);
+    }
   }
 
   @override

@@ -1,10 +1,13 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 
 import 'package:airsonic/const.dart';
 import 'package:airsonic/login.dart';
 import 'package:airsonic/playerControl.dart';
+import 'package:airsonic/search.dart';
 import 'package:flutter/material.dart';
+import 'package:rxdart/rxdart.dart';
 import 'package:window_manager/window_manager.dart';
 
 import 'navigation.dart';
@@ -77,19 +80,13 @@ class _SplitViewState extends State<SplitView>
                         // vertical black line as separator
                         // use Expanded to take up the remaining horizontal space
                         Expanded(
-                          child: Scaffold(
-                            bottomSheet: const PlayBackControl(),
-                            body: Padding(
-                              padding: const EdgeInsets.only(bottom: 60),
-                              child: Center(
-                                child: FractionallySizedBox(
-                                  widthFactor: 0.975,
-                                  child: widget.content,
-                                ),
-                              ),
-                            ),
+                            child: Scaffold(
+                          bottomSheet: PlayBackControl(),
+                          body: Padding(
+                            padding: const EdgeInsets.only(bottom: 60.0),
+                            child: widget.content,
                           ),
-                        ),
+                        ))
                       ],
                     ),
                   )
@@ -107,7 +104,11 @@ class _SplitViewState extends State<SplitView>
             child: Center(
               child: FractionallySizedBox(
                 widthFactor: 0.975,
-                child: widget.content,
+                child: Scaffold(
+                    appBar: AppBar(
+                      backgroundColor: Colors.transparent,
+                    ),
+                    body: widget.content),
               ),
             ),
           ),

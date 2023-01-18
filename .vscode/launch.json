@@ -14,9 +14,7 @@
             "request": "launch",
             "type": "dart",
             "flutterMode": "debug",
-            "args": [
-                "--cache-sksl"
-            ]
+            "args": []
         },
         {
             "name": "airsonic (profile mode)",

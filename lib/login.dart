@@ -6,6 +6,8 @@ import 'package:flutter/src/widgets/framework.dart';
 import 'package:flutter/src/widgets/placeholder.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'const.dart';
+
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 

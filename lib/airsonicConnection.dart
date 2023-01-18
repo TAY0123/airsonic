@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
-import 'package:airsonic/player.dart';
+import 'package:airsonic/shared.dart';
 import 'package:audio_service/audio_service.dart';
 
 import 'package:crypto/crypto.dart';
@@ -100,6 +100,7 @@ class MediaPlayer {
       final player = await futurePlayer;
       return player.playbackState;
     }();
+
     /*
     await futurePlayer;
     AudioService.position.listen((position) {
@@ -235,7 +236,9 @@ class MediaPlayer {
       //if (album.childElements.isNotEmpty) {}
       result.albums.add(albumObj);
     }
-
+    for (var artist in root.findAllElements("artist")) {
+      result.artists.add(Artist.fromElement(artist));
+    }
     return result;
   }
 
@@ -266,6 +269,11 @@ class MediaPlayer {
       result.albums.addAll((await fetchAlbumInfo(album.id)).albums);
     }
     return result;
+  }
+
+  Future<AirSonicResult> fetchSearchResult(String keyword) async {
+    return await _xmlEndpoint("search3",
+        query: {"query": Uri.encodeQueryComponent(keyword)});
   }
 
   Future<ImageProvider?> fetchCover(String id, {full = false}) async {
@@ -360,6 +368,17 @@ class Album {
   String coverArt;
   Artist? artist;
   List<Song>? songs;
+  ImageProvider? img;
+
+  Future<bool> fetchCover() async {
+    final connection = MediaPlayer.instance;
+    try {
+      img = await connection.fetchCover(coverArt);
+    } catch (e) {
+      return false;
+    }
+    return true;
+  }
 
   factory Album.fromElement(XmlElement element) {
     final a = Album(

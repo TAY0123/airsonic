@@ -18,4 +18,3 @@ const routeAlbumInfo = '/AlbumInfo';
 const routeRootAlbum = '/album';
 // album/:id
 
-const breakpoint = 800.0;

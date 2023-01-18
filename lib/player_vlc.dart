@@ -1,7 +1,37 @@
+import 'dart:io';
+
+import 'package:airsonic/player.dart';
 import 'package:audio_service/audio_service.dart';
+import 'package:audio_session/audio_session.dart';
 import 'package:dart_vlc/dart_vlc.dart' as vlc;
+import 'package:dart_vlc/dart_vlc.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+Future<AudioHandler> initAudioService() async {
+  if (Platform.isIOS || Platform.isMacOS) {
+    final session = await AudioSession.instance;
+    await session.configure(const AudioSessionConfiguration.music());
+  }
+  if ((Platform.isWindows || Platform.isLinux) && !kIsWeb) {
+    return await AudioService.init(
+      builder: () => VlcAudioHandler(),
+      config: const AudioServiceConfig(
+        androidNotificationChannelId: 'com.mycompany.myapp.audio',
+        androidNotificationChannelName: 'Audio Service Demo',
+      ),
+    );
+  } else {
+    return await AudioService.init(
+      builder: () => MyAudioHandler(),
+      config: const AudioServiceConfig(
+        androidNotificationChannelId: 'com.mycompany.myapp.audio',
+        androidNotificationChannelName: 'Audio Service Demo',
+      ),
+    );
+  }
+}
 
 class VlcAudioHandler extends BaseAudioHandler {
   final _player = vlc.Player(
@@ -30,6 +60,7 @@ class VlcAudioHandler extends BaseAudioHandler {
   }
 
   VlcAudioHandler() {
+    DartVLC.initialize();
     HardwareKeyboard.instance.addHandler(_mediakeyHandler);
     _listenForDurationChanges();
     _notifyAudioHandlerAboutPlaybackEvents();
@@ -170,7 +201,7 @@ class VlcAudioHandler extends BaseAudioHandler {
 
   vlc.Media _createAudioSource(MediaItem mediaItem) {
     return vlc.Media.network(
-      _apiEndpointUrl("stream", query: {"id": mediaItem.id, "format": "raw"}),
+      _apiEndpointUrl("stream", query: {"id": mediaItem.id, "format": "flac"}),
     );
   }
 

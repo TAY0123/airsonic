@@ -2,9 +2,12 @@ import 'dart:async';
 
 import 'package:airsonic/albumInfo.dart';
 import 'package:airsonic/airsonicConnection.dart';
+import 'package:airsonic/search.dart';
 import 'package:dismissible_page/dismissible_page.dart';
 import 'package:flutter/material.dart';
 import 'package:transparent_image/transparent_image.dart';
+
+import 'card.dart';
 
 class AlbumListView extends StatefulWidget {
   const AlbumListView({super.key});
@@ -47,10 +50,21 @@ class _AlbumListViewState extends State<AlbumListView>
         }
       }
     });
-    init();
+
+    result.stream.listen((event) {
+      if (event == null) {
+        _dataController.add(albums);
+        return;
+      }
+      _dataController.add(event.albums);
+      setState(() {
+        ended = true;
+      });
+    });
+    fetchUntilScrollable();
   }
 
-  void init() async {
+  void fetchUntilScrollable() async {
     completer = Completer();
     await fetchAlbums();
     while ((!_scrollController.hasClients ||
@@ -82,7 +96,9 @@ class _AlbumListViewState extends State<AlbumListView>
     }
 
     if (result.isEmpty) {
-      ended = true;
+      setState(() {
+        ended = true;
+      });
       return true;
     }
 
@@ -95,210 +111,99 @@ class _AlbumListViewState extends State<AlbumListView>
 
   final ScrollController _scrollController = ScrollController();
 
+  final StreamController<AirSonicResult?> result = StreamController();
   @override
   Widget build(BuildContext context) {
-    return NotificationListener<SizeChangedLayoutNotification>(
-      onNotification: (notification) {
-        () async {
-          await completer.future;
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        actions: [SearchingBar(result)],
+      ),
+      body: NotificationListener<SizeChangedLayoutNotification>(
+        onNotification: (notification) {
+          () async {
+            await completer.future;
 
-          completer = Completer();
-          while ((!_scrollController.hasClients ||
-                  _scrollController.position.maxScrollExtent == 0.0) &&
-              error == null &&
-              !ended) {
-            await fetchAlbums();
-          }
-          completer.complete();
-        }();
+            completer = Completer();
+            while ((!_scrollController.hasClients ||
+                    _scrollController.position.maxScrollExtent == 0.0) &&
+                error == null &&
+                !ended) {
+              await fetchAlbums();
+            }
+            completer.complete();
+          }();
 
-        return true;
-      },
-      child: SizeChangedLayoutNotifier(
-        child: LayoutBuilder(builder: (context, constraints) {
-          return StreamBuilder(
-              stream: _dataController.stream,
-              builder: ((context, snapshot) {
-                if (snapshot.hasData) {
-                  if (error != null) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(error.toString()),
-                          FloatingActionButton.small(
-                              child: Icon(Icons.refresh),
-                              onPressed: () {
-                                error = null;
-                                init();
-                              })
-                        ],
-                      ),
-                    );
-                  }
-                  return GridView.builder(
+          return true;
+        },
+        child: SizeChangedLayoutNotifier(
+          child: LayoutBuilder(builder: (context, constraints) {
+            return StreamBuilder(
+                stream: _dataController.stream,
+                builder: ((context, snapshot) {
+                  if (snapshot.hasData) {
+                    if (error != null) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(error.toString()),
+                            FloatingActionButton.small(
+                                child: const Icon(Icons.refresh),
+                                onPressed: () {
+                                  error = null;
+                                  fetchUntilScrollable();
+                                })
+                          ],
+                        ),
+                      );
+                    }
+                    return CustomScrollView(
                       controller: _scrollController,
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      itemCount: snapshot.data!.length,
-                      gridDelegate:
-                          const SliverGridDelegateWithMaxCrossAxisExtent(
-                              childAspectRatio: 0.75,
-                              maxCrossAxisExtent: 250,
-                              crossAxisSpacing: 16,
-                              mainAxisSpacing: 16),
-                      itemBuilder: ((context, index) {
-                        final album = snapshot.data![index];
-                        return AlbumCard(album);
-                      }));
+                      slivers: [
+                        SliverGrid.builder(
+                            itemCount: snapshot.data!.length,
+                            gridDelegate:
+                                const SliverGridDelegateWithMaxCrossAxisExtent(
+                                    childAspectRatio: 0.75,
+                                    maxCrossAxisExtent: 250,
+                                    crossAxisSpacing: 16,
+                                    mainAxisSpacing: 16),
+                            itemBuilder: ((context, index) {
+                              final album = snapshot.data![index];
+                              return AlbumCard(album);
+                            })),
+                        SliverFixedExtentList(
+                            delegate: SliverChildListDelegate([
+                              Center(
+                                  child: ended
+                                      ? Text(
+                                          "Total Album: ${snapshot.data!.length}",
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyLarge,
+                                        )
+                                      : CircularProgressIndicator())
+                            ]),
+                            itemExtent: 100),
+                      ],
+                    );
 
-                  /*
-                    ListView(
-                        children: snapshot.data?.albums.map((e) {
-                              print(e.name);
-                              return Text(e.name);
-                            }).toList() ??
-                            []);
-                            */
-                } else {
-                  return const Center(child: CircularProgressIndicator());
-                }
-              }));
-        }),
-      ),
-    );
-  }
-}
-
-class AlbumCard extends StatefulWidget {
-  final Album album;
-
-  const AlbumCard(this.album, {super.key});
-
-  @override
-  State<AlbumCard> createState() => _AlbumCardState();
-}
-
-class _AlbumCardState extends State<AlbumCard>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  final MediaPlayer mp = MediaPlayer.instance;
-
-  bool full = false;
-
-  late Future<ImageProvider?> img;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(vsync: this);
-    img = mp.fetchCover(widget.album.coverArt).onError(
-          (error, stackTrace) => Future.value(null),
-        );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () async {
-        context.pushTransparentRoute(AlbumInfo(
-          widget.album,
-          img: await img,
-        ));
-        /*
-        Navigator.pushNamed(context, "/album/${widget.album.id}",
-            arguments: widget.album);
-            */
-      },
-      child: Card(
-        child: Column(
-          children: [
-            Hero(
-              tag: "${widget.album.id}-Cover}",
-              child: AlbumImage(
-                imgProvider: img,
-              ),
-            ),
-            Expanded(
-                flex: 6,
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 8, right: 8, top: 5),
-                  child: Column(
-                    children: [
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Hero(
-                          tag: "${widget.album.id}-Title}",
-                          child: Text(
-                            widget.album.name,
-                            maxLines: 1,
-                            style: Theme.of(context).textTheme.titleMedium,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Hero(
-                          tag: "${widget.album.id}-Artist}",
-                          child: Text(
-                            widget.album.artist?.name ?? "N.A",
-                            style: Theme.of(context).textTheme.bodySmall,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ))
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class AlbumImage extends StatelessWidget {
-  final Future<ImageProvider?> imgProvider;
-
-  const AlbumImage({
-    super.key,
-    required this.imgProvider,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: const BorderRadius.all(Radius.circular(12)),
-      child: AspectRatio(
-        aspectRatio: 1,
-        child: Container(
-          color: Theme.of(context).primaryColorDark,
-          child: FutureBuilder(
-            future: imgProvider,
-            builder: (context, snapshot) {
-              if (snapshot.hasData && snapshot.requireData != null) {
-                return FadeInImage(
-                  fadeInCurve: Curves.easeInCubic,
-                  fadeInDuration: const Duration(milliseconds: 300),
-                  placeholder: MemoryImage(kTransparentImage),
-                  image: snapshot.requireData!,
-                  fit: BoxFit.cover,
-                  imageErrorBuilder: (context, error, stackTrace) =>
-                      Container(),
-                );
-              } else {
-                return Container();
-              }
-            },
-          ),
+                    /*
+                      ListView(
+                          children: snapshot.data?.albums.map((e) {
+                                print(e.name);
+                                return Text(e.name);
+                              }).toList() ??
+                              []);
+                              */
+                  } else {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                }));
+          }),
         ),
       ),
     );

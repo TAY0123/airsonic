@@ -5,14 +5,13 @@ import 'dart:math';
 import 'package:airsonic/airsonicConnection.dart';
 import 'package:airsonic/albumInfo.dart';
 import 'package:airsonic/main.dart';
-import 'package:airsonic/route.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
-import 'package:just_audio/just_audio.dart';
 import 'package:text_scroll/text_scroll.dart';
 
 import 'a.dart';
 import 'after_layout.dart';
+import 'const.dart';
 
 //TODO: over 1/4 change to large view
 class PlayBackControl extends StatefulWidget {
@@ -80,7 +79,9 @@ class _PlayBackControlState extends State<PlayBackControl>
 
   void _listenToPlayerStatus() async {
     currentStatusSubscriber = (await mp.playerStatus).listen((event) {
-      playing = event.playing;
+      setState(() {
+        playing = event.playing;
+      });
     });
   }
 
@@ -126,7 +127,7 @@ class _PlayBackControlState extends State<PlayBackControl>
   }
 
   void open() {
-    Navigator.of(Navi!.currentContext!).push(TRoute(
+    Navigator.of(context).push(TRoute(
       builder: (context) => WillPopScope(
           onWillPop: () async {
             close();
@@ -143,6 +144,42 @@ class _PlayBackControlState extends State<PlayBackControl>
 
   @override
   Widget build(BuildContext context) {
+    var playbackControlButton = Row(
+      //full size = 48
+      children: [
+        IconButton(
+            onPressed: () async {
+              final player = await mp.futurePlayer;
+              player.skipToPrevious();
+            },
+            icon: const Icon(Icons.skip_previous)),
+        Ink(
+          decoration: ShapeDecoration(
+            color: Theme.of(context).colorScheme.primary,
+            shape: CircleBorder(),
+          ),
+          child: IconButton(
+              onPressed: () async {
+                final player = await mp.futurePlayer;
+                if (playing) {
+                  player.pause();
+                } else {
+                  player.play();
+                }
+              },
+              icon: Icon(
+                playing ? Icons.play_arrow : Icons.pause,
+                color: Theme.of(context).colorScheme.onPrimary,
+              )),
+        ),
+        IconButton(
+            onPressed: () async {
+              final player = await mp.futurePlayer;
+              player.skipToNext();
+            },
+            icon: const Icon(Icons.skip_next)),
+      ],
+    );
     text.child = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.start,
@@ -241,7 +278,7 @@ class _PlayBackControlState extends State<PlayBackControl>
                   (details.velocity.pixelsPerSecond.dy > 1200 ||
                       (_height ?? 0) < (constraints.maxHeight / 5) * 4)) {
                 ///if dragging down and over threshold
-                Navigator.of(Navi!.currentContext!).pop();
+                Navigator.of(context).pop();
                 opened = false;
               } else {
                 opened = true;
@@ -313,7 +350,7 @@ class _PlayBackControlState extends State<PlayBackControl>
                       child: Center(
                         child: FractionallySizedBox(
                           widthFactor: 0.9,
-                          child: (constraints.maxWidth > breakpoint - 90)
+                          child: (constraints.maxWidth > breakpoint)
                               ? Column(
                                   children: [
                                     Expanded(
@@ -366,30 +403,7 @@ class _PlayBackControlState extends State<PlayBackControl>
                                                   ),
                                                   const Spacer(),
                                                   //media control on full screen
-                                                  Row(
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .spaceBetween,
-                                                    children: [
-                                                      const Spacer(),
-                                                      IconButton(
-                                                          iconSize: 48,
-                                                          onPressed: () {},
-                                                          icon: const Icon(Icons
-                                                              .skip_previous)),
-                                                      IconButton(
-                                                          iconSize: 48,
-                                                          onPressed: () {},
-                                                          icon: const Icon(Icons
-                                                              .play_arrow)),
-                                                      IconButton(
-                                                          iconSize: 48,
-                                                          onPressed: () {},
-                                                          icon: const Icon(
-                                                              Icons.skip_next)),
-                                                      const Spacer(),
-                                                    ],
-                                                  ),
+                                                  playbackControlButton,
                                                   //progress bar
                                                   AfterLayout(
                                                       callback: (value) {
@@ -413,60 +427,54 @@ class _PlayBackControlState extends State<PlayBackControl>
                                     )
                                   ],
                                 )
-                              : ListView(children: [
-                                  Row(
-                                    children: [
-                                      FloatingActionButton(
-                                          onPressed: close,
-                                          child: const Icon(Icons.close))
-                                    ],
-                                  ),
-                                  AspectRatio(
-                                      aspectRatio: 1,
-                                      child: Center(
-                                        child: AfterLayout(
-                                            callback: (value) {
-                                              setState(() {
-                                                coverImage.transition.endPoint =
-                                                    _getRect(value);
-                                              });
-                                            },
-                                            child: coverImage.child),
-                                      )),
-                                  AfterLayout(
-                                      callback: (value) {
-                                        text.transition.endPoint =
-                                            _getRect(value);
-                                      },
-                                      child: text.child!),
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      const Spacer(),
-                                      IconButton(
-                                          iconSize: 48,
-                                          onPressed: () {},
-                                          icon:
-                                              const Icon(Icons.skip_previous)),
-                                      IconButton(
-                                          iconSize: 48,
-                                          onPressed: () {},
-                                          icon: const Icon(Icons.play_arrow)),
-                                      IconButton(
-                                          iconSize: 48,
-                                          onPressed: () {},
-                                          icon: const Icon(Icons.skip_next)),
-                                      const Spacer(),
-                                    ],
-                                  ),
-                                  AfterLayout(
-                                      callback: (value) {
-                                        progressBar.transition.endPoint =
-                                            _getRect(value);
-                                      },
-                                      child: progressBar.child!),
-                                ]),
+                              : Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                      Padding(
+                                        padding:
+                                            const EdgeInsets.only(top: 8.0),
+                                        child: Row(
+                                          children: [
+                                            FloatingActionButton(
+                                                onPressed: close,
+                                                child: const Icon(Icons.close))
+                                          ],
+                                        ),
+                                      ),
+                                      Spacer(
+                                        flex: 1,
+                                      ),
+                                      AspectRatio(
+                                          aspectRatio: 1,
+                                          child: Center(
+                                            child: AfterLayout(
+                                                callback: (value) {
+                                                  setState(() {
+                                                    coverImage.transition
+                                                            .endPoint =
+                                                        _getRect(value);
+                                                  });
+                                                },
+                                                child: coverImage.child),
+                                          )),
+                                      AfterLayout(
+                                          callback: (value) {
+                                            text.transition.endPoint =
+                                                _getRect(value);
+                                          },
+                                          child: text.child!),
+                                      Spacer(
+                                        flex: 4,
+                                      ),
+                                      playbackControlButton,
+                                      AfterLayout(
+                                          callback: (value) {
+                                            progressBar.transition.endPoint =
+                                                _getRect(value);
+                                          },
+                                          child: progressBar.child!),
+                                      Spacer(),
+                                    ]),
                         ),
                       ),
                     ),
@@ -475,92 +483,186 @@ class _PlayBackControlState extends State<PlayBackControl>
                   Opacity(
                     opacity: dragFinish ? 1 : 0,
                     //opacity: 1,
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 20, right: 20),
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(
-                            maxHeight: 60,
-                            maxWidth: MediaQuery.of(context).size.width),
-                        child: Row(
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.only(
-                                  top: 8, bottom: 8, right: 8),
-                              child:
-                                  //Cover Image
-
-                                  AfterLayout(
-                                      callback: (value) {
-                                        coverImage.transition.startObj = value;
-
-                                        ///trigger refresh position when exit from fulscreen
-                                        coverImage.transition.startPoint =
-                                            _getRect(value);
-                                      },
-                                      child: AspectRatio(
-                                          aspectRatio: 1,
-                                          child: Hero(
-                                              tag: "ccc",
-                                              child: coverImage.child ??
-                                                  Container()))),
-                            ),
-                            Expanded(
-                              flex: 3,
-                              child: AfterLayout(
-                                callback: (value) {
-                                  text.transition.startObj = value;
-                                  text.transition.startPoint = _getRect(value);
-                                },
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisAlignment: MainAxisAlignment.center,
+                    child: Container(
+                      color: Theme.of(context).colorScheme.background,
+                      child: (constraints.maxWidth > breakpoint)
+                          ? Padding(
+                              padding:
+                                  const EdgeInsets.only(left: 10, right: 10),
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints(
+                                    maxHeight: 60,
+                                    maxWidth:
+                                        MediaQuery.of(context).size.width),
+                                child: Row(
                                   children: [
-                                    TextScroll(
-                                      current.title,
-                                      pauseBetween: const Duration(seconds: 5),
-                                      velocity: const Velocity(
-                                          pixelsPerSecond: Offset(20, 0)),
+                                    Padding(
+                                      padding: const EdgeInsets.only(
+                                          top: 8, bottom: 8, right: 8),
+                                      child:
+                                          //Cover Image
+
+                                          AfterLayout(
+                                              callback: (value) {
+                                                coverImage.transition.startObj =
+                                                    value;
+
+                                                ///trigger refresh position when exit from fulscreen
+                                                coverImage
+                                                        .transition.startPoint =
+                                                    _getRect(value);
+                                              },
+                                              child: AspectRatio(
+                                                  aspectRatio: 1,
+                                                  child: Hero(
+                                                      tag: "ccc",
+                                                      child: coverImage.child ??
+                                                          Container()))),
                                     ),
-                                    TextScroll(
-                                      current.artist ?? "",
-                                      pauseBetween: const Duration(seconds: 5),
-                                      velocity: const Velocity(
-                                          pixelsPerSecond: Offset(20, 0)),
-                                    )
+                                    Expanded(
+                                      flex: 3,
+                                      child: AfterLayout(
+                                        callback: (value) {
+                                          text.transition.startObj = value;
+                                          text.transition.startPoint =
+                                              _getRect(value);
+                                        },
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            TextScroll(
+                                              current.title,
+                                              pauseBetween:
+                                                  const Duration(seconds: 5),
+                                              velocity: const Velocity(
+                                                  pixelsPerSecond:
+                                                      Offset(20, 0)),
+                                            ),
+                                            TextScroll(
+                                              current.artist ?? "",
+                                              pauseBetween:
+                                                  const Duration(seconds: 5),
+                                              velocity: const Velocity(
+                                                  pixelsPerSecond:
+                                                      Offset(20, 0)),
+                                            )
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 15,
+                                      child: Padding(
+                                        padding: const EdgeInsets.only(
+                                            left: 8.0, right: 8),
+                                        child: AfterLayout(
+                                            callback: (value) {
+                                              progressBar.transition.startObj =
+                                                  value;
+                                              progressBar.transition
+                                                  .startPoint = _getRect(value);
+                                            },
+                                            child: progressBar.child),
+                                      ),
+                                    ),
+                                    playbackControlButton,
                                   ],
                                 ),
                               ),
-                            ),
-                            Expanded(
-                              flex: 15,
-                              child: Padding(
-                                padding:
-                                    const EdgeInsets.only(left: 8.0, right: 8),
-                                child: AfterLayout(
-                                    callback: (value) {
-                                      progressBar.transition.startObj = value;
-                                      progressBar.transition.startPoint =
-                                          _getRect(value);
-                                    },
-                                    child: progressBar.child),
+                            )
+                          : ConstrainedBox(
+                              constraints: BoxConstraints(
+                                  maxHeight: 62,
+                                  maxWidth: MediaQuery.of(context).size.width),
+                              child: Stack(
+                                alignment: Alignment.bottomCenter,
+                                children: [
+                                  Positioned(
+                                    top: 0,
+                                    left: 0,
+                                    right: 0,
+                                    child: AfterLayout(
+                                        callback: (value) {
+                                          progressBar.transition.startObj =
+                                              value;
+                                          progressBar.transition.startPoint =
+                                              _getRect(value);
+                                        },
+                                        child: _playbackProgressBar(context)),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.only(
+                                        left: 10, right: 10),
+                                    child: Row(
+                                      children: [
+                                        Padding(
+                                          padding: const EdgeInsets.only(
+                                              top: 10, bottom: 8, right: 8),
+                                          child:
+                                              //Cover Image
+
+                                              AfterLayout(
+                                                  callback: (value) {
+                                                    coverImage.transition
+                                                        .startObj = value;
+
+                                                    ///trigger refresh position when exit from fulscreen
+                                                    coverImage.transition
+                                                            .startPoint =
+                                                        _getRect(value);
+                                                  },
+                                                  child: AspectRatio(
+                                                      aspectRatio: 1,
+                                                      child: Hero(
+                                                          tag: "ccc",
+                                                          child: coverImage
+                                                                  .child ??
+                                                              Container()))),
+                                        ),
+                                        Expanded(
+                                          flex: 18,
+                                          child: AfterLayout(
+                                            callback: (value) {
+                                              text.transition.startObj = value;
+                                              text.transition.startPoint =
+                                                  _getRect(value);
+                                            },
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                TextScroll(
+                                                  current.title,
+                                                  pauseBetween: const Duration(
+                                                      seconds: 5),
+                                                  velocity: const Velocity(
+                                                      pixelsPerSecond:
+                                                          Offset(20, 0)),
+                                                ),
+                                                TextScroll(
+                                                  current.artist ?? "",
+                                                  pauseBetween: const Duration(
+                                                      seconds: 5),
+                                                  velocity: const Velocity(
+                                                      pixelsPerSecond:
+                                                          Offset(20, 0)),
+                                                )
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                        playbackControlButton,
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            Row(
-                              children: [
-                                IconButton(
-                                    onPressed: () {},
-                                    icon: const Icon(Icons.skip_previous)),
-                                IconButton(
-                                    onPressed: () {},
-                                    icon: const Icon(Icons.play_arrow)),
-                                IconButton(
-                                    onPressed: () {},
-                                    icon: const Icon(Icons.skip_next)),
-                              ],
-                            )
-                          ],
-                        ),
-                      ),
                     ),
                   ),
               ],
