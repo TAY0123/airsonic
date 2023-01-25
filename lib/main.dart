@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:airsonic/album_info.dart';
+import 'package:airsonic/albums_list.dart';
 import 'package:airsonic/dashboard.dart';
 import 'package:airsonic/airsonic_connection.dart';
 import 'package:airsonic/login.dart';
@@ -16,7 +17,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'album_list.dart';
+import 'albums_grid.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -93,7 +94,7 @@ class MyApp extends StatelessWidget {
                 //handle / and /AlbumList
               } else if (settings.name == routeRootAlbum) {
                 //page = const AlbumListView();
-                page = const AlbumListView();
+                page = const AlbumViewList();
               }
               if (settings.name == "/login") {
                 page = const LoginPage();

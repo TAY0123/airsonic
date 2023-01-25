@@ -30,7 +30,7 @@ class _AlbumInfoState extends State<AlbumInfo>
     super.initState();
     _controller = AnimationController(vsync: this);
     album = () async {
-      return await mp.fetchAlbumInfo(widget.album.id);
+      return (await mp.fetchAlbumInfo(widget.album.id));
     }();
   }
 
@@ -84,16 +84,19 @@ class _AlbumInfoState extends State<AlbumInfo>
                           ),
                           Expanded(
                             child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
+                                Spacer(),
                                 Hero(
                                   tag: "${widget.album.id}-Title}",
                                   child: Text(
                                     widget.album.name,
                                     maxLines: 2,
-                                    overflow: TextOverflow.fade,
-                                    style:
-                                        Theme.of(context).textTheme.titleLarge,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .headlineMedium,
                                   ),
                                 ),
                                 Hero(
@@ -106,6 +109,30 @@ class _AlbumInfoState extends State<AlbumInfo>
                                         Theme.of(context).textTheme.bodyLarge,
                                   ),
                                 ),
+                                FutureBuilder(
+                                  future: album,
+                                  builder: (context, snapshot) {
+                                    if (snapshot.hasData) {
+                                      if (snapshot.requireData.albums.isEmpty) {
+                                        return Text("No album found");
+                                      } else {
+                                        final currentAlbum =
+                                            snapshot.requireData.albums[0] ??
+                                                Album("", "", "");
+                                        var total = Duration.zero;
+                                        for (final i in currentAlbum.songs ??
+                                            List<Song>.empty()) {
+                                          total +=
+                                              Duration(seconds: i.duration);
+                                        }
+                                        return Text(
+                                            "${currentAlbum.songs?.length ?? 0} songs - Total: ${printDuration(total)}");
+                                      }
+                                    } else {
+                                      return Text("Loading Album...");
+                                    }
+                                  },
+                                )
                               ],
                             ),
                           ),

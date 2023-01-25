@@ -90,6 +90,63 @@ class _AlbumCardState extends State<AlbumCard>
   }
 }
 
+class AlbumTile extends StatefulWidget {
+  final Album album;
+  final GlobalKey<NavigatorState> nav;
+
+  const AlbumTile(this.album, {super.key, required this.nav});
+
+  @override
+  State<AlbumTile> createState() => _AlbumTileState();
+}
+
+class _AlbumTileState extends State<AlbumTile>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  bool full = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: ListTile(
+        onTap: () {
+          Navigator.of(widget.nav.currentContext!).pushNamedAndRemoveUntil(
+              "/album/${widget.album.id}", (route) => false,
+              arguments: widget.album);
+        },
+        leading: AlbumImage(
+          album: widget.album,
+        ),
+        title: Text(
+          widget.album.name,
+          maxLines: 1,
+          style: Theme.of(context).textTheme.titleMedium,
+          overflow: TextOverflow.ellipsis,
+        ),
+        subtitle: Text(
+          widget.album.artist?.name ?? "N.A",
+          style: Theme.of(context).textTheme.bodySmall,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+    );
+  }
+}
+
 class AlbumImage extends StatelessWidget {
   final Album album;
 

@@ -37,8 +37,8 @@ class _SearchingBarState extends State<SearchingBar> {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(4.0),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 250),
+      child: SizedBox(
+        height: 56,
         child: Material(
           elevation: 3,
           surfaceTintColor: Theme.of(context).colorScheme.primary,
@@ -53,55 +53,57 @@ class _SearchingBarState extends State<SearchingBar> {
             ),
             duration: const Duration(milliseconds: 250),
             child: Padding(
-              padding: const EdgeInsets.only(left: 8.0, right: 8.0),
-              child: TextField(
-                controller: fieldText,
-                //autofocus: true,
-                onChanged: (keywords) {
-                  //create local completer
-                  var local = Completer();
-                  status = local;
+              padding: const EdgeInsets.only(left: 16.0, right: 16.0),
+              child: Center(
+                child: TextField(
+                  controller: fieldText,
+                  //autofocus: true,
+                  onChanged: (keywords) {
+                    //create local completer
+                    var local = Completer();
+                    status = local;
 
-                  if (keywords.isEmpty) {
-                    widget.result.add(null);
-                    setState(() {
-                      clearBtn = false;
-                    });
-                    return;
-                  } else {
-                    setState(() {
-                      clearBtn = true;
-                    });
-                  }
-                  Future.delayed(Duration(milliseconds: 500)).then((value) {
-                    local.complete();
-                    if (status.isCompleted) {
-                      () async {
-                        final r = await mp.fetchSearchResult(keywords);
-                        widget.result.add(r);
-                      }();
+                    if (keywords.isEmpty) {
+                      widget.result.add(null);
+                      setState(() {
+                        clearBtn = false;
+                      });
+                      return;
+                    } else {
+                      setState(() {
+                        clearBtn = true;
+                      });
                     }
-                  });
-                },
-                style: Theme.of(context).textTheme.bodyLarge,
-                //sdtextAlign: TextAlign.center,
-                textAlignVertical: TextAlignVertical.center,
-                decoration: InputDecoration(
-                  icon: Icon(
-                    Icons.search,
+                    Future.delayed(Duration(milliseconds: 500)).then((value) {
+                      local.complete();
+                      if (status.isCompleted) {
+                        () async {
+                          final r = await mp.fetchSearchResult(keywords);
+                          widget.result.add(r);
+                        }();
+                      }
+                    });
+                  },
+                  style: Theme.of(context).textTheme.bodyLarge,
+                  //sdtextAlign: TextAlign.center,
+                  textAlignVertical: TextAlignVertical.center,
+                  decoration: InputDecoration(
+                    icon: Icon(
+                      Icons.search,
+                    ),
+                    suffixIcon: clearBtn
+                        ? IconButton(
+                            onPressed: () {
+                              fieldText.clear();
+                              widget.result.add(null);
+                            },
+                            icon: Icon(Icons.close))
+                        : null,
+                    hintText: "Search",
+                    isCollapsed: true,
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(vertical: 10),
                   ),
-                  suffixIcon: clearBtn
-                      ? IconButton(
-                          onPressed: () {
-                            fieldText.clear();
-                            widget.result.add(null);
-                          },
-                          icon: Icon(Icons.close))
-                      : null,
-                  hintText: "Search",
-                  isCollapsed: true,
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(vertical: 10),
                 ),
               ),
             ),
