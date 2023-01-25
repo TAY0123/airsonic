@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:airsonic/airsonicConnection.dart';
+import 'package:airsonic/airsonic_connection.dart';
 import 'package:dismissible_page/dismissible_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/src/widgets/framework.dart';
@@ -111,7 +111,7 @@ class _SearchingBarState extends State<SearchingBar> {
     );
   }
 }
-
+/* 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
 
@@ -120,7 +120,7 @@ class SearchPage extends StatefulWidget {
 }
 
 class _SearchPageState extends State<SearchPage> {
-  StreamController<AirSonicResult> result = StreamController();
+  StreamController<SearchResult> result = StreamController();
 
   @override
   Widget build(BuildContext context) {
@@ -210,3 +210,4 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 }
+ */

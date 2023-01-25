@@ -1,6 +1,6 @@
 import 'dart:math';
 
-import 'package:airsonic/airsonicConnection.dart';
+import 'package:airsonic/airsonic_connection.dart';
 import 'package:flutter/material.dart';
 
 class NavDrawer extends StatelessWidget {
@@ -43,6 +43,8 @@ class NavDrawer extends StatelessWidget {
         const NavigationDrawerDestination(
             icon: Icon(Icons.people), label: Text("Artists")),
         const NavigationDrawerDestination(
+            icon: Icon(Icons.folder), label: Text("Folders")),
+        const NavigationDrawerDestination(
             icon: Icon(Icons.settings), label: Text("Settings")),
         const NavigationDrawerDestination(
             icon: Icon(Icons.playlist_play), label: Text("Playlist")),
@@ -69,14 +71,17 @@ class NavBar extends StatelessWidget {
 }
 
 class NavRail extends StatelessWidget {
-  const NavRail({super.key});
+  final bool extended;
+  const NavRail({this.extended = false, super.key});
 
   @override
   Widget build(BuildContext context) {
     return NavigationRail(
         groupAlignment: 0,
-        extended: false,
-        labelType: NavigationRailLabelType.selected,
+        extended: extended,
+        labelType: extended
+            ? NavigationRailLabelType.none
+            : NavigationRailLabelType.selected,
         destinations: const [
           NavigationRailDestination(
               icon: Icon(Icons.home), label: Text("Home")),
@@ -84,6 +89,8 @@ class NavRail extends StatelessWidget {
               icon: Icon(Icons.album), label: Text("Albums")),
           NavigationRailDestination(
               icon: Icon(Icons.people), label: Text("Artists")),
+          NavigationRailDestination(
+              icon: Icon(Icons.folder), label: Text("Folders")),
           NavigationRailDestination(
               icon: Icon(Icons.playlist_play), label: Text("Playlist")),
           NavigationRailDestination(

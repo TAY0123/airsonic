@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 
-import 'package:airsonic/airsonicConnection.dart';
-import 'package:airsonic/albumInfo.dart';
+import 'package:airsonic/airsonic_connection.dart';
+import 'package:airsonic/album_info.dart';
 import 'package:airsonic/main.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
@@ -350,7 +350,7 @@ class _PlayBackControlState extends State<PlayBackControl>
                       child: Center(
                         child: FractionallySizedBox(
                           widthFactor: 0.9,
-                          child: (constraints.maxWidth > breakpoint)
+                          child: (constraints.maxWidth > breakpointM)
                               ? Column(
                                   children: [
                                     Expanded(
@@ -485,7 +485,7 @@ class _PlayBackControlState extends State<PlayBackControl>
                     //opacity: 1,
                     child: Container(
                       color: Theme.of(context).colorScheme.background,
-                      child: (constraints.maxWidth > breakpoint)
+                      child: (constraints.maxWidth > breakpointM)
                           ? Padding(
                               padding:
                                   const EdgeInsets.only(left: 10, right: 10),

@@ -1,4 +1,4 @@
-import 'package:airsonic/airsonicConnection.dart';
+import 'package:airsonic/airsonic_connection.dart';
 import 'package:airsonic/animatedwave.dart';
 import 'package:airsonic/route.dart';
 import 'package:flutter/material.dart';
@@ -207,7 +207,7 @@ class _LoginPageState extends State<LoginPage> {
           ),
         );
 
-        if (constraints.maxWidth > breakpoint) {
+        if (constraints.maxWidth > breakpointM) {
           //tablet mode
           return Scaffold(
             body: Row(

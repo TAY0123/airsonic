@@ -2,9 +2,9 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 
-import 'package:airsonic/albumInfo.dart';
+import 'package:airsonic/album_info.dart';
 import 'package:airsonic/dashboard.dart';
-import 'package:airsonic/airsonicConnection.dart';
+import 'package:airsonic/airsonic_connection.dart';
 import 'package:airsonic/login.dart';
 import 'package:airsonic/desktop_init.dart';
 import 'package:airsonic/playerControl.dart';
@@ -16,7 +16,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'albumList.dart';
+import 'album_list.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:transparent_image/transparent_image.dart';
 
-import 'airsonicConnection.dart';
+import 'airsonic_connection.dart';
 
 class AlbumCard extends StatefulWidget {
   final Album album;
@@ -190,10 +190,10 @@ class ArtistList extends StatelessWidget {
   }
 }
 
-class AlbumList extends StatelessWidget {
+class AlbumCardList extends StatelessWidget {
   List<Album> albumList;
 
-  AlbumList(this.albumList, {super.key});
+  AlbumCardList(this.albumList, {super.key});
 
   @override
   Widget build(BuildContext context) {

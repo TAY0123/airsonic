@@ -124,7 +124,7 @@ class MediaPlayer {
   late final Future<bool> _inited = init(); //initalize the information
   late final Future<AudioHandler> futurePlayer = initAudioService();
 
-  Future<AirSonicResult> login(
+  Future<XMLResult> login(
       {String domain = "", String username = "", String password = ""}) async {
     if (domain.endsWith("/")) {
       //remove trailing "/" due to parse will include it in segments
@@ -212,12 +212,12 @@ class MediaPlayer {
     return resp;
   }
 
-  Future<AirSonicResult> _xmlEndpoint(String endpoint,
+  Future<XMLResult> _xmlEndpoint(String endpoint,
       {Map<String, String>? query}) async {
     final data = await _apiEndpoint(endpoint, query: query);
     final root = XmlDocument.parse(data.body);
 
-    var result = AirSonicResult();
+    var result = XMLResult();
 
     //check if status ok
     final status =
@@ -242,38 +242,51 @@ class MediaPlayer {
     return result;
   }
 
-  Future<AirSonicResult> fetchAlbumList(
+  AirSonicResult fetchAlbumList(
       {int offset = 0,
       int count = 0,
       AlbumListType type = AlbumListType.recent,
-      String folderId = ""}) async {
-    await _inited;
-    Map<String, String> q = {};
-    if (folderId.isNotEmpty) {
-      q["musicFolderId"] = folderId;
-    }
-    q["type"] = AlbumListType.recent.name;
-    q["offset"] = "$offset";
-    var result = await _xmlEndpoint("getAlbumList2", query: q);
-    return result;
+      String folderId = ""}) {
+    final res = AirSonicResult();
+
+    res.album = AlbumList((offset, count) async {
+      await _inited;
+      Map<String, String> q = {};
+      if (folderId.isNotEmpty) {
+        q["musicFolderId"] = folderId;
+      }
+      q["type"] = type.name;
+      q["offset"] = "$offset";
+
+      return await _xmlEndpoint("getAlbumList2", query: q);
+    });
+
+    return res;
   }
 
-  Future<AirSonicResult> fetchAlbumInfo(String albumId) async {
+  Future<XMLResult> fetchAlbumInfo(String albumId) async {
     return await _xmlEndpoint("getAlbum", query: {"id": albumId});
   }
 
-  Future<AirSonicResult> fetchFolder(String folderId) async {
+  Future<XMLResult> fetchFolder(String folderId) async {
     var albumlist = await _xmlEndpoint("getAlbum", query: {"id": folderId});
-    AirSonicResult result = AirSonicResult();
+    XMLResult result = XMLResult();
     for (final album in albumlist.albums) {
       result.albums.addAll((await fetchAlbumInfo(album.id)).albums);
     }
     return result;
   }
 
-  Future<AirSonicResult> fetchSearchResult(String keyword) async {
-    return await _xmlEndpoint("search3",
-        query: {"query": Uri.encodeQueryComponent(keyword)});
+  AirSonicResult fetchSearchResult(String keyword) {
+    final result = AirSonicResult();
+    result.keywords = keyword;
+    result.album = AlbumList((offset, count) async {
+      return _xmlEndpoint("search3", query: {
+        "query": Uri.encodeQueryComponent(keyword),
+        "albumOffset": "$offset"
+      });
+    });
+    return result;
   }
 
   Future<ImageProvider?> fetchCover(String id, {full = false}) async {
@@ -353,7 +366,7 @@ class MediaPlayer {
   }
 }
 
-class AirSonicResult {
+class XMLResult {
   bool status = false;
   List<Album> albums = [];
   List<Song> songs = [];
@@ -378,6 +391,33 @@ class Album {
       return false;
     }
     return true;
+  }
+
+  ///fetch all albumInfo from server
+  ///return false if failed and true on success
+  Future<bool> fetchInfo() async {
+    final connection = MediaPlayer.instance;
+    try {
+      final result = await connection.fetchAlbumInfo(id);
+      if (result.albums.isEmpty) {
+        return false;
+      } else {
+        artist = result.albums[0].artist;
+        songs = result.albums[0].songs;
+        name = result.albums[0].name;
+        coverArt = result.albums[0].coverArt;
+      }
+    } catch (e) {
+      return false;
+    }
+
+    return true;
+  }
+
+  static Future<Album> fromId(String id) async {
+    final result = Album(id, "", "");
+    await result.fetchInfo();
+    return result;
   }
 
   factory Album.fromElement(XmlElement element) {
@@ -484,4 +524,57 @@ extension FutureExtension<T> on Future<T> {
     }).catchError(completer.completeError);
     return completer.isCompleted;
   }
+}
+
+class AlbumList {
+  int _offset = 0;
+  List<Album> albums = [];
+  bool finished = false;
+
+  final Future<XMLResult> Function(int offset, int count) _fetch;
+
+  AlbumList(this._fetch);
+  final mp = MediaPlayer.instance;
+
+  ///fetch next count of item to album list and
+  ///return count of success fetched albums
+  Future<int> fetchNext({int count = 10}) async {
+    final result = (await _fetch(_offset, count)).albums;
+    albums.addAll(result);
+    _offset += result.length;
+
+    if (result.isEmpty) {
+      finished = true;
+    }
+    return result.length;
+  }
+}
+
+class ArtistList {
+  int _offset = 0;
+  List<Artist> artists = [];
+  bool finished = false;
+
+  final Future<XMLResult> Function(int offset, int count) _fetch;
+
+  ArtistList(this._fetch);
+  final mp = MediaPlayer.instance;
+
+  ///fetch next count of item to album list and
+  ///return count of success fetched albums
+  Future<int> fetchNext({int count = 10}) async {
+    final result = (await _fetch(_offset, count)).artists;
+    artists.addAll(result);
+    _offset += result.length;
+
+    if (result.isEmpty) {
+      finished = true;
+    }
+    return result.length;
+  }
+}
+
+class AirSonicResult {
+  AlbumList? album;
+  String keywords = "";
 }

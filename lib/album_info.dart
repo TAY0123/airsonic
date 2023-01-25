@@ -1,4 +1,4 @@
-import 'package:airsonic/airsonicConnection.dart';
+import 'package:airsonic/airsonic_connection.dart';
 import 'package:airsonic/card.dart';
 import 'package:airsonic/route.dart';
 import 'package:flutter/material.dart';
@@ -23,7 +23,7 @@ class _AlbumInfoState extends State<AlbumInfo>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   final mp = MediaPlayer.instance;
-  late Future<AirSonicResult> album;
+  late Future<XMLResult> album;
 
   @override
   void initState() {
@@ -49,7 +49,7 @@ class _AlbumInfoState extends State<AlbumInfo>
       },
       child: Scaffold(
         body: LayoutBuilder(builder: (context, constraints) {
-          if (constraints.maxWidth > breakpoint) {
+          if (constraints.maxWidth > breakpointM) {
             return Container(
               color: Theme.of(context).cardColor,
               child: FractionallySizedBox(

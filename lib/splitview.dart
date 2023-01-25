@@ -43,7 +43,7 @@ class _SplitViewState extends State<SplitView>
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (context, constraints) {
-      if (desktop || constraints.maxWidth > breakpoint) {
+      if (desktop || constraints.maxWidth > breakpointM) {
         // widescreen: menu on the left, content on the right
         return Container(
             color: Theme.of(context).scaffoldBackgroundColor,
@@ -74,7 +74,11 @@ class _SplitViewState extends State<SplitView>
                             : constraints.maxHeight,
                     child: Row(
                       children: [
-                        const NavRail(),
+                        NavRail(
+                          extended: (constraints.maxWidth > breakpointL)
+                              ? true
+                              : false,
+                        ),
 
                         // use SizedBox to constrain the AppMenu to a fixed width
                         // vertical black line as separator
