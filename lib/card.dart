@@ -92,9 +92,9 @@ class _AlbumCardState extends State<AlbumCard>
 
 class AlbumTile extends StatefulWidget {
   final Album album;
-  final GlobalKey<NavigatorState> nav;
+  final ValueNotifier<String> index;
 
-  const AlbumTile(this.album, {super.key, required this.nav});
+  const AlbumTile(this.album, {super.key, required this.index});
 
   @override
   State<AlbumTile> createState() => _AlbumTileState();
@@ -105,42 +105,115 @@ class _AlbumTileState extends State<AlbumTile>
   late AnimationController _controller;
 
   bool full = false;
+  Color background = Colors.transparent;
+  bool selected = false;
+  void indexUpdated() {
+    if (widget.index.value == widget.album.id) {
+      _controller.forward();
+    } else {
+      _controller.reverse();
+    }
+  }
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this);
+    widget.index.addListener(indexUpdated);
+    _controller = AnimationController(
+        vsync: this, upperBound: 0.24, duration: Duration(milliseconds: 250));
+    _controller.addListener(() {
+      setState(() {
+        background = Theme.of(context)
+            .colorScheme
+            .onSurface
+            .withOpacity(_controller.value);
+      });
+    });
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    widget.index.removeListener(indexUpdated);
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: ListTile(
-        onTap: () {
-          Navigator.of(widget.nav.currentContext!).pushNamedAndRemoveUntil(
-              "/album/${widget.album.id}", (route) => false,
-              arguments: widget.album);
-        },
-        leading: AlbumImage(
-          album: widget.album,
+    /*
+    return ListTile(
+      leading: AlbumImage(
+        album: widget.album,
+      ),
+      onTap: () {
+        Navigator.of(widget.nav.currentContext!).pushNamedAndRemoveUntil(
+            "/album/${widget.album.id}", (route) => false,
+            arguments: widget.album);
+        setState(() {
+          selected = true;
+        });
+      },
+      title: Text(
+        widget.album.name,
+        maxLines: 2,
+        style: Theme.of(context).textTheme.titleSmall,
+        overflow: TextOverflow.ellipsis,
+      ),
+      subtitle: Text(
+        widget.album.artist?.name ?? "N.A",
+        style: Theme.of(context).textTheme.bodySmall,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+    );
+    */
+    return Container(
+      height: 100,
+      child: Card(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          side: BorderSide(
+            color: Theme.of(context).colorScheme.outline,
+          ),
+          borderRadius: const BorderRadius.all(Radius.circular(12)),
         ),
-        title: Text(
-          widget.album.name,
-          maxLines: 1,
-          style: Theme.of(context).textTheme.titleMedium,
-          overflow: TextOverflow.ellipsis,
-        ),
-        subtitle: Text(
-          widget.album.artist?.name ?? "N.A",
-          style: Theme.of(context).textTheme.bodySmall,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
+        //color: Theme.of(context).colorScheme.surfaceVariant,
+        color: background,
+        child: GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onTap: () {
+            widget.index.value = widget.album.id;
+          },
+          child: Center(
+            child: Row(
+              children: [
+                AlbumImage(
+                  album: widget.album,
+                ),
+                Expanded(
+                    child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.album.name,
+                        maxLines: 2,
+                        style: Theme.of(context).textTheme.titleSmall,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        widget.album.artist?.name ?? "N.A",
+                        style: Theme.of(context).textTheme.bodySmall,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ))
+              ],
+            ),
+          ),
         ),
       ),
     );

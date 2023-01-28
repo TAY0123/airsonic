@@ -22,7 +22,7 @@ class _AlbumViewListState extends State<AlbumViewList>
 
   bool ended = false;
 
-  final _defaultController = MediaPlayer.instance.fetchAlbumList();
+  var _defaultController = MediaPlayer.instance.fetchAlbumList();
 
   late Completer completer = Completer();
 
@@ -33,6 +33,10 @@ class _AlbumViewListState extends State<AlbumViewList>
   late ValueNotifier<AirSonicResult> _listController;
   final ScrollController _scrollController = ScrollController();
   final StreamController<AirSonicResult?> result = StreamController();
+
+  var _currentType = AlbumListType.recent;
+
+  ValueNotifier<String> _index = ValueNotifier("");
 
   @override
   void initState() {
@@ -72,19 +76,28 @@ class _AlbumViewListState extends State<AlbumViewList>
         fetchUntilScrollable();
       },
     );
+
+    _index.addListener(
+      () =>
+          Navigator.of(localNavigator.currentContext!).pushNamedAndRemoveUntil(
+        "/album/${_index.value}",
+        (route) => false,
+      ),
+    );
     fetchUntilScrollable();
   }
 
   void fetchUntilScrollable() async {
-    completer = Completer();
+    final local_completer = Completer();
+    completer = local_completer;
     await fetchAlbums();
     while ((!_scrollController.hasClients ||
             _scrollController.position.maxScrollExtent == 0.0) &&
         error == null &&
-        !ended) {
+        !(_listController.value.album?.finished ?? true)) {
       await fetchAlbums();
     }
-    completer.complete();
+    local_completer.complete();
   }
 
   @override
@@ -92,6 +105,7 @@ class _AlbumViewListState extends State<AlbumViewList>
     _controller.dispose();
     _listController.dispose();
     _scrollController.dispose();
+    _index.dispose();
     result.close();
     super.dispose();
   }
@@ -109,8 +123,7 @@ class _AlbumViewListState extends State<AlbumViewList>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.all(8.0),
+      body: SafeArea(
         child: Row(
           children: [
             Expanded(
@@ -124,7 +137,7 @@ class _AlbumViewListState extends State<AlbumViewList>
                             _scrollController.position.maxScrollExtent ==
                                 0.0) &&
                         error == null &&
-                        !ended) {
+                        !(_listController.value.album?.finished ?? true)) {
                       await fetchAlbums();
                     }
                     completer.complete();
@@ -136,55 +149,76 @@ class _AlbumViewListState extends State<AlbumViewList>
                   child: LayoutBuilder(builder: (context, constraints) {
                     final a = _listController.value.album!;
 
-                    final List<PopupMenuEntry<String>> b = chips
-                        .map((e) => PopupMenuItem<String>(
-                              value: e,
-                              child: Text(e),
+                    final List<PopupMenuEntry<AlbumListType>> b = chipss.entries
+                        .map((element) => PopupMenuItem<AlbumListType>(
+                              value: element.value,
+                              child: Text(element.key),
                             ))
                         .toList();
                     return Padding(
                         padding: const EdgeInsets.only(left: 8.0, right: 8.0),
-                        child: CustomScrollView(
-                          controller: _scrollController,
-                          slivers: [
-                            SliverList(
-                                delegate: SliverChildListDelegate([
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: SearchingBar(result),
-                                  ),
-                                  PopupMenuButton(
-                                    tooltip: "sorting",
-                                    initialValue: "Starred",
-                                    icon: Icon(Icons.filter_list),
-                                    itemBuilder: (context) => b,
-                                  )
+                        child: Column(
+                          children: [
+                            SearchingBar(result),
+                            Expanded(
+                              child: CustomScrollView(
+                                controller: _scrollController,
+                                slivers: [
+                                  SliverList(
+                                      delegate: SliverChildListDelegate([
+                                    Row(
+                                      children: [
+                                        Spacer(),
+                                        PopupMenuButton(
+                                            tooltip: "sorting",
+                                            initialValue: _currentType,
+                                            icon: Icon(Icons.filter_list),
+                                            itemBuilder: (context) => b,
+                                            onSelected: (value) {
+                                              if (_currentType == value) return;
+                                              setState(() {
+                                                _currentType = value;
+                                                _defaultController =
+                                                    mp.fetchAlbumList(
+                                                        type: value);
+                                              });
+                                              _listController.value =
+                                                  _defaultController;
+                                            }),
+                                      ],
+                                    ),
+                                    Padding(
+                                        padding: EdgeInsets.only(bottom: 30))
+                                  ])),
+                                  SliverList(
+                                      delegate: SliverChildListDelegate(
+                                    a.albums
+                                        .map((e) => Padding(
+                                              padding: const EdgeInsets.only(
+                                                  bottom: 8.0),
+                                              child: AlbumTile(
+                                                e,
+                                                index: _index,
+                                              ),
+                                            ))
+                                        .toList(),
+                                  )),
+                                  SliverFixedExtentList(
+                                      delegate: SliverChildListDelegate([
+                                        Center(
+                                            child: a.finished
+                                                ? Text(
+                                                    "Total Album: ${a.albums.length}",
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .bodyLarge,
+                                                  )
+                                                : CircularProgressIndicator())
+                                      ]),
+                                      itemExtent: 80),
                                 ],
                               ),
-                            ])),
-                            SliverList(
-                                delegate: SliverChildListDelegate(
-                              a.albums
-                                  .map((e) => AlbumTile(
-                                        e,
-                                        nav: localNavigator,
-                                      ))
-                                  .toList(),
-                            )),
-                            SliverFixedExtentList(
-                                delegate: SliverChildListDelegate([
-                                  Center(
-                                      child: a.finished
-                                          ? Text(
-                                              "Total Album: ${a.albums.length}",
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodyLarge,
-                                            )
-                                          : CircularProgressIndicator())
-                                ]),
-                                itemExtent: 80),
+                            ),
                           ],
                         ));
                   }),
@@ -194,7 +228,7 @@ class _AlbumViewListState extends State<AlbumViewList>
             Expanded(
               flex: 2,
               child: Padding(
-                padding: const EdgeInsets.only(left: 8.0),
+                padding: const EdgeInsets.only(right: 8.0),
                 child: Navigator(
                   key: localNavigator,
                   initialRoute: "/",
@@ -245,14 +279,15 @@ class _AlbumViewListState extends State<AlbumViewList>
   }
 }
 
-var chips = [
-  "Recent",
-  "Random",
-  "Newest",
-  "Frequent",
-  "Starred",
-  "By Name",
-  "By Artist",
-  "By Year",
-  "Genre"
-];
+var chipss = <String, AlbumListType>{
+  "Recent": AlbumListType.recent,
+  "Random": AlbumListType.random,
+  "Newest": AlbumListType.newest,
+  "Frequent": AlbumListType.frequent,
+  "Starred": AlbumListType.starred,
+  "By Name": AlbumListType.alphabeticalByName,
+  "By Artist": AlbumListType.alphabeticalByArtist,
+  /* support on 1.10.1 */
+  //"By Year": AlbumListType.byYear,
+  //"Genre": AlbumListType.byGenre
+};

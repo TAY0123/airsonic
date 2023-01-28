@@ -510,6 +510,7 @@ enum AlbumListType {
   recent,
   starred,
   alphabeticalByName,
+  /* support on 1.10.1 */
   alphabeticalByArtist,
   byYear,
   byGenre
@@ -543,7 +544,7 @@ class AlbumList {
     albums.addAll(result);
     _offset += result.length;
 
-    if (result.isEmpty) {
+    if (result.isEmpty || result.length != count) {
       finished = true;
     }
     return result.length;
