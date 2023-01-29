@@ -295,6 +295,12 @@ class MediaPlayer {
         "albumOffset": "$offset"
       });
     });
+    result.artist = ArtistList((offset, count) async {
+      return _xmlEndpoint("search3", query: {
+        "query": Uri.encodeQueryComponent(keyword),
+        "artistOffset": "$offset"
+      });
+    });
     return result;
   }
 
@@ -372,6 +378,10 @@ class MediaPlayer {
           */
 
     fplayer.play();
+  }
+
+  Future<XMLResult> fetchArtist(String id) async {
+    return await _xmlEndpoint("getArtist", query: {"id": id});
   }
 }
 
@@ -485,21 +495,64 @@ class Artist {
   String coverID = "";
   List<Album>? albums;
   int albumsCount = 0;
+  ImageProvider? img;
+
+  MediaPlayer mp = MediaPlayer.instance;
 
   Artist(this.id, this.name,
       {this.coverID = "", this.albums, this.albumsCount = 0});
 
+  Future<bool> fetchCover() async {
+    final connection = MediaPlayer.instance;
+    try {
+      img = await connection.fetchCover(coverID);
+    } catch (e) {
+      return false;
+    }
+    return true;
+  }
+
   factory Artist.fromElement(XmlElement element) {
-    return Artist(
+    final res = Artist(
       element.getAttribute("id") ?? "",
       element.getAttribute("name") ?? "",
       coverID: element.getAttribute("coverArt") ?? "",
       albumsCount: int.parse(element.getAttribute("albumCount") ?? ""),
     );
+    if (element.childElements.isNotEmpty) {
+      res.albums = [];
+      for (var ele in element.childElements) {
+        final tmp = Album.fromElement(ele);
+        if (tmp.id != "") {
+          res.albums?.add(tmp);
+        }
+      }
+    }
+    return res;
   }
 
-  //TODO: implement
-  void getDetail() {}
+  Future<bool> getDetail() async {
+    final res = await mp.fetchArtist(id);
+    if (res.artists.isEmpty) {
+      return false;
+    } else {
+      name = res.artists[0].name;
+      coverID = res.artists[0].coverID;
+      albums = res.artists[0].albums;
+      albumsCount = res.artists[0].albumsCount;
+    }
+    return true;
+  }
+
+  AirSonicResult getAlbumController() {
+    final res = AirSonicResult();
+    res.album = AlbumList((offset, count) async {
+      return XMLResult();
+    });
+    res.album?.albums = albums!;
+    res.album?.finished = true;
+    return res;
+  }
 
   factory Artist.FromAlbum(XmlElement element) {
     return Artist(element.getAttribute("artistId") ?? "",

@@ -5,6 +5,7 @@ import 'package:airsonic/search.dart';
 import 'package:flutter/material.dart';
 
 import 'album_info.dart';
+import 'animatedwave.dart';
 import 'card.dart';
 
 class AlbumViewList extends StatefulWidget {
@@ -237,7 +238,32 @@ class _AlbumViewListState extends State<AlbumViewList>
                     late Widget page;
 
                     if (settings.name == "/") {
-                      page = Container();
+                      page = LayoutBuilder(builder: (context, constraints) {
+                        return Column(
+                          children: [
+                            Spacer(),
+                            Stack(
+                              alignment: Alignment.bottomCenter,
+                              children: [
+                                AnimatedWave(
+                                  height: constraints.maxHeight / 4,
+                                  speed: 0.3,
+                                  color: Theme.of(context).primaryColor,
+                                ),
+                                AnimatedWave(
+                                    height: constraints.maxHeight / 4,
+                                    speed: 0.2,
+                                    color:
+                                        Theme.of(context).colorScheme.surface),
+                                AnimatedWave(
+                                    height: constraints.maxHeight / 4,
+                                    speed: 0.4,
+                                    color: Theme.of(context).primaryColorLight),
+                              ],
+                            ),
+                          ],
+                        );
+                      });
                     }
 
                     // Handle '/album/:id'

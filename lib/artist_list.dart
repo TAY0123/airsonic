@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:airsonic/airsonic_connection.dart';
+import 'package:airsonic/animatedwave.dart';
+import 'package:airsonic/artist_info.dart';
 import 'package:airsonic/search.dart';
 import 'package:flutter/material.dart';
 
@@ -111,7 +113,7 @@ class _ArtistViewListState extends State<ArtistViewList>
   }
 
   Future<bool> fetchAlbums() async {
-    if (_listController.value.artist!.finished) {
+    if (_listController.value.artist?.finished ?? false) {
       setState(() {});
       return true;
     }
@@ -237,7 +239,32 @@ class _ArtistViewListState extends State<ArtistViewList>
                     late Widget page;
 
                     if (settings.name == "/") {
-                      page = Container();
+                      page = LayoutBuilder(builder: (context, constraints) {
+                        return Column(
+                          children: [
+                            Spacer(),
+                            Stack(
+                              alignment: Alignment.bottomCenter,
+                              children: [
+                                AnimatedWave(
+                                  height: constraints.maxHeight / 4,
+                                  speed: 0.3,
+                                  color: Theme.of(context).primaryColor,
+                                ),
+                                AnimatedWave(
+                                    height: constraints.maxHeight / 4,
+                                    speed: 0.2,
+                                    color:
+                                        Theme.of(context).colorScheme.surface),
+                                AnimatedWave(
+                                    height: constraints.maxHeight / 4,
+                                    speed: 0.4,
+                                    color: Theme.of(context).primaryColorLight),
+                              ],
+                            ),
+                          ],
+                        );
+                      });
                     }
 
                     // Handle '/artist/:id'
@@ -245,15 +272,15 @@ class _ArtistViewListState extends State<ArtistViewList>
                     if (uri.pathSegments.length == 2 &&
                         uri.pathSegments.first == 'artist') {
                       var id = uri.pathSegments[1];
-                      /*
-                      if (settings.arguments != null) {
 
+                      if (settings.arguments != null) {
                         print((settings.arguments as Album).name);
-                        page = AlbumInfo(settings.arguments as Album);
+                        page = ArtistInfo(artist: settings.arguments as Artist);
                       } else {
-                        page = AlbumInfo(Album(id, "", ""));
+                        page = ArtistInfo(
+                          artist: Artist(id, ""),
+                        );
                       }
-                      */
                     }
 
                     return PageRouteBuilder(
@@ -261,7 +288,7 @@ class _ArtistViewListState extends State<ArtistViewList>
                       settings: settings,
                       pageBuilder: (context, animation, secondaryAnimation) =>
                           Scaffold(
-                        body: Placeholder(),
+                        body: page,
                       ),
                       transitionsBuilder:
                           (context, animation, secondaryAnimation, child) {

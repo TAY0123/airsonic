@@ -7,7 +7,8 @@ import 'package:flutter/material.dart';
 import 'card.dart';
 
 class AlbumViewGrid extends StatefulWidget {
-  const AlbumViewGrid({super.key});
+  final AirSonicResult? controller;
+  const AlbumViewGrid({super.key, this.controller});
 
   @override
   State<AlbumViewGrid> createState() => _AlbumViewGridState();
@@ -21,7 +22,8 @@ class _AlbumViewGridState extends State<AlbumViewGrid>
 
   bool ended = false;
 
-  final _defaultController = MediaPlayer.instance.fetchAlbumList();
+  late AirSonicResult _defaultController =
+      widget.controller ?? MediaPlayer.instance.fetchAlbumList();
 
   late Completer completer = Completer();
 
@@ -78,7 +80,7 @@ class _AlbumViewGridState extends State<AlbumViewGrid>
     while ((!_scrollController.hasClients ||
             _scrollController.position.maxScrollExtent == 0.0) &&
         error == null &&
-        !ended) {
+        !(_listController.value.album?.finished ?? true)) {
       await fetchAlbums();
     }
     completer.complete();
@@ -115,7 +117,7 @@ class _AlbumViewGridState extends State<AlbumViewGrid>
             while ((!_scrollController.hasClients ||
                     _scrollController.position.maxScrollExtent == 0.0) &&
                 error == null &&
-                !ended) {
+                !(_listController.value.album?.finished ?? true)) {
               await fetchAlbums();
             }
             completer.complete();
