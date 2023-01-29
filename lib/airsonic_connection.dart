@@ -243,8 +243,7 @@ class MediaPlayer {
   }
 
   AirSonicResult fetchAlbumList(
-      {int offset = 0,
-      int count = 0,
+      {int count = 0,
       AlbumListType type = AlbumListType.recent,
       String folderId = ""}) {
     final res = AirSonicResult();
@@ -259,6 +258,16 @@ class MediaPlayer {
       q["offset"] = "$offset";
 
       return await _xmlEndpoint("getAlbumList2", query: q);
+    });
+
+    return res;
+  }
+
+  AirSonicResult fetchArtistList() {
+    final res = AirSonicResult();
+    res.artist = ArtistList((offset, count) async {
+      await _inited;
+      return await _xmlEndpoint("getArtists");
     });
 
     return res;
@@ -482,7 +491,7 @@ class Artist {
 
   factory Artist.fromElement(XmlElement element) {
     return Artist(
-      element.getAttribute("Id") ?? "",
+      element.getAttribute("id") ?? "",
       element.getAttribute("name") ?? "",
       coverID: element.getAttribute("coverArt") ?? "",
       albumsCount: int.parse(element.getAttribute("albumCount") ?? ""),
@@ -568,7 +577,7 @@ class ArtistList {
     artists.addAll(result);
     _offset += result.length;
 
-    if (result.isEmpty) {
+    if (result.length != count) {
       finished = true;
     }
     return result.length;
@@ -577,5 +586,6 @@ class ArtistList {
 
 class AirSonicResult {
   AlbumList? album;
+  ArtistList? artist;
   String keywords = "";
 }

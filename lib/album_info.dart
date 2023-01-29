@@ -1,9 +1,11 @@
 import 'package:airsonic/airsonic_connection.dart';
 import 'package:airsonic/card.dart';
 import 'package:airsonic/route.dart';
+import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/services.dart';
+import 'package:rxdart/rxdart.dart';
 
 import 'const.dart';
 
@@ -219,17 +221,21 @@ class _AlbumInfoState extends State<AlbumInfo>
                 Expanded(
                   flex: 7,
                   child: FutureBuilder(
-                    future: album,
+                    future: Future.wait([album, mp.currentItem]),
                     builder: (context, snapshot) {
                       if (snapshot.hasData) {
-                        int count = snapshot.requireData.albums
+                        final currentAlbum =
+                            snapshot.requireData[0] as XMLResult;
+                        final currentPlaying =
+                            snapshot.requireData[1] as ValueStream<MediaItem?>;
+                        int count = currentAlbum.albums
                             .map((e) => e.songs?.length ?? 0)
                             .sum;
                         List<Song> songs = [];
-                        songs.addAll(snapshot.requireData.albums
+                        songs.addAll(currentAlbum.albums
                             .map((e) => e.songs ?? [])
                             .flattened);
-                        songs.addAll(snapshot.requireData.songs.map((e) => e));
+                        songs.addAll(currentAlbum.songs.map((e) => e));
                         return ListView.separated(
                           itemCount: count,
                           separatorBuilder: (context, index) {
@@ -237,8 +243,13 @@ class _AlbumInfoState extends State<AlbumInfo>
                           },
                           itemBuilder: (context, index) {
                             final song = songs[index];
+                            var selected = song.id == currentPlaying.value?.id;
                             return ListTile(
+                              selected: selected,
                               onTap: () {
+                                setState(() {
+                                  selected = true;
+                                });
                                 mp.playPlaylist(songs, index: index);
                               },
                               leading: Column(
@@ -249,7 +260,7 @@ class _AlbumInfoState extends State<AlbumInfo>
                               ),
                               title: Text(song.title),
                               subtitle: Text(song.artist?.name ??
-                                  snapshot.requireData.albums[0].artist?.name ??
+                                  currentAlbum.albums[0].artist?.name ??
                                   "Unknown"),
                               trailing: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -336,50 +347,66 @@ class _AlbumInfoState extends State<AlbumInfo>
                   const Align(
                       alignment: Alignment.centerLeft, child: Text("Songs")),
                   FutureBuilder(
-                    future: album,
+                    future: Future.wait([album, mp.currentItem]),
                     builder: (context, snapshot) {
                       if (snapshot.hasData) {
-                        int count = snapshot.requireData.albums
+                        final currentAlbum =
+                            snapshot.requireData[0] as XMLResult;
+                        final currentPlaying =
+                            snapshot.requireData[1] as ValueStream<MediaItem?>;
+
+                        int count = currentAlbum.albums
                             .map((e) => e.songs?.length ?? 0)
                             .sum;
                         List<Song> songs = [];
-                        songs.addAll(snapshot.requireData.albums
+                        songs.addAll(currentAlbum.albums
                             .map((e) => e.songs ?? [])
                             .flattened);
-                        songs.addAll(snapshot.requireData.songs.map((e) => e));
+                        songs.addAll(currentAlbum.songs.map((e) => e));
                         return Column(
                           children: songs
-                              .mapIndexed(((i, e) {
-                                return ListTile(
-                                  onTap: () {
-                                    mp.playPlaylist(songs, index: i);
+                              .mapIndexed(((i, song) {
+                                return Builder(
+                                  builder: (context) {
+                                    var selected =
+                                        song.id == currentPlaying.value?.id;
+                                    return ListTile(
+                                      selected: selected,
+                                      onTap: () {
+                                        setState(() {
+                                          selected = true;
+                                        });
+                                        mp.playPlaylist(songs, index: i);
+                                      },
+                                      leading: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: const [
+                                          Icon(Icons.play_arrow_rounded)
+                                        ],
+                                      ),
+                                      trailing: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Text(printDuration(Duration(
+                                                seconds: song.duration)))
+                                          ]),
+                                      title: Text(
+                                        song.title,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      subtitle: Text(
+                                        song.artist?.name ??
+                                            currentAlbum
+                                                .albums[0].artist?.name ??
+                                            "Unknown",
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    );
                                   },
-                                  leading: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: const [
-                                      Icon(Icons.play_arrow_rounded)
-                                    ],
-                                  ),
-                                  trailing: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Text(printDuration(
-                                            Duration(seconds: e.duration)))
-                                      ]),
-                                  title: Text(
-                                    e.title,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  subtitle: Text(
-                                    e.artist?.name ??
-                                        snapshot.requireData.albums[0].artist
-                                            ?.name ??
-                                        "Unknown",
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
                                 );
                               }))
                               .expand<Widget>((e) sync* {

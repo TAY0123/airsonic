@@ -4,16 +4,17 @@ import 'package:airsonic/airsonic_connection.dart';
 import 'package:airsonic/search.dart';
 import 'package:flutter/material.dart';
 
+import 'albums_list.dart';
 import 'card.dart';
 
-class ArtistListView extends StatefulWidget {
-  const ArtistListView({super.key});
+class ArtistViewList extends StatefulWidget {
+  const ArtistViewList({super.key});
 
   @override
-  State<ArtistListView> createState() => _ArtistListViewState();
+  State<ArtistViewList> createState() => _ArtistViewListState();
 }
 
-class _ArtistListViewState extends State<ArtistListView>
+class _ArtistViewListState extends State<ArtistViewList>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
 
@@ -21,15 +22,21 @@ class _ArtistListViewState extends State<ArtistListView>
 
   bool ended = false;
 
-  final _defaultController = MediaPlayer.instance.fetchAlbumList();
+  var _defaultController = MediaPlayer.instance.fetchArtistList();
 
   late Completer completer = Completer();
 
   Object? error;
 
+  final GlobalKey<NavigatorState> localNavigator = GlobalKey();
+
   late ValueNotifier<AirSonicResult> _listController;
   final ScrollController _scrollController = ScrollController();
   final StreamController<AirSonicResult?> result = StreamController();
+
+  var _currentType = AlbumListType.recent;
+
+  ValueNotifier<String> _index = ValueNotifier("-1");
 
   @override
   void initState() {
@@ -56,12 +63,12 @@ class _ArtistListViewState extends State<ArtistListView>
     result.stream.listen((event) {
       if (event == null) {
         _listController.value = _defaultController;
-        //_dataController.add(albums);
+        //_dataController.add(artists);
         return;
       } else {
         _listController.value = event;
       }
-      //_dataController.add(event.albums);
+      //_dataController.add(event.artists);
     });
 
     _listController.addListener(
@@ -69,19 +76,28 @@ class _ArtistListViewState extends State<ArtistListView>
         fetchUntilScrollable();
       },
     );
+
+    _index.addListener(
+      () =>
+          Navigator.of(localNavigator.currentContext!).pushNamedAndRemoveUntil(
+        "/artist/${_index.value}",
+        (route) => false,
+      ),
+    );
     fetchUntilScrollable();
   }
 
   void fetchUntilScrollable() async {
-    completer = Completer();
+    final local_completer = Completer();
+    completer = local_completer;
     await fetchAlbums();
     while ((!_scrollController.hasClients ||
             _scrollController.position.maxScrollExtent == 0.0) &&
         error == null &&
-        !ended) {
+        !(_listController.value.artist?.finished ?? true)) {
       await fetchAlbums();
     }
-    completer.complete();
+    local_completer.complete();
   }
 
   @override
@@ -89,16 +105,17 @@ class _ArtistListViewState extends State<ArtistListView>
     _controller.dispose();
     _listController.dispose();
     _scrollController.dispose();
+    _index.dispose();
     result.close();
     super.dispose();
   }
 
   Future<bool> fetchAlbums() async {
-    if (_listController.value.album!.finished) {
+    if (_listController.value.artist!.finished) {
       setState(() {});
       return true;
     }
-    await _listController.value.album?.fetchNext();
+    await _listController.value.artist?.fetchNext();
     setState(() {});
     return true;
   }
@@ -106,61 +123,159 @@ class _ArtistListViewState extends State<ArtistListView>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        surfaceTintColor: Colors.transparent,
-        actions: [SearchingBar(result)],
-      ),
-      body: NotificationListener<SizeChangedLayoutNotification>(
-        onNotification: (notification) {
-          () async {
-            await completer.future;
+      body: SafeArea(
+        child: Row(
+          children: [
+            Expanded(
+              child: NotificationListener<SizeChangedLayoutNotification>(
+                onNotification: (notification) {
+                  () async {
+                    await completer.future;
 
-            completer = Completer();
-            while ((!_scrollController.hasClients ||
-                    _scrollController.position.maxScrollExtent == 0.0) &&
-                error == null &&
-                !ended) {
-              await fetchAlbums();
-            }
-            completer.complete();
-          }();
+                    completer = Completer();
+                    while ((!_scrollController.hasClients ||
+                            _scrollController.position.maxScrollExtent ==
+                                0.0) &&
+                        error == null &&
+                        !(_listController.value.artist?.finished ?? true)) {
+                      await fetchAlbums();
+                    }
+                    completer.complete();
+                  }();
 
-          return true;
-        },
-        child: SizeChangedLayoutNotifier(
-          child: LayoutBuilder(builder: (context, constraints) {
-            final a = _listController.value.album!;
-            return CustomScrollView(
-              controller: _scrollController,
-              slivers: [
-                SliverGrid.builder(
-                    itemCount: a.albums.length,
-                    gridDelegate:
-                        const SliverGridDelegateWithMaxCrossAxisExtent(
-                            childAspectRatio: 0.75,
-                            maxCrossAxisExtent: 250,
-                            crossAxisSpacing: 16,
-                            mainAxisSpacing: 16),
-                    itemBuilder: ((context, index) {
-                      final album = a.albums[index];
-                      return AlbumCard(album);
-                    })),
-                SliverFixedExtentList(
-                    delegate: SliverChildListDelegate([
-                      Center(
-                          child: a.finished
-                              ? Text(
-                                  "Total Album: ${a.albums.length}",
-                                  style: Theme.of(context).textTheme.bodyLarge,
-                                )
-                              : CircularProgressIndicator())
-                    ]),
-                    itemExtent: 100),
-              ],
-            );
-          }),
+                  return true;
+                },
+                child: SizeChangedLayoutNotifier(
+                  child: LayoutBuilder(builder: (context, constraints) {
+                    final a = _listController.value.artist!;
+
+                    final List<PopupMenuEntry<AlbumListType>> b = chipss.entries
+                        .map((element) => PopupMenuItem<AlbumListType>(
+                              value: element.value,
+                              child: Text(element.key),
+                            ))
+                        .toList();
+                    return Padding(
+                        padding: const EdgeInsets.only(left: 8.0, right: 8.0),
+                        child: Column(
+                          children: [
+                            SearchingBar(result),
+                            Expanded(
+                              child: CustomScrollView(
+                                controller: _scrollController,
+                                slivers: [
+                                  SliverList(
+                                      delegate: SliverChildListDelegate([
+                                    Row(
+                                      children: [
+                                        Spacer(),
+                                        PopupMenuButton(
+                                            tooltip: "sorting",
+                                            initialValue: _currentType,
+                                            icon: Icon(Icons.filter_list),
+                                            itemBuilder: (context) => b,
+                                            onSelected: (value) {
+                                              if (_currentType == value) return;
+                                              setState(() {
+                                                _currentType = value;
+                                                _defaultController =
+                                                    mp.fetchAlbumList(
+                                                        type: value);
+                                              });
+                                              _listController.value =
+                                                  _defaultController;
+                                            }),
+                                      ],
+                                    ),
+                                    Padding(
+                                        padding: EdgeInsets.only(bottom: 30))
+                                  ])),
+                                  SliverList(
+                                      delegate: SliverChildListDelegate(
+                                    a.artists
+                                        .map((e) => Padding(
+                                              padding: const EdgeInsets.only(
+                                                  bottom: 8.0),
+                                              child: ArtistTile(
+                                                e,
+                                                index: _index,
+                                              ),
+                                            ))
+                                        .toList(),
+                                  )),
+                                  SliverFixedExtentList(
+                                      delegate: SliverChildListDelegate([
+                                        Center(
+                                            child: a.finished
+                                                ? Text(
+                                                    "Total Artist: ${a.artists.length}",
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .bodyLarge,
+                                                  )
+                                                : CircularProgressIndicator())
+                                      ]),
+                                      itemExtent: 80),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ));
+                  }),
+                ),
+              ),
+            ),
+            Expanded(
+              flex: 2,
+              child: Padding(
+                padding: const EdgeInsets.only(right: 8.0),
+                child: Navigator(
+                  key: localNavigator,
+                  initialRoute: "/",
+                  onGenerateRoute: (settings) {
+                    print(settings.name);
+                    late Widget page;
+
+                    if (settings.name == "/") {
+                      page = Container();
+                    }
+
+                    // Handle '/artist/:id'
+                    var uri = Uri.parse(settings.name ?? "");
+                    if (uri.pathSegments.length == 2 &&
+                        uri.pathSegments.first == 'artist') {
+                      var id = uri.pathSegments[1];
+                      /*
+                      if (settings.arguments != null) {
+
+                        print((settings.arguments as Album).name);
+                        page = AlbumInfo(settings.arguments as Album);
+                      } else {
+                        page = AlbumInfo(Album(id, "", ""));
+                      }
+                      */
+                    }
+
+                    return PageRouteBuilder(
+                      transitionDuration: Duration(milliseconds: 250),
+                      settings: settings,
+                      pageBuilder: (context, animation, secondaryAnimation) =>
+                          Scaffold(
+                        body: Placeholder(),
+                      ),
+                      transitionsBuilder:
+                          (context, animation, secondaryAnimation, child) {
+                        return FadeTransition(
+                          opacity: animation,
+                          child: child,
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            )
+          ],
         ),
       ),
     );

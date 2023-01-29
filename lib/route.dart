@@ -3,7 +3,7 @@ const routeHome = '$routeRootAlbum';
 
 ///root route
 const routeSettings = '/Settings';
-const routeLogin = '/Login';
+const routeLogin = '/login';
 const routeDashboard = '/Dashboard';
 
 ///subroute
@@ -18,3 +18,5 @@ const routeAlbumInfo = '/AlbumInfo';
 const routeRootAlbum = '/album';
 // album/:id
 
+//artist
+const routeRootArtist = '/artist';

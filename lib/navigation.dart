@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:airsonic/airsonic_connection.dart';
+import 'package:airsonic/main.dart';
 import 'package:flutter/material.dart';
 
 class NavDrawer extends StatelessWidget {
@@ -70,16 +71,48 @@ class NavBar extends StatelessWidget {
   }
 }
 
-class NavRail extends StatelessWidget {
+class NavRail extends StatefulWidget {
   final bool extended;
   const NavRail({this.extended = false, super.key});
 
   @override
+  State<NavRail> createState() => _NavRailState();
+}
+
+class _NavRailState extends State<NavRail> {
+  int index = 1;
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return NavigationRail(
+        onDestinationSelected: (value) {
+          setState(() {
+            index = value;
+          });
+          switch (value) {
+            case 0:
+              Navi?.currentState
+                  ?.pushNamedAndRemoveUntil("/", (route) => false);
+              break;
+            case 1:
+              Navi?.currentState
+                  ?.pushNamedAndRemoveUntil("/album", (route) => false);
+              break;
+            case 2:
+              Navi?.currentState
+                  ?.pushNamedAndRemoveUntil("/artist", (route) => false);
+              break;
+            default:
+          }
+        },
         groupAlignment: 0,
-        extended: extended,
-        labelType: extended
+        extended: widget.extended,
+        labelType: widget.extended
             ? NavigationRailLabelType.none
             : NavigationRailLabelType.selected,
         destinations: const [
@@ -98,6 +131,6 @@ class NavRail extends StatelessWidget {
           NavigationRailDestination(
               icon: Icon(Icons.view_list), label: Text("Sources")),
         ],
-        selectedIndex: 0);
+        selectedIndex: index);
   }
 }

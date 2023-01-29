@@ -4,6 +4,7 @@ import 'dart:math';
 
 import 'package:airsonic/album_info.dart';
 import 'package:airsonic/albums_list.dart';
+import 'package:airsonic/artist_list.dart';
 import 'package:airsonic/dashboard.dart';
 import 'package:airsonic/airsonic_connection.dart';
 import 'package:airsonic/login.dart';
@@ -42,7 +43,6 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Flutter Demo',
-      navigatorKey: Navi,
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
           brightness: Brightness.light,
@@ -78,6 +78,7 @@ class MyApp extends StatelessWidget {
       home: Scaffold(
         body: SplitView(
           Navigator(
+            key: Navi,
             observers: [HeroController()],
             initialRoute: "/",
             onGenerateRoute: (settings) {
@@ -96,8 +97,11 @@ class MyApp extends StatelessWidget {
                 //page = const AlbumListView();
                 page = const AlbumViewList();
               }
-              if (settings.name == "/login") {
+              if (settings.name == routeLogin) {
                 page = const LoginPage();
+              }
+              if (settings.name == routeRootArtist) {
+                page = const ArtistViewList();
               }
 
               // Handle '/album/:id'
@@ -122,7 +126,21 @@ class MyApp extends StatelessWidget {
                       reverseTransitionDuration: Duration(milliseconds: 250));
                 }
               }
-
+              return PageRouteBuilder(
+                transitionDuration: Duration(milliseconds: 250),
+                settings: settings,
+                pageBuilder: (context, animation, secondaryAnimation) =>
+                    Scaffold(
+                  body: page,
+                ),
+                transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(
+                    opacity: animation,
+                    child: child,
+                  );
+                },
+              );
               return MaterialPageRoute(
                   settings: settings,
                   builder: (context) {
