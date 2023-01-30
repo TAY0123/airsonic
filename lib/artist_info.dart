@@ -64,8 +64,9 @@ class _ArtistInfoState extends State<ArtistInfo> {
               children: [
                 Padding(padding: EdgeInsets.only(top: 60)),
                 Row(
-                  children: [Text("Albums"), Divider()],
+                  children: [Text("Albums")],
                 ),
+                Divider(),
                 Expanded(
                   child: AlbumViewGrid(
                     controller: widget.artist.getAlbumController(),

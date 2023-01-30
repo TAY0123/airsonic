@@ -7,6 +7,7 @@ import 'package:airsonic/albums_list.dart';
 import 'package:airsonic/artist_list.dart';
 import 'package:airsonic/dashboard.dart';
 import 'package:airsonic/airsonic_connection.dart';
+import 'package:airsonic/folder_list.dart';
 import 'package:airsonic/login.dart';
 import 'package:airsonic/desktop_init.dart';
 import 'package:airsonic/playerControl.dart';
@@ -29,15 +30,27 @@ void main() async {
   runApp(MyApp());
 }
 
-class MyApp extends StatelessWidget {
-  MyApp({super.key}) {
+class MyApp extends StatefulWidget {
+  MyApp({super.key}) {}
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  StreamController<bool> login = StreamController();
+
+  bool _hideNav = false;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
     () async {
       login.add(await SharedPreferences.getInstance()
           .then((value) => value.getBool("login") ?? (false)));
     }();
   }
-
-  StreamController<bool> login = StreamController();
 
   @override
   Widget build(BuildContext context) {
@@ -83,6 +96,11 @@ class MyApp extends StatelessWidget {
             initialRoute: "/",
             onGenerateRoute: (settings) {
               print(settings.name);
+              if (_hideNav) {
+                setState(() {
+                  _hideNav = false;
+                });
+              }
               late Widget page;
 
               if (settings.name == "/") {
@@ -99,13 +117,21 @@ class MyApp extends StatelessWidget {
               }
               if (settings.name == routeLogin) {
                 page = const LoginPage();
+                setState(() {
+                  _hideNav = true;
+                });
               }
               if (settings.name == routeRootArtist) {
                 page = const ArtistViewList();
               }
+              if (settings.name == "/folder") {
+                page = FolderViewList();
+              }
+
+              //parse uri
+              var uri = Uri.parse(settings.name ?? "");
 
               // Handle '/album/:id'
-              var uri = Uri.parse(settings.name ?? "");
               if (uri.pathSegments.length == 2 &&
                   uri.pathSegments.first == 'album') {
                 var id = uri.pathSegments[1];
@@ -119,6 +145,27 @@ class MyApp extends StatelessWidget {
                       reverseTransitionDuration: Duration(milliseconds: 250));
                 } else {
                   page = AlbumInfo(Album(id, "", ""));
+                  return TransparentRoute(
+                      builder: (context) => page,
+                      backgroundColor: Theme.of(context).colorScheme.background,
+                      transitionDuration: Duration(milliseconds: 250),
+                      reverseTransitionDuration: Duration(milliseconds: 250));
+                }
+              }
+
+              // Handle '/folder/:id'
+              if (uri.pathSegments.length == 2 &&
+                  uri.pathSegments.first == 'folder') {
+                var id = uri.pathSegments[1];
+                if (settings.arguments != null) {
+                  print((settings.arguments as Album).name);
+                  page = FolderViewList();
+                  return TransparentRoute(
+                      builder: (context) => page,
+                      backgroundColor: Colors.black.withOpacity(0.5),
+                      transitionDuration: Duration(milliseconds: 250),
+                      reverseTransitionDuration: Duration(milliseconds: 250));
+                } else {
                   return TransparentRoute(
                       builder: (context) => page,
                       backgroundColor: Theme.of(context).colorScheme.background,
@@ -141,15 +188,9 @@ class MyApp extends StatelessWidget {
                   );
                 },
               );
-              return MaterialPageRoute(
-                  settings: settings,
-                  builder: (context) {
-                    return Scaffold(
-                      body: page,
-                    );
-                  });
             },
           ),
+          hideNavigator: _hideNav,
         ),
       ),
       themeMode: ThemeMode.system,
@@ -166,7 +207,7 @@ class InitPage extends StatelessWidget {
   Widget build(BuildContext context) {
     () async {
       if ((await SharedPreferences.getInstance()).getBool("login") ?? false) {
-        Navigator.of(context).popAndPushNamed("/album");
+        Navigator.of(context).popAndPushNamed("/dashboard");
       } else {
         Navigator.of(context).popAndPushNamed("/login");
       }

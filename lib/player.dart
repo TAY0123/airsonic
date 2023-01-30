@@ -73,7 +73,7 @@ class MyAudioHandler extends BaseAudioHandler {
     final salt = prefs.getString("salt") ?? "";
 
     if (domain.isEmpty || token.isEmpty || username.isEmpty) {
-      throw ("login credentials error");
+      return false;
     }
 
     _base = Uri.parse(domain);

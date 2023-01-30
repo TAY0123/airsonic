@@ -13,33 +13,21 @@ import 'package:window_manager/window_manager.dart';
 import 'navigation.dart';
 import 'route.dart';
 
-class SplitView extends StatefulWidget {
-  final Widget? content;
-  const SplitView(this.content, {super.key});
-
-  @override
-  State<SplitView> createState() => _SplitViewState();
-}
-
-class _SplitViewState extends State<SplitView>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+class SplitView extends StatelessWidget {
+  final Widget content;
 
   final bool _mac = Platform.isMacOS;
 
   bool _maximize = false;
+
+  final bool hideNavigator;
+
+  SplitView(
+    this.content, {
+    super.key,
+    this.hideNavigator = false,
+  });
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (context, constraints) {
@@ -74,11 +62,12 @@ class _SplitViewState extends State<SplitView>
                             : constraints.maxHeight,
                     child: Row(
                       children: [
-                        NavRail(
-                          extended: (constraints.maxWidth > breakpointL)
-                              ? true
-                              : false,
-                        ),
+                        if (!hideNavigator)
+                          NavRail(
+                            extended: (constraints.maxWidth > breakpointL)
+                                ? true
+                                : false,
+                          ),
 
                         // use SizedBox to constrain the AppMenu to a fixed width
                         // vertical black line as separator
@@ -88,7 +77,7 @@ class _SplitViewState extends State<SplitView>
                           bottomSheet: PlayBackControl(),
                           body: Padding(
                             padding: const EdgeInsets.only(bottom: 60.0),
-                            child: widget.content,
+                            child: content,
                           ),
                         ))
                       ],
@@ -112,7 +101,7 @@ class _SplitViewState extends State<SplitView>
                     appBar: AppBar(
                       backgroundColor: Colors.transparent,
                     ),
-                    body: widget.content),
+                    body: content),
               ),
             ),
           ),

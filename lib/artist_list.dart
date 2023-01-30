@@ -162,63 +162,68 @@ class _ArtistViewListState extends State<ArtistViewList>
                         child: Column(
                           children: [
                             SearchingBar(result),
+                            Padding(padding: EdgeInsets.only(bottom: 8)),
                             Expanded(
-                              child: CustomScrollView(
-                                controller: _scrollController,
-                                slivers: [
-                                  SliverList(
-                                      delegate: SliverChildListDelegate([
-                                    Row(
-                                      children: [
-                                        Spacer(),
-                                        PopupMenuButton(
-                                            tooltip: "sorting",
-                                            initialValue: _currentType,
-                                            icon: Icon(Icons.filter_list),
-                                            itemBuilder: (context) => b,
-                                            onSelected: (value) {
-                                              if (_currentType == value) return;
-                                              setState(() {
-                                                _currentType = value;
-                                                _defaultController =
-                                                    mp.fetchAlbumList(
-                                                        type: value);
-                                              });
-                                              _listController.value =
-                                                  _defaultController;
-                                            }),
-                                      ],
-                                    ),
-                                    Padding(
-                                        padding: EdgeInsets.only(bottom: 30))
-                                  ])),
-                                  SliverList(
-                                      delegate: SliverChildListDelegate(
-                                    a.artists
-                                        .map((e) => Padding(
-                                              padding: const EdgeInsets.only(
-                                                  bottom: 8.0),
-                                              child: ArtistTile(
-                                                e,
-                                                index: _index,
-                                              ),
-                                            ))
-                                        .toList(),
-                                  )),
-                                  SliverFixedExtentList(
-                                      delegate: SliverChildListDelegate([
-                                        Center(
-                                            child: a.finished
-                                                ? Text(
-                                                    "Total Artist: ${a.artists.length}",
-                                                    style: Theme.of(context)
-                                                        .textTheme
-                                                        .bodyLarge,
-                                                  )
-                                                : CircularProgressIndicator())
-                                      ]),
-                                      itemExtent: 80),
-                                ],
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: CustomScrollView(
+                                  controller: _scrollController,
+                                  slivers: [
+                                    SliverList(
+                                        delegate: SliverChildListDelegate([
+                                      Row(
+                                        children: [
+                                          Spacer(),
+                                          PopupMenuButton(
+                                              tooltip: "sorting",
+                                              initialValue: _currentType,
+                                              icon: Icon(Icons.filter_list),
+                                              itemBuilder: (context) => b,
+                                              onSelected: (value) {
+                                                if (_currentType == value)
+                                                  return;
+                                                setState(() {
+                                                  _currentType = value;
+                                                  _defaultController =
+                                                      mp.fetchAlbumList(
+                                                          type: value);
+                                                });
+                                                _listController.value =
+                                                    _defaultController;
+                                              }),
+                                        ],
+                                      ),
+                                      Padding(
+                                          padding: EdgeInsets.only(bottom: 30))
+                                    ])),
+                                    SliverList(
+                                        delegate: SliverChildListDelegate(
+                                      a.artists
+                                          .map((e) => Padding(
+                                                padding: const EdgeInsets.only(
+                                                    bottom: 8.0),
+                                                child: ArtistTile(
+                                                  e,
+                                                  index: _index,
+                                                ),
+                                              ))
+                                          .toList(),
+                                    )),
+                                    SliverFixedExtentList(
+                                        delegate: SliverChildListDelegate([
+                                          Center(
+                                              child: a.finished
+                                                  ? Text(
+                                                      "Total Artist: ${a.artists.length}",
+                                                      style: Theme.of(context)
+                                                          .textTheme
+                                                          .bodyLarge,
+                                                    )
+                                                  : CircularProgressIndicator())
+                                        ]),
+                                        itemExtent: 80),
+                                  ],
+                                ),
                               ),
                             ),
                           ],

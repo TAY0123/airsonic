@@ -4,7 +4,7 @@ const routeHome = '$routeRootAlbum';
 ///root route
 const routeSettings = '/Settings';
 const routeLogin = '/login';
-const routeDashboard = '/Dashboard';
+const routeDashboard = '/dashboard';
 
 ///subroute
 const routeDashboardAlbumList = '$routeDashboard/$routeAlbumList';

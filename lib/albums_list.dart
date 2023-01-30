@@ -157,67 +157,73 @@ class _AlbumViewListState extends State<AlbumViewList>
                             ))
                         .toList();
                     return Padding(
-                        padding: const EdgeInsets.only(left: 8.0, right: 8.0),
+                        padding: const EdgeInsets.only(
+                            top: 4, left: 8.0, right: 8.0),
                         child: Column(
                           children: [
                             SearchingBar(result),
+                            Padding(padding: EdgeInsets.only(bottom: 8)),
                             Expanded(
-                              child: CustomScrollView(
-                                controller: _scrollController,
-                                slivers: [
-                                  SliverList(
-                                      delegate: SliverChildListDelegate([
-                                    Row(
-                                      children: [
-                                        Spacer(),
-                                        PopupMenuButton(
-                                            tooltip: "sorting",
-                                            initialValue: _currentType,
-                                            icon: Icon(Icons.filter_list),
-                                            itemBuilder: (context) => b,
-                                            onSelected: (value) {
-                                              if (_currentType == value) return;
-                                              setState(() {
-                                                _currentType = value;
-                                                _defaultController =
-                                                    mp.fetchAlbumList(
-                                                        type: value);
-                                              });
-                                              _listController.value =
-                                                  _defaultController;
-                                            }),
-                                      ],
-                                    ),
-                                    Padding(
-                                        padding: EdgeInsets.only(bottom: 30))
-                                  ])),
-                                  SliverList(
-                                      delegate: SliverChildListDelegate(
-                                    a.albums
-                                        .map((e) => Padding(
-                                              padding: const EdgeInsets.only(
-                                                  bottom: 8.0),
-                                              child: AlbumTile(
-                                                e,
-                                                index: _index,
-                                              ),
-                                            ))
-                                        .toList(),
-                                  )),
-                                  SliverFixedExtentList(
-                                      delegate: SliverChildListDelegate([
-                                        Center(
-                                            child: a.finished
-                                                ? Text(
-                                                    "Total Album: ${a.albums.length}",
-                                                    style: Theme.of(context)
-                                                        .textTheme
-                                                        .bodyLarge,
-                                                  )
-                                                : CircularProgressIndicator())
-                                      ]),
-                                      itemExtent: 80),
-                                ],
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: CustomScrollView(
+                                  controller: _scrollController,
+                                  slivers: [
+                                    SliverList(
+                                        delegate: SliverChildListDelegate([
+                                      Row(
+                                        children: [
+                                          Spacer(),
+                                          PopupMenuButton(
+                                              tooltip: "sorting",
+                                              initialValue: _currentType,
+                                              icon: Icon(Icons.filter_list),
+                                              itemBuilder: (context) => b,
+                                              onSelected: (value) {
+                                                if (_currentType == value)
+                                                  return;
+                                                setState(() {
+                                                  _currentType = value;
+                                                  _defaultController =
+                                                      mp.fetchAlbumList(
+                                                          type: value);
+                                                });
+                                                _listController.value =
+                                                    _defaultController;
+                                              }),
+                                        ],
+                                      ),
+                                      Padding(
+                                          padding: EdgeInsets.only(bottom: 30))
+                                    ])),
+                                    SliverList(
+                                        delegate: SliverChildListDelegate(
+                                      a.albums
+                                          .map((e) => Padding(
+                                                padding: const EdgeInsets.only(
+                                                    bottom: 8.0),
+                                                child: AlbumTile(
+                                                  e,
+                                                  index: _index,
+                                                ),
+                                              ))
+                                          .toList(),
+                                    )),
+                                    SliverFixedExtentList(
+                                        delegate: SliverChildListDelegate([
+                                          Center(
+                                              child: a.finished
+                                                  ? Text(
+                                                      "Total Album: ${a.albums.length}",
+                                                      style: Theme.of(context)
+                                                          .textTheme
+                                                          .bodyLarge,
+                                                    )
+                                                  : CircularProgressIndicator())
+                                        ]),
+                                        itemExtent: 80),
+                                  ],
+                                ),
                               ),
                             ),
                           ],
@@ -228,74 +234,74 @@ class _AlbumViewListState extends State<AlbumViewList>
             ),
             Expanded(
               flex: 2,
-              child: Padding(
-                padding: const EdgeInsets.only(right: 8.0),
-                child: Navigator(
-                  key: localNavigator,
-                  initialRoute: "/",
-                  onGenerateRoute: (settings) {
-                    print(settings.name);
-                    late Widget page;
+              child: Navigator(
+                key: localNavigator,
+                initialRoute: "/",
+                onGenerateRoute: (settings) {
+                  print(settings.name);
+                  late Widget page;
 
-                    if (settings.name == "/") {
-                      page = LayoutBuilder(builder: (context, constraints) {
-                        return Column(
-                          children: [
-                            Spacer(),
-                            Stack(
-                              alignment: Alignment.bottomCenter,
-                              children: [
-                                AnimatedWave(
+                  if (settings.name == "/") {
+                    page = LayoutBuilder(builder: (context, constraints) {
+                      return Column(
+                        children: [
+                          Spacer(),
+                          Stack(
+                            alignment: Alignment.bottomCenter,
+                            children: [
+                              AnimatedWave(
+                                height: constraints.maxHeight / 4,
+                                speed: 0.3,
+                                color: Theme.of(context).primaryColor,
+                              ),
+                              AnimatedWave(
                                   height: constraints.maxHeight / 4,
-                                  speed: 0.3,
-                                  color: Theme.of(context).primaryColor,
-                                ),
-                                AnimatedWave(
-                                    height: constraints.maxHeight / 4,
-                                    speed: 0.2,
-                                    color:
-                                        Theme.of(context).colorScheme.surface),
-                                AnimatedWave(
-                                    height: constraints.maxHeight / 4,
-                                    speed: 0.4,
-                                    color: Theme.of(context).primaryColorLight),
-                              ],
-                            ),
-                          ],
-                        );
-                      });
-                    }
+                                  speed: 0.2,
+                                  color: Theme.of(context).colorScheme.surface),
+                              AnimatedWave(
+                                  height: constraints.maxHeight / 4,
+                                  speed: 0.4,
+                                  color: Theme.of(context).primaryColorLight),
+                            ],
+                          ),
+                        ],
+                      );
+                    });
+                  }
 
-                    // Handle '/album/:id'
-                    var uri = Uri.parse(settings.name ?? "");
-                    if (uri.pathSegments.length == 2 &&
-                        uri.pathSegments.first == 'album') {
-                      var id = uri.pathSegments[1];
-                      if (settings.arguments != null) {
-                        print((settings.arguments as Album).name);
-                        page = AlbumInfo(settings.arguments as Album);
-                      } else {
-                        page = AlbumInfo(Album(id, "", ""));
-                      }
+                  // Handle '/album/:id'
+                  var uri = Uri.parse(settings.name ?? "");
+                  if (uri.pathSegments.length == 2 &&
+                      uri.pathSegments.first == 'album') {
+                    var id = uri.pathSegments[1];
+                    if (settings.arguments != null) {
+                      print((settings.arguments as Album).name);
+                      page = AlbumInfo(settings.arguments as Album);
+                    } else {
+                      page = AlbumInfo(Album(id, "", ""));
                     }
+                  }
 
-                    return PageRouteBuilder(
-                      transitionDuration: Duration(milliseconds: 250),
-                      settings: settings,
-                      pageBuilder: (context, animation, secondaryAnimation) =>
-                          Scaffold(
-                        body: page,
-                      ),
-                      transitionsBuilder:
-                          (context, animation, secondaryAnimation, child) {
-                        return FadeTransition(
-                          opacity: animation,
-                          child: child,
-                        );
-                      },
-                    );
-                  },
-                ),
+                  return PageRouteBuilder(
+                    transitionDuration: Duration(milliseconds: 250),
+                    settings: settings,
+                    pageBuilder: (context, animation, secondaryAnimation) =>
+                        Scaffold(
+                      body: Card(
+                          child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: page,
+                      )),
+                    ),
+                    transitionsBuilder:
+                        (context, animation, secondaryAnimation, child) {
+                      return FadeTransition(
+                        opacity: animation,
+                        child: child,
+                      );
+                    },
+                  );
+                },
               ),
             )
           ],

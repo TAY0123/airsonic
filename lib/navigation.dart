@@ -80,7 +80,7 @@ class NavRail extends StatefulWidget {
 }
 
 class _NavRailState extends State<NavRail> {
-  int index = 1;
+  int index = 0;
 
   @override
   void initState() {
@@ -91,6 +91,7 @@ class _NavRailState extends State<NavRail> {
   Widget build(BuildContext context) {
     return NavigationRail(
         onDestinationSelected: (value) {
+          if (index == value) return;
           setState(() {
             index = value;
           });
@@ -106,6 +107,10 @@ class _NavRailState extends State<NavRail> {
             case 2:
               Navi?.currentState
                   ?.pushNamedAndRemoveUntil("/artist", (route) => false);
+              break;
+            case 3:
+              Navi?.currentState
+                  ?.pushNamedAndRemoveUntil("/folder", (route) => false);
               break;
             default:
           }
