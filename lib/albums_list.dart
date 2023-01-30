@@ -79,11 +79,10 @@ class _AlbumViewListState extends State<AlbumViewList>
     );
 
     _index.addListener(
-      () =>
-          Navigator.of(localNavigator.currentContext!).pushNamedAndRemoveUntil(
-        "/album/${_index.value}",
-        (route) => false,
-      ),
+      () => Navigator.of(localNavigator.currentContext!)
+          .pushNamedAndRemoveUntil("/album/${_index.value}", (route) => false,
+              arguments: _listController.value.album?.albums
+                  .firstWhere((element) => element.id == _index.value)),
     );
     fetchUntilScrollable();
   }

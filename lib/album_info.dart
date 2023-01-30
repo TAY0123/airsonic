@@ -26,14 +26,14 @@ class _AlbumInfoState extends State<AlbumInfo>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   final mp = MediaPlayer.instance;
-  late Future<XMLResult> album;
+  late Future<bool> albumFetchStatus;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(vsync: this);
-    album = () async {
-      return (await mp.fetchAlbumInfo(widget.album.id));
+    albumFetchStatus = () async {
+      return await widget.album.fetchInfo();
     }();
   }
 
@@ -76,11 +76,10 @@ class _AlbumInfoState extends State<AlbumInfo>
                                   fit: BoxFit.contain,
                                 )
                               : FutureBuilder(
-                                  future: album,
+                                  future: albumFetchStatus,
                                   builder: (context, snapshot) {
                                     if (snapshot.hasData) {
-                                      final currentAlbum =
-                                          snapshot.requireData.albums[0];
+                                      final currentAlbum = widget.album;
                                       return AlbumImage(
                                         album: currentAlbum,
                                         fit: BoxFit.contain,
@@ -114,11 +113,10 @@ class _AlbumInfoState extends State<AlbumInfo>
                                         .headlineMedium,
                                   )
                                 : FutureBuilder(
-                                    future: album,
+                                    future: albumFetchStatus,
                                     builder: (context, snapshot) {
                                       if (snapshot.hasData) {
-                                        final currentAlbum =
-                                            snapshot.requireData.albums[0];
+                                        final currentAlbum = widget.album;
                                         return Text(
                                           currentAlbum.name,
                                           maxLines: 2,
@@ -159,11 +157,10 @@ class _AlbumInfoState extends State<AlbumInfo>
                                             .bodyLarge,
                                       )
                                     : FutureBuilder(
-                                        future: album,
+                                        future: albumFetchStatus,
                                         builder: (context, snapshot) {
                                           if (snapshot.hasData) {
-                                            final currentAlbum =
-                                                snapshot.requireData.albums[0];
+                                            final currentAlbum = widget.album;
                                             return Text(
                                               currentAlbum.artist?.name ?? "",
                                               maxLines: 1,
@@ -182,15 +179,13 @@ class _AlbumInfoState extends State<AlbumInfo>
                           ),
                           Padding(padding: EdgeInsets.only(bottom: 8)),
                           FutureBuilder(
-                            future: album,
+                            future: albumFetchStatus,
                             builder: (context, snapshot) {
                               if (snapshot.hasData) {
-                                if (snapshot.requireData.albums.isEmpty) {
+                                if (!snapshot.requireData) {
                                   return Text("No album found");
                                 } else {
-                                  final currentAlbum =
-                                      snapshot.requireData.albums[0] ??
-                                          Album("", "", "");
+                                  final currentAlbum = widget.album;
                                   var total = Duration.zero;
                                   for (final i in currentAlbum.songs ??
                                       List<Song>.empty()) {
@@ -227,20 +222,16 @@ class _AlbumInfoState extends State<AlbumInfo>
               Expanded(
                 flex: 7,
                 child: FutureBuilder(
-                  future: Future.wait([album, mp.currentItem]),
+                  future: Future.wait([albumFetchStatus, mp.currentItem]),
                   builder: (context, snapshot) {
                     if (snapshot.hasData) {
-                      final currentAlbum = snapshot.requireData[0] as XMLResult;
+                      final currentAlbum = widget.album;
                       final currentPlaying =
                           snapshot.requireData[1] as ValueStream<MediaItem?>;
-                      int count = currentAlbum.albums
-                          .map((e) => e.songs?.length ?? 0)
-                          .sum;
+                      int count = currentAlbum.songs?.length ?? 0;
+
                       List<Song> songs = [];
-                      songs.addAll(currentAlbum.albums
-                          .map((e) => e.songs ?? [])
-                          .flattened);
-                      songs.addAll(currentAlbum.songs.map((e) => e));
+                      songs.addAll(currentAlbum.songs ?? []);
                       return ListView.separated(
                         itemCount: count,
                         separatorBuilder: (context, index) {
@@ -263,7 +254,7 @@ class _AlbumInfoState extends State<AlbumInfo>
                             ),
                             title: Text(song.title),
                             subtitle: Text(song.artist?.name ??
-                                currentAlbum.albums[0].artist?.name ??
+                                currentAlbum.artist?.name ??
                                 "Unknown"),
                             trailing: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -303,11 +294,28 @@ class _AlbumInfoState extends State<AlbumInfo>
                     ),
                   ),
                   Hero(
-                      tag: "${widget.album.id}-Cover}",
-                      child: AlbumImage(
-                        album: widget.album,
-                        fit: BoxFit.contain,
-                      )),
+                    tag: "${widget.album.id}-Cover}",
+                    child: widget.album.img != null
+                        ? AlbumImage(
+                            album: widget.album,
+                            fit: BoxFit.contain,
+                          )
+                        : FutureBuilder(
+                            future: albumFetchStatus,
+                            builder: (context, snapshot) {
+                              if (snapshot.hasData) {
+                                return AlbumImage(
+                                  album: widget.album,
+                                  fit: BoxFit.contain,
+                                );
+                              } else {
+                                return Container(
+                                  color: Colors.black,
+                                );
+                              }
+                            },
+                          ),
+                  ),
                   const Padding(
                     padding: EdgeInsets.only(top: 8),
                   ),
@@ -333,7 +341,7 @@ class _AlbumInfoState extends State<AlbumInfo>
                               text: widget.album.artist?.name ?? ""));
                           ScaffoldMessenger.of(context)
                               .showSnackBar(new SnackBar(
-                            content: new Text("Copied to Clipboard"),
+                            content: new Text("Artist Copied to Clipboard"),
                           ));
                         },
                         child: Text(
@@ -349,22 +357,17 @@ class _AlbumInfoState extends State<AlbumInfo>
                   const Align(
                       alignment: Alignment.centerLeft, child: Text("Songs")),
                   FutureBuilder(
-                    future: Future.wait([album, mp.currentItem]),
+                    future: Future.wait([albumFetchStatus, mp.currentItem]),
                     builder: (context, snapshot) {
                       if (snapshot.hasData) {
-                        final currentAlbum =
-                            snapshot.requireData[0] as XMLResult;
+                        final currentAlbum = widget.album;
                         final currentPlaying =
                             snapshot.requireData[1] as ValueStream<MediaItem?>;
 
-                        int count = currentAlbum.albums
-                            .map((e) => e.songs?.length ?? 0)
-                            .sum;
+                        int count = currentAlbum.songs?.length ?? 0;
+
                         List<Song> songs = [];
-                        songs.addAll(currentAlbum.albums
-                            .map((e) => e.songs ?? [])
-                            .flattened);
-                        songs.addAll(currentAlbum.songs.map((e) => e));
+                        songs.addAll(currentAlbum.songs ?? []);
                         return Column(
                           children: songs
                               .mapIndexed(((i, song) {
@@ -401,8 +404,7 @@ class _AlbumInfoState extends State<AlbumInfo>
                                       ),
                                       subtitle: Text(
                                         song.artist?.name ??
-                                            currentAlbum
-                                                .albums[0].artist?.name ??
+                                            currentAlbum.artist?.name ??
                                             "Unknown",
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
