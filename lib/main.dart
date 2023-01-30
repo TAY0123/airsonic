@@ -7,7 +7,6 @@ import 'package:airsonic/albums_list.dart';
 import 'package:airsonic/artist_list.dart';
 import 'package:airsonic/dashboard.dart';
 import 'package:airsonic/airsonic_connection.dart';
-import 'package:airsonic/folder_list.dart';
 import 'package:airsonic/login.dart';
 import 'package:airsonic/desktop_init.dart';
 import 'package:airsonic/playerControl.dart';
@@ -27,11 +26,11 @@ void main() async {
   if (Platform.isLinux || Platform.isMacOS || Platform.isWindows && !kIsWeb) {
     await DesktopInit();
   }
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatefulWidget {
-  MyApp({super.key}) {}
+  const MyApp({super.key});
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -44,7 +43,6 @@ class _MyAppState extends State<MyApp> {
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     () async {
       login.add(await SharedPreferences.getInstance()
@@ -124,9 +122,6 @@ class _MyAppState extends State<MyApp> {
               if (settings.name == routeRootArtist) {
                 page = const ArtistViewList();
               }
-              if (settings.name == "/folder") {
-                page = FolderViewList();
-              }
 
               //parse uri
               var uri = Uri.parse(settings.name ?? "");
@@ -153,26 +148,6 @@ class _MyAppState extends State<MyApp> {
                 }
               }
 
-              // Handle '/folder/:id'
-              if (uri.pathSegments.length == 2 &&
-                  uri.pathSegments.first == 'folder') {
-                var id = uri.pathSegments[1];
-                if (settings.arguments != null) {
-                  print((settings.arguments as Album).name);
-                  page = FolderViewList();
-                  return TransparentRoute(
-                      builder: (context) => page,
-                      backgroundColor: Colors.black.withOpacity(0.5),
-                      transitionDuration: Duration(milliseconds: 250),
-                      reverseTransitionDuration: Duration(milliseconds: 250));
-                } else {
-                  return TransparentRoute(
-                      builder: (context) => page,
-                      backgroundColor: Theme.of(context).colorScheme.background,
-                      transitionDuration: Duration(milliseconds: 250),
-                      reverseTransitionDuration: Duration(milliseconds: 250));
-                }
-              }
               return PageRouteBuilder(
                 transitionDuration: Duration(milliseconds: 250),
                 settings: settings,

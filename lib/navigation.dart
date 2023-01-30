@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:airsonic/airsonic_connection.dart';
 import 'package:airsonic/main.dart';
 import 'package:flutter/material.dart';
@@ -10,7 +8,7 @@ class NavDrawer extends StatelessWidget {
     Key? key,
   }) : super(key: key);
 
-  bool search;
+  final bool search;
   final mp = MediaPlayer.instance;
 
   @override
@@ -43,8 +41,6 @@ class NavDrawer extends StatelessWidget {
             icon: Icon(Icons.album), label: Text("Albums")),
         const NavigationDrawerDestination(
             icon: Icon(Icons.people), label: Text("Artists")),
-        const NavigationDrawerDestination(
-            icon: Icon(Icons.folder), label: Text("Folders")),
         const NavigationDrawerDestination(
             icon: Icon(Icons.settings), label: Text("Settings")),
         const NavigationDrawerDestination(
@@ -108,10 +104,6 @@ class _NavRailState extends State<NavRail> {
               Navi?.currentState
                   ?.pushNamedAndRemoveUntil("/artist", (route) => false);
               break;
-            case 3:
-              Navi?.currentState
-                  ?.pushNamedAndRemoveUntil("/folder", (route) => false);
-              break;
             default:
           }
         },
@@ -127,8 +119,6 @@ class _NavRailState extends State<NavRail> {
               icon: Icon(Icons.album), label: Text("Albums")),
           NavigationRailDestination(
               icon: Icon(Icons.people), label: Text("Artists")),
-          NavigationRailDestination(
-              icon: Icon(Icons.folder), label: Text("Folders")),
           NavigationRailDestination(
               icon: Icon(Icons.playlist_play), label: Text("Playlist")),
           NavigationRailDestination(
