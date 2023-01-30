@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:airsonic/airsonic_connection.dart';
 import 'package:airsonic/card.dart';
+import 'package:airsonic/main.dart';
 import 'package:airsonic/route.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
@@ -52,227 +55,204 @@ class _AlbumInfoState extends State<AlbumInfo>
       },
       child: LayoutBuilder(builder: (context, constraints) {
         if (constraints.maxWidth > breakpointM) {
-          return Column(
-            children: [
-              Row(
-                children: [
-                  if (Navigator.canPop(context))
-                    FloatingActionButton(
-                      child: const Icon(Icons.close),
-                      onPressed: () => Navigator.pop(context),
-                    )
-                ],
-              ),
-              Expanded(
-                flex: 7,
-                child: Row(
-                  children: [
-                    Hero(
-                        tag: "${widget.album.id}-Cover}",
-                        child: Center(
-                          child: widget.album.img != null
-                              ? AlbumImage(
-                                  album: widget.album,
-                                  fit: BoxFit.contain,
-                                )
-                              : FutureBuilder(
-                                  future: albumFetchStatus,
-                                  builder: (context, snapshot) {
-                                    if (snapshot.hasData) {
-                                      final currentAlbum = widget.album;
-                                      return AlbumImage(
-                                        album: currentAlbum,
-                                        fit: BoxFit.contain,
-                                      );
-                                    } else {
-                                      return Container(
-                                        color: Colors.black,
-                                      );
-                                    }
-                                  },
-                                ),
-                        )),
-                    const Padding(
-                      padding: EdgeInsets.only(left: 16),
-                    ),
-                    Expanded(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Spacer(),
-                          Hero(
-                            tag: "${widget.album.id}-Title}",
+          return Scaffold(
+            backgroundColor: Colors.transparent,
+            appBar: Navigator.canPop(context) ? AppBar() : null,
+            body: Column(
+              children: [
+                Padding(padding: EdgeInsets.only(bottom: 8)),
+                Expanded(
+                  flex: 7,
+                  child: Row(
+                    children: [
+                      Hero(
+                          tag: "${widget.album.id}-Cover}",
+                          child: Center(
                             child: widget.album.img != null
-                                ? Text(
-                                    widget.album.name,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .headlineMedium,
+                                ? AlbumImage(
+                                    album: widget.album,
+                                    fit: BoxFit.contain,
                                   )
                                 : FutureBuilder(
                                     future: albumFetchStatus,
                                     builder: (context, snapshot) {
                                       if (snapshot.hasData) {
                                         final currentAlbum = widget.album;
-                                        return Text(
-                                          currentAlbum.name,
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .headlineMedium,
+                                        return AlbumImage(
+                                          album: currentAlbum,
+                                          fit: BoxFit.contain,
                                         );
                                       } else {
-                                        return Text("");
+                                        return Container(
+                                          color: Colors.black,
+                                        );
                                       }
                                     },
                                   ),
-                          ),
-                          Hero(
-                            tag: "${widget.album.id}-Artist}",
-                            child: FilledButton.tonalIcon(
-                              onLongPress: () {
-                                Clipboard.setData(new ClipboardData(
-                                    text: widget.album.artist?.name ?? ""));
-                                ScaffoldMessenger.of(context)
-                                    .showSnackBar(new SnackBar(
-                                  content: new Text(
-                                    "Copied to Clipboard",
-                                  ),
-                                ));
-                              },
-                              onPressed: () {},
-                              label: Icon(Icons.arrow_circle_right),
-                              icon: Expanded(
-                                child: widget.album.img != null
-                                    ? Text(
-                                        widget.album.artist?.name ?? "",
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyLarge,
-                                      )
-                                    : FutureBuilder(
-                                        future: albumFetchStatus,
-                                        builder: (context, snapshot) {
-                                          if (snapshot.hasData) {
-                                            final currentAlbum = widget.album;
-                                            return Text(
-                                              currentAlbum.artist?.name ?? "",
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodyLarge,
-                                            );
-                                          } else {
-                                            return Text("");
-                                          }
-                                        },
-                                      ),
+                          )),
+                      const Padding(
+                        padding: EdgeInsets.only(left: 16),
+                      ),
+                      Expanded(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Spacer(),
+                            Hero(
+                              tag: "${widget.album.id}-Title}",
+                              child: widget.album.img != null
+                                  ? Text(
+                                      widget.album.name,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .headlineMedium,
+                                    )
+                                  : FutureBuilder(
+                                      future: albumFetchStatus,
+                                      builder: (context, snapshot) {
+                                        if (snapshot.hasData) {
+                                          final currentAlbum = widget.album;
+                                          return Text(
+                                            currentAlbum.name,
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .headlineMedium,
+                                          );
+                                        } else {
+                                          return Text("");
+                                        }
+                                      },
+                                    ),
+                            ),
+                            Hero(
+                              tag: "${widget.album.id}-Artist}",
+                              child: FilledButton.tonalIcon(
+                                onLongPress: () {
+                                  Clipboard.setData(new ClipboardData(
+                                      text: widget.album.artist?.name ?? ""));
+                                  ScaffoldMessenger.of(context)
+                                      .showSnackBar(new SnackBar(
+                                    content: new Text(
+                                      "Copied to Clipboard",
+                                    ),
+                                  ));
+                                },
+                                onPressed: () {
+                                  Navi?.currentState?.pushReplacementNamed(
+                                    "/artist/${widget.album.artist?.id ?? ""}",
+                                  );
+                                },
+                                label: Icon(Icons.arrow_circle_right),
+                                icon: Expanded(
+                                  child: widget.album.img != null
+                                      ? Text(
+                                          widget.album.artist?.name ?? "",
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyLarge,
+                                        )
+                                      : FutureBuilder(
+                                          future: albumFetchStatus,
+                                          builder: (context, snapshot) {
+                                            if (snapshot.hasData) {
+                                              final currentAlbum = widget.album;
+                                              return Text(
+                                                currentAlbum.artist?.name ?? "",
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodyLarge,
+                                              );
+                                            } else {
+                                              return Text("");
+                                            }
+                                          },
+                                        ),
+                                ),
                               ),
                             ),
-                          ),
-                          Padding(padding: EdgeInsets.only(bottom: 8)),
-                          FutureBuilder(
-                            future: albumFetchStatus,
-                            builder: (context, snapshot) {
-                              if (snapshot.hasData) {
-                                if (!snapshot.requireData) {
-                                  return Text("No album found");
-                                } else {
-                                  final currentAlbum = widget.album;
-                                  var total = Duration.zero;
-                                  for (final i in currentAlbum.songs ??
-                                      List<Song>.empty()) {
-                                    total += Duration(seconds: i.duration);
+                            Padding(padding: EdgeInsets.only(bottom: 8)),
+                            FutureBuilder(
+                              future: albumFetchStatus,
+                              builder: (context, snapshot) {
+                                if (snapshot.hasData) {
+                                  if (!snapshot.requireData) {
+                                    return Text("No album found");
+                                  } else {
+                                    final currentAlbum = widget.album;
+                                    var total = Duration.zero;
+                                    for (final i in currentAlbum.songs ??
+                                        List<Song>.empty()) {
+                                      total += Duration(seconds: i.duration);
+                                    }
+                                    return FilledButton(
+                                        onPressed: null,
+                                        child: Text(
+                                            "${currentAlbum.songs?.length ?? 0} Songs · Total: ${printDuration(total)}"));
                                   }
-                                  return FilledButton(
-                                      onPressed: null,
-                                      child: Text(
-                                          "${currentAlbum.songs?.length ?? 0} songs - Total: ${printDuration(total)}"));
+                                } else {
+                                  return Text("Loading Album...");
                                 }
-                              } else {
-                                return Text("Loading Album...");
-                              }
-                            },
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.only(top: 32.0),
-                            child: FilledButton.icon(
-                              icon: Icon(Icons.play_arrow),
-                              onPressed: () {},
-                              label: Text("Play All"),
+                              },
                             ),
-                          )
-                        ],
+                            Padding(
+                              padding: const EdgeInsets.only(top: 32.0),
+                              child: FilledButton.icon(
+                                icon: Icon(Icons.play_arrow),
+                                onPressed: () {},
+                                label: Text("Play All"),
+                              ),
+                            )
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              const Spacer(),
-              const Align(
-                  alignment: Alignment.centerLeft, child: Text("Songs")),
-              Divider(),
-              Expanded(
-                flex: 7,
-                child: FutureBuilder(
-                  future: Future.wait([albumFetchStatus, mp.currentItem]),
-                  builder: (context, snapshot) {
-                    if (snapshot.hasData) {
-                      final currentAlbum = widget.album;
-                      final currentPlaying =
-                          snapshot.requireData[1] as ValueStream<MediaItem?>;
-                      int count = currentAlbum.songs?.length ?? 0;
+                const Spacer(),
+                const Align(
+                    alignment: Alignment.centerLeft, child: Text("Songs")),
+                Divider(),
+                Expanded(
+                  flex: 7,
+                  child: FutureBuilder(
+                    future: albumFetchStatus,
+                    builder: (context, snapshot) {
+                      if (snapshot.hasData) {
+                        final currentAlbum = widget.album;
+                        int count = currentAlbum.songs?.length ?? 0;
 
-                      List<Song> songs = [];
-                      songs.addAll(currentAlbum.songs ?? []);
-                      return ListView.separated(
-                        itemCount: count,
-                        separatorBuilder: (context, index) {
-                          return const Divider();
-                        },
-                        itemBuilder: (context, index) {
-                          final song = songs[index];
-                          var selected = song.id == currentPlaying.value?.id;
-                          return ListTile(
-                            selected: selected,
-                            onTap: () {
-                              setState(() {
-                                selected = true;
-                              });
-                              mp.playPlaylist(songs, index: index);
-                            },
-                            leading: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: const [Icon(Icons.play_arrow_rounded)],
-                            ),
-                            title: Text(song.title),
-                            subtitle: Text(song.artist?.name ??
-                                currentAlbum.artist?.name ??
-                                "Unknown"),
-                            trailing: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(printDuration(
-                                    Duration(seconds: song.duration)))
-                              ],
-                            ),
-                          );
-                        },
-                      );
-                    } else {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-                  },
-                ),
-              )
-            ],
+                        List<Song> songs = [];
+                        songs.addAll(currentAlbum.songs ?? []);
+                        return ListView.separated(
+                          itemCount: count,
+                          separatorBuilder: (context, index) {
+                            return const Divider();
+                          },
+                          itemBuilder: (context, index) {
+                            return AlbumInfoListTile(
+                              index,
+                              songs,
+                              artistName: currentAlbum.artist?.name,
+                            );
+                          },
+                        );
+                      } else {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                    },
+                  ),
+                )
+              ],
+            ),
           );
         } else {
           return Container(
@@ -331,6 +311,7 @@ class _AlbumInfoState extends State<AlbumInfo>
                       ),
                     ),
                   ),
+                  const Padding(padding: EdgeInsets.only(top: 10)),
                   Align(
                     alignment: Alignment.centerLeft,
                     child: Hero(
@@ -357,12 +338,10 @@ class _AlbumInfoState extends State<AlbumInfo>
                   const Align(
                       alignment: Alignment.centerLeft, child: Text("Songs")),
                   FutureBuilder(
-                    future: Future.wait([albumFetchStatus, mp.currentItem]),
+                    future: albumFetchStatus,
                     builder: (context, snapshot) {
                       if (snapshot.hasData) {
                         final currentAlbum = widget.album;
-                        final currentPlaying =
-                            snapshot.requireData[1] as ValueStream<MediaItem?>;
 
                         int count = currentAlbum.songs?.length ?? 0;
 
@@ -371,46 +350,10 @@ class _AlbumInfoState extends State<AlbumInfo>
                         return Column(
                           children: songs
                               .mapIndexed(((i, song) {
-                                return Builder(
-                                  builder: (context) {
-                                    var selected =
-                                        song.id == currentPlaying.value?.id;
-                                    return ListTile(
-                                      selected: selected,
-                                      onTap: () {
-                                        setState(() {
-                                          selected = true;
-                                        });
-                                        mp.playPlaylist(songs, index: i);
-                                      },
-                                      leading: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: const [
-                                          Icon(Icons.play_arrow_rounded)
-                                        ],
-                                      ),
-                                      trailing: Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            Text(printDuration(Duration(
-                                                seconds: song.duration)))
-                                          ]),
-                                      title: Text(
-                                        song.title,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      subtitle: Text(
-                                        song.artist?.name ??
-                                            currentAlbum.artist?.name ??
-                                            "Unknown",
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    );
-                                  },
+                                return AlbumInfoListTile(
+                                  i,
+                                  songs,
+                                  artistName: currentAlbum.artist?.name,
                                 );
                               }))
                               .expand<Widget>((e) sync* {
@@ -447,5 +390,84 @@ String printDuration(Duration duration) {
     return "${twoDigits(duration.inHours)}:$twoDigitMinutes:$twoDigitSeconds";
   } else {
     return "$twoDigitMinutes:$twoDigitSeconds";
+  }
+}
+
+class AlbumInfoListTile extends StatefulWidget {
+  final int index;
+  final List<Song> songs;
+  final String? artistName;
+  const AlbumInfoListTile(int this.index, this.songs,
+      {super.key, this.artistName});
+
+  @override
+  State<AlbumInfoListTile> createState() => _AlbumInfoListTileState();
+}
+
+class _AlbumInfoListTileState extends State<AlbumInfoListTile> {
+  bool selected = false;
+  MediaPlayer mp = MediaPlayer.instance;
+  ValueStream<MediaItem?>? current;
+  late Future<Null> task;
+  late StreamSubscription<MediaItem?>? subscribe;
+
+  @override
+  void initState() {
+    super.initState();
+    task = () async {
+      current = await mp.currentItem;
+      selected = widget.songs[widget.index].id == current?.value?.id;
+      subscribe = current?.listen((event) {
+        setState(() {
+          selected = widget.songs[widget.index].id == event?.id;
+        });
+      });
+    }();
+  }
+
+  @override
+  void dispose() {
+    subscribe?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder(
+      future: task,
+      builder: (context, snapshot) {
+        return ListTile(
+          selected: selected,
+          onTap: () {
+            setState(() {
+              selected = true;
+            });
+            mp.playPlaylist(widget.songs, index: widget.index);
+          },
+          leading: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: const [Icon(Icons.play_arrow_rounded)],
+          ),
+          trailing: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(printDuration(
+                    Duration(seconds: widget.songs[widget.index].duration)))
+              ]),
+          title: Text(
+            widget.songs[widget.index].title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          subtitle: Text(
+            widget.songs[widget.index].artist?.name ??
+                widget.artistName ??
+                "Unknown",
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        );
+      },
+    );
   }
 }

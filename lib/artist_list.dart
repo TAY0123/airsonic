@@ -10,8 +10,8 @@ import 'albums_list.dart';
 import 'card.dart';
 
 class ArtistViewList extends StatefulWidget {
-  const ArtistViewList({super.key});
-
+  const ArtistViewList({super.key, this.artist});
+  final Artist? artist;
   @override
   State<ArtistViewList> createState() => _ArtistViewListState();
 }
@@ -238,10 +238,14 @@ class _ArtistViewListState extends State<ArtistViewList>
                 padding: const EdgeInsets.only(right: 8.0),
                 child: Navigator(
                   key: localNavigator,
-                  initialRoute: "/",
+                  initialRoute: widget.artist != null
+                      ? "/artist/${widget.artist?.id ?? ""}"
+                      : "/",
                   onGenerateRoute: (settings) {
                     print(settings.name);
-                    late Widget page;
+                    Widget page = Center(
+                      child: Text("Page not found :("),
+                    );
 
                     if (settings.name == "/") {
                       page = LayoutBuilder(builder: (context, constraints) {

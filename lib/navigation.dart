@@ -1,5 +1,6 @@
 import 'package:airsonic/airsonic_connection.dart';
 import 'package:airsonic/main.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class NavDrawer extends StatelessWidget {
@@ -69,14 +70,15 @@ class NavBar extends StatelessWidget {
 
 class NavRail extends StatefulWidget {
   final bool extended;
-  const NavRail({this.extended = false, super.key});
+  final ValueNotifier<int>? index;
+  const NavRail({this.extended = false, super.key, this.index});
 
   @override
   State<NavRail> createState() => _NavRailState();
 }
 
 class _NavRailState extends State<NavRail> {
-  int index = 0;
+  late final ValueNotifier<int> _index = widget.index ?? ValueNotifier(0);
 
   @override
   void initState() {
@@ -84,48 +86,67 @@ class _NavRailState extends State<NavRail> {
   }
 
   @override
+  void dispose() {
+    if (widget.index == null) {
+      _index.dispose();
+    }
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return NavigationRail(
-        onDestinationSelected: (value) {
-          if (index == value) return;
-          setState(() {
-            index = value;
-          });
-          switch (value) {
-            case 0:
-              Navi?.currentState
-                  ?.pushNamedAndRemoveUntil("/", (route) => false);
-              break;
-            case 1:
-              Navi?.currentState
-                  ?.pushNamedAndRemoveUntil("/album", (route) => false);
-              break;
-            case 2:
-              Navi?.currentState
-                  ?.pushNamedAndRemoveUntil("/artist", (route) => false);
-              break;
-            default:
-          }
-        },
-        groupAlignment: 0,
-        extended: widget.extended,
-        labelType: widget.extended
-            ? NavigationRailLabelType.none
-            : NavigationRailLabelType.selected,
-        destinations: const [
-          NavigationRailDestination(
-              icon: Icon(Icons.home), label: Text("Home")),
-          NavigationRailDestination(
-              icon: Icon(Icons.album), label: Text("Albums")),
-          NavigationRailDestination(
-              icon: Icon(Icons.people), label: Text("Artists")),
-          NavigationRailDestination(
-              icon: Icon(Icons.playlist_play), label: Text("Playlist")),
-          NavigationRailDestination(
-              icon: Icon(Icons.settings), label: Text("Settings")),
-          NavigationRailDestination(
-              icon: Icon(Icons.view_list), label: Text("Sources")),
-        ],
-        selectedIndex: index);
+    return ValueListenableBuilder(
+        valueListenable: _index,
+        builder: (context, value, child) {
+          return NavigationRail(
+              onDestinationSelected: (value) {
+                if (_index.value == value) return;
+                if (widget.index == null) {
+                  _index.value = value;
+                }
+                switch (value) {
+                  case 0:
+                    Navi?.currentState
+                        ?.pushNamedAndRemoveUntil("/", (route) => false);
+                    break;
+                  case 1:
+                    Navi?.currentState
+                        ?.pushNamedAndRemoveUntil("/album", (route) => false);
+                    break;
+                  case 2:
+                    Navi?.currentState
+                        ?.pushNamedAndRemoveUntil("/artist", (route) => false);
+                    break;
+                  case 3:
+                    Navi?.currentState?.pushNamedAndRemoveUntil(
+                        "/playlist", (route) => false);
+                    break;
+                  case 4:
+                    Navi?.currentState
+                        ?.pushNamedAndRemoveUntil("/setting", (route) => false);
+                    break;
+
+                  default:
+                }
+              },
+              groupAlignment: 0,
+              extended: widget.extended,
+              labelType: widget.extended
+                  ? NavigationRailLabelType.none
+                  : NavigationRailLabelType.selected,
+              destinations: const [
+                NavigationRailDestination(
+                    icon: Icon(Icons.home), label: Text("Home")),
+                NavigationRailDestination(
+                    icon: Icon(Icons.album), label: Text("Albums")),
+                NavigationRailDestination(
+                    icon: Icon(Icons.people), label: Text("Artists")),
+                NavigationRailDestination(
+                    icon: Icon(Icons.playlist_play), label: Text("Playlist")),
+                NavigationRailDestination(
+                    icon: Icon(Icons.settings), label: Text("Settings")),
+              ],
+              selectedIndex: _index.value);
+        });
   }
 }

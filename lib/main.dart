@@ -10,6 +10,7 @@ import 'package:airsonic/airsonic_connection.dart';
 import 'package:airsonic/login.dart';
 import 'package:airsonic/desktop_init.dart';
 import 'package:airsonic/playerControl.dart';
+import 'package:airsonic/playlist_view.dart';
 import 'package:airsonic/route.dart';
 import 'package:airsonic/search.dart';
 import 'package:airsonic/splitview.dart';
@@ -41,6 +42,8 @@ class _MyAppState extends State<MyApp> {
 
   bool _hideNav = false;
 
+  ValueNotifier<int> _index = ValueNotifier(0);
+
   @override
   void initState() {
     super.initState();
@@ -57,15 +60,6 @@ class _MyAppState extends State<MyApp> {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
           brightness: Brightness.light,
-          // This is the theme of your application.
-          //
-          // Try running your application with "flutter run". You'll see the
-          // application has a blue toolbar. Then, without quitting the app, try
-          // changing the primarySwatch below to Colors.green and then invoke
-          // "hot reload" (press "r" in the console where you ran "flutter run",
-          // or simply save your changes to "hot reload" in a Flutter IDE).
-          // Notice that the counter didn't reset back to zero; the application
-          // is not restarted.
           primarySwatch: Colors.blue,
           useMaterial3: true),
       darkTheme: ThemeData(
@@ -75,16 +69,6 @@ class _MyAppState extends State<MyApp> {
             surfaceTintColor: Colors.transparent,
             elevation: 0,
           ),
-          // This is the theme of your application.
-          //
-          // Try running your application with "flutter run". You'll see the
-          // application has a blue toolbar. Then, without quitting the app, try
-          // changing the primarySwatch below to Colors.green and then invoke
-          // "hot reload" (press "r" in the console where you ran "flutter run",
-          // or simply save your changes to "hot reload" in a Flutter IDE).
-          // Notice that the counter didn't reset back to zero; the application
-          // is not restarted.
-
           useMaterial3: true),
       home: Scaffold(
         body: SplitView(
@@ -99,57 +83,61 @@ class _MyAppState extends State<MyApp> {
                   _hideNav = false;
                 });
               }
-              late Widget page;
-
-              if (settings.name == "/") {
-                page = const InitPage();
-              }
-
-              //handle /Dashboard
-              if (settings.name == routeDashboard) {
-                page = const Dashboard();
-                //handle / and /AlbumList
-              } else if (settings.name == routeRootAlbum) {
-                //page = const AlbumListView();
-                page = const AlbumViewList();
-              }
-              if (settings.name == routeLogin) {
-                page = const LoginPage();
-                setState(() {
-                  _hideNav = true;
-                });
-              }
-              if (settings.name == routeRootArtist) {
-                page = const ArtistViewList();
-              }
+              Widget page = const InitPage();
 
               //parse uri
-              var uri = Uri.parse(settings.name ?? "");
-
-              // Handle '/album/:id'
-              if (uri.pathSegments.length == 2 &&
-                  uri.pathSegments.first == 'album') {
-                var id = uri.pathSegments[1];
-                if (settings.arguments != null) {
-                  print((settings.arguments as Album).name);
-                  page = AlbumInfo(settings.arguments as Album);
-                  return TransparentRoute(
-                      builder: (context) => page,
-                      backgroundColor: Colors.black.withOpacity(0.5),
-                      transitionDuration: Duration(milliseconds: 250),
-                      reverseTransitionDuration: Duration(milliseconds: 250));
-                } else {
-                  page = AlbumInfo(Album(id, "", ""));
-                  return TransparentRoute(
-                      builder: (context) => page,
-                      backgroundColor: Theme.of(context).colorScheme.background,
-                      transitionDuration: Duration(milliseconds: 250),
-                      reverseTransitionDuration: Duration(milliseconds: 250));
+              Object? err;
+              Uri? uri;
+              try {
+                uri = Uri.parse(settings.name ?? "");
+              } catch (e) {
+                err = e;
+              }
+              if (err == null && (uri?.pathSegments.isNotEmpty ?? false)) {
+                switch (uri?.pathSegments.first) {
+                  case "dashboard": //handle /Dashboard
+                    _index.value = 0;
+                    page = const Dashboard();
+                    break;
+                  case "login":
+                    page = const LoginPage();
+                    setState(() {
+                      _hideNav = true;
+                    });
+                    break;
+                  case "artist":
+                    _index.value = 2;
+                    Artist? parm = null;
+                    if (uri?.pathSegments.length == 2) {
+                      parm = Artist(uri?.pathSegments[1] ?? "", "");
+                    }
+                    page = ArtistViewList(
+                      artist: parm,
+                    );
+                    break;
+                  case "album":
+                    _index.value = 1;
+                    if (uri?.pathSegments.length == 2) {
+                      page =
+                          const AlbumViewList(); //album: Album(id: uri?.pathSegments[1]) );
+                    } else {
+                      page = const AlbumViewList();
+                    }
+                    if (settings.arguments != null) {
+                      page = AlbumInfo(settings.arguments as Album);
+                    }
+                    break;
+                  case "playlist":
+                    _index.value = 3;
+                    page = const PlayListView();
+                    break;
+                  default:
+                    break;
                 }
               }
 
               return PageRouteBuilder(
-                transitionDuration: Duration(milliseconds: 250),
+                transitionDuration: const Duration(milliseconds: 250),
                 settings: settings,
                 pageBuilder: (context, animation, secondaryAnimation) =>
                     Scaffold(
@@ -166,6 +154,7 @@ class _MyAppState extends State<MyApp> {
             },
           ),
           hideNavigator: _hideNav,
+          index: _index, //follow navigation.dart
         ),
       ),
       themeMode: ThemeMode.system,

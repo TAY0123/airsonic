@@ -36,6 +36,7 @@ class _ArtistInfoState extends State<ArtistInfo> {
               return [
                 SliverAppBar.large(
                     expandedHeight: 300,
+                    automaticallyImplyLeading: false,
                     surfaceTintColor: Colors.transparent,
                     title: Padding(
                       padding: const EdgeInsets.all(8.0),
@@ -51,9 +52,11 @@ class _ArtistInfoState extends State<ArtistInfo> {
                             ),
                           ),
                           Padding(padding: EdgeInsets.only(left: 8)),
-                          Text(
-                            widget.artist.name,
-                            style: Theme.of(context).textTheme.titleLarge,
+                          Expanded(
+                            child: Text(
+                              widget.artist.name,
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
                           ),
                         ],
                       ),

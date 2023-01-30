@@ -22,10 +22,13 @@ class SplitView extends StatelessWidget {
 
   final bool hideNavigator;
 
+  final ValueNotifier<int>? index;
+
   SplitView(
     this.content, {
     super.key,
     this.hideNavigator = false,
+    this.index,
   });
 
   @override
@@ -64,6 +67,7 @@ class SplitView extends StatelessWidget {
                       children: [
                         if (!hideNavigator)
                           NavRail(
+                            index: index,
                             extended: (constraints.maxWidth > breakpointL)
                                 ? true
                                 : false,

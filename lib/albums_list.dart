@@ -238,59 +238,76 @@ class _AlbumViewListState extends State<AlbumViewList>
                 initialRoute: "/",
                 onGenerateRoute: (settings) {
                   print(settings.name);
-                  late Widget page;
-
-                  if (settings.name == "/") {
-                    page = LayoutBuilder(builder: (context, constraints) {
-                      return Column(
-                        children: [
-                          Spacer(),
-                          Stack(
-                            alignment: Alignment.bottomCenter,
-                            children: [
-                              AnimatedWave(
+                  Widget page = LayoutBuilder(builder: (context, constraints) {
+                    return Column(
+                      children: [
+                        Spacer(),
+                        Stack(
+                          alignment: Alignment.bottomCenter,
+                          children: [
+                            AnimatedWave(
+                              height: constraints.maxHeight / 4,
+                              speed: 0.3,
+                              color: Theme.of(context).primaryColor,
+                            ),
+                            AnimatedWave(
                                 height: constraints.maxHeight / 4,
-                                speed: 0.3,
-                                color: Theme.of(context).primaryColor,
-                              ),
-                              AnimatedWave(
-                                  height: constraints.maxHeight / 4,
-                                  speed: 0.2,
-                                  color: Theme.of(context).colorScheme.surface),
-                              AnimatedWave(
-                                  height: constraints.maxHeight / 4,
-                                  speed: 0.4,
-                                  color: Theme.of(context).primaryColorLight),
-                            ],
-                          ),
-                        ],
-                      );
-                    });
+                                speed: 0.2,
+                                color: Theme.of(context).colorScheme.surface),
+                            AnimatedWave(
+                                height: constraints.maxHeight / 4,
+                                speed: 0.4,
+                                color: Theme.of(context).primaryColorLight),
+                          ],
+                        ),
+                      ],
+                    );
+                  });
+                  Object? err;
+                  Uri? uri;
+                  try {
+                    uri = Uri.parse(settings.name ?? "");
+                  } catch (e) {
+                    err = e;
                   }
+                  if (err == null && (uri?.pathSegments.isNotEmpty ?? false)) {
+                    switch (uri?.pathSegments.first) {
+                      case "album":
+                        if (uri?.pathSegments.length == 2) {
+                          var id = uri?.pathSegments[1];
+                          if (settings.arguments != null) {
+                            page = Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: AlbumInfo(settings.arguments as Album),
+                            );
+                          } else {
+                            page = Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: AlbumInfo(Album(id!, "", "")),
+                            );
+                          }
+                        }
+                        break;
+                      default:
+                        print("defauklt");
 
-                  // Handle '/album/:id'
-                  var uri = Uri.parse(settings.name ?? "");
-                  if (uri.pathSegments.length == 2 &&
-                      uri.pathSegments.first == 'album') {
-                    var id = uri.pathSegments[1];
-                    if (settings.arguments != null) {
-                      print((settings.arguments as Album).name);
-                      page = AlbumInfo(settings.arguments as Album);
-                    } else {
-                      page = AlbumInfo(Album(id, "", ""));
+                        break;
                     }
                   }
+                  // Handle '/album/:id'
+                  /*
+                  if (uri.pathSegments.length == 2 &&
+                      uri.pathSegments.first == 'album') {
+                   
+                  }
+                  */
 
                   return PageRouteBuilder(
                     transitionDuration: Duration(milliseconds: 250),
                     settings: settings,
                     pageBuilder: (context, animation, secondaryAnimation) =>
                         Scaffold(
-                      body: Card(
-                          child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: page,
-                      )),
+                      body: Card(child: page),
                     ),
                     transitionsBuilder:
                         (context, animation, secondaryAnimation, child) {
