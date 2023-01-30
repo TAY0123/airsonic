@@ -8,7 +8,15 @@ import 'card.dart';
 
 class AlbumViewGrid extends StatefulWidget {
   final AirSonicResult? controller;
-  const AlbumViewGrid({super.key, this.controller});
+  final bool pushNamedNavigation;
+  final bool searchBar;
+  final bool listenOnly;
+  const AlbumViewGrid(
+      {super.key,
+      this.controller,
+      this.pushNamedNavigation = true,
+      this.searchBar = true,
+      this.listenOnly = false});
 
   @override
   State<AlbumViewGrid> createState() => _AlbumViewGridState();
@@ -30,7 +38,7 @@ class _AlbumViewGridState extends State<AlbumViewGrid>
   Object? error;
 
   late ValueNotifier<AirSonicResult> _listController;
-  final ScrollController _scrollController = ScrollController();
+  late final ScrollController _scrollController;
   final StreamController<AirSonicResult?> result = StreamController();
 
   @override
@@ -41,19 +49,6 @@ class _AlbumViewGridState extends State<AlbumViewGrid>
 
     _controller = AnimationController(
         duration: const Duration(milliseconds: 250), vsync: this);
-
-    _scrollController.addListener(() {
-      if (_scrollController.position.pixels >=
-          _scrollController.position.maxScrollExtent) {
-        if (completer.isCompleted) {
-          completer = Completer();
-          fetchAlbums().then((value) {
-            completer.complete();
-            return value;
-          });
-        }
-      }
-    });
 
     result.stream.listen((event) {
       if (event == null) {
@@ -90,7 +85,7 @@ class _AlbumViewGridState extends State<AlbumViewGrid>
   void dispose() {
     _controller.dispose();
     _listController.dispose();
-    _scrollController.dispose();
+    if (!widget.listenOnly) _scrollController.dispose();
     result.close();
     super.dispose();
   }
@@ -103,6 +98,25 @@ class _AlbumViewGridState extends State<AlbumViewGrid>
     await _listController.value.album?.fetchNext();
     setState(() {});
     return true;
+  }
+
+  @override
+  void didChangeDependencies() {
+    _scrollController = widget.listenOnly
+        ? PrimaryScrollController.of(context)
+        : ScrollController();
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels >=
+          _scrollController.position.maxScrollExtent) {
+        if (completer.isCompleted) {
+          completer = Completer();
+          fetchAlbums().then((value) {
+            completer.complete();
+            return value;
+          });
+        }
+      }
+    });
   }
 
   @override
@@ -131,20 +145,22 @@ class _AlbumViewGridState extends State<AlbumViewGrid>
             return Padding(
               padding: const EdgeInsets.all(8.0),
               child: CustomScrollView(
-                controller: _scrollController,
+                controller: !widget.listenOnly ? _scrollController : null,
                 slivers: [
-                  SliverFixedExtentList(
-                      delegate: SliverChildListDelegate([
-                        Center(
-                            child: Row(
-                          children: [
-                            Expanded(child: SearchingBar(result)),
-                            IconButton(
-                                onPressed: () {}, icon: Icon(Icons.filter_list))
-                          ],
-                        ))
-                      ]),
-                      itemExtent: 80),
+                  if (widget.searchBar)
+                    SliverFixedExtentList(
+                        delegate: SliverChildListDelegate([
+                          Center(
+                              child: Row(
+                            children: [
+                              Expanded(child: SearchingBar(result)),
+                              IconButton(
+                                  onPressed: () {},
+                                  icon: Icon(Icons.filter_list))
+                            ],
+                          ))
+                        ]),
+                        itemExtent: 80),
                   SliverGrid.builder(
                       itemCount: a.albums.length,
                       gridDelegate:
@@ -155,7 +171,8 @@ class _AlbumViewGridState extends State<AlbumViewGrid>
                               mainAxisSpacing: 16),
                       itemBuilder: ((context, index) {
                         final album = a.albums[index];
-                        return AlbumCard(album);
+                        return AlbumCard(album,
+                            pushNamed: widget.pushNamedNavigation);
                       })),
                   SliverFixedExtentList(
                       delegate: SliverChildListDelegate([

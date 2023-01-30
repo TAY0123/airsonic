@@ -15,6 +15,8 @@ class ArtistInfo extends StatefulWidget {
 }
 
 class _ArtistInfoState extends State<ArtistInfo> {
+  GlobalKey<NestedScrollViewState> scrollviewKey = GlobalKey();
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder(
@@ -28,37 +30,52 @@ class _ArtistInfoState extends State<ArtistInfo> {
       }(),
       builder: (context, snapshot) {
         if (snapshot.hasData) {
-          return Column(
-            children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(99999),
-                      child: Image(
-                          image: widget.artist.img ??
-                              MemoryImage(kTransparentImage)),
-                    ),
-                    Expanded(
-                        child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.artist.name,
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                      ],
-                    )),
-                  ],
+          return NestedScrollView(
+            key: scrollviewKey,
+            headerSliverBuilder: (context, innerBoxIsScrolled) {
+              return [
+                SliverAppBar.large(
+                    expandedHeight: 300,
+                    surfaceTintColor: Colors.transparent,
+                    title: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Row(
+                        children: [
+                          AspectRatio(
+                            aspectRatio: 1,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(99999),
+                              child: Image(
+                                  image: widget.artist.img ??
+                                      MemoryImage(kTransparentImage)),
+                            ),
+                          ),
+                          Padding(padding: EdgeInsets.only(left: 8)),
+                          Text(
+                            widget.artist.name,
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                        ],
+                      ),
+                    ))
+              ];
+            },
+            body: Column(
+              children: [
+                Padding(padding: EdgeInsets.only(top: 60)),
+                Row(
+                  children: [Text("Albums"), Divider()],
                 ),
-              ),
-              Expanded(
-                  flex: 2,
+                Expanded(
                   child: AlbumViewGrid(
                     controller: widget.artist.getAlbumController(),
-                  ))
-            ],
+                    searchBar: false,
+                    pushNamedNavigation: false,
+                    listenOnly: true,
+                  ),
+                ),
+              ],
+            ),
           );
         } else {
           return Center(

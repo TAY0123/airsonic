@@ -1,14 +1,16 @@
 import 'dart:math';
 
+import 'package:airsonic/album_info.dart';
 import 'package:flutter/material.dart';
+import 'package:simple_animations/simple_animations.dart';
 import 'package:transparent_image/transparent_image.dart';
 
 import 'airsonic_connection.dart';
 
 class AlbumCard extends StatefulWidget {
   final Album album;
-
-  const AlbumCard(this.album, {super.key});
+  final bool pushNamed;
+  const AlbumCard(this.album, {super.key, required this.pushNamed});
 
   @override
   State<AlbumCard> createState() => _AlbumCardState();
@@ -40,8 +42,27 @@ class _AlbumCardState extends State<AlbumCard>
           widget.album,
           img: await img,
         )); */
-        Navigator.pushNamed(context, "/album/${widget.album.id}",
-            arguments: widget.album);
+        if (widget.pushNamed) {
+          Navigator.pushNamed(context, "/album/${widget.album.id}",
+              arguments: widget.album);
+        } else {
+          Navigator.push(
+              context,
+              PageRouteBuilder(
+                transitionDuration: Duration(milliseconds: 250),
+                pageBuilder: (context, animation, secondaryAnimation) =>
+                    Scaffold(
+                  body: AlbumInfo(widget.album),
+                ),
+                transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(
+                    opacity: animation,
+                    child: child,
+                  );
+                },
+              ));
+        }
       },
       child: Card(
         child: Column(
@@ -139,73 +160,85 @@ class _AlbumTileState extends State<AlbumTile>
   }
 
   @override
-  Widget build(BuildContext context) {
-    if (selected) {
-      background = Theme.of(context).colorScheme.onSurface.withOpacity(0.12);
+  void didChangeDependencies() {
+    if (widget.index.value == widget.album.id) {
+      background = Theme.of(context).colorScheme.onSurface.withOpacity(0.24);
+      _controller.animateTo(1, duration: Duration(microseconds: 0));
     }
 
     final fading = _animation.drive<Color?>(
       ColorTween(
-          begin: Theme.of(context).colorScheme.surfaceVariant,
-          end: Theme.of(context).colorScheme.onSurface.withOpacity(0.12)),
+          begin: Colors.transparent,
+          end: Theme.of(context).colorScheme.onSurface.withOpacity(0.24)),
     );
     fading.addListener(() {
       setState(() {
         background = fading.value!;
       });
     });
-    return Container(
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
       height: 125,
       child: Card(
         elevation: 0,
-        //color: Theme.of(context).colorScheme.surfaceVariant,
-        color: background,
+        clipBehavior: Clip.antiAlias,
+        color: Theme.of(context).colorScheme.surfaceVariant,
         child: GestureDetector(
           behavior: HitTestBehavior.translucent,
           onTap: () {
             widget.index.value = widget.album.id;
           },
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.only(right: 16),
-              child: Row(
-                children: [
-                  AlbumImage(
-                    album: widget.album,
-                  ),
-                  Expanded(
-                      child: Padding(
-                    padding: const EdgeInsets.only(left: 8, top: 8),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.album.name,
-                          maxLines: 2,
-                          style: Theme.of(context).textTheme.titleMedium,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          widget.album.artist?.name ?? "N.A",
-                          style: Theme.of(context).textTheme.bodyMedium,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  )),
-                  Padding(
-                    padding: EdgeInsets.only(top: 8),
-                    child: Column(
-                      children: [
-                        IconButton(
-                            onPressed: () {}, icon: Icon(Icons.favorite)),
-                      ],
-                    ),
-                  )
-                ],
+          child: Stack(
+            children: [
+              Container(
+                color: background,
               ),
-            ),
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 16),
+                  child: Row(
+                    children: [
+                      AlbumImage(
+                        album: widget.album,
+                      ),
+                      Expanded(
+                          child: Padding(
+                        padding: const EdgeInsets.only(left: 8, top: 8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              widget.album.name,
+                              maxLines: 2,
+                              style: Theme.of(context).textTheme.titleMedium,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            Text(
+                              widget.album.artist?.name ?? "N.A",
+                              style: Theme.of(context).textTheme.bodyMedium,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      )),
+                      Padding(
+                        padding: EdgeInsets.only(top: 8),
+                        child: Column(
+                          children: [
+                            IconButton(
+                                onPressed: () {}, icon: Icon(Icons.favorite)),
+                          ],
+                        ),
+                      )
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -391,8 +424,7 @@ class _ArtistTileState extends State<ArtistTile>
   late CurvedAnimation _animation;
 
   bool full = false;
-  late Color background = Theme.of(context).colorScheme.surfaceVariant;
-  bool selected = false;
+  late Color background = Colors.transparent;
   void indexUpdated() {
     if (widget.index.value == widget.artist.id) {
       _controller.forward();
@@ -404,9 +436,7 @@ class _ArtistTileState extends State<ArtistTile>
   @override
   void initState() {
     super.initState();
-    if (widget.index.value == widget.artist.id) {
-      selected = true;
-    }
+
     widget.index.addListener(indexUpdated);
     _controller =
         AnimationController(vsync: this, duration: Duration(milliseconds: 250));
@@ -422,102 +452,118 @@ class _ArtistTileState extends State<ArtistTile>
   }
 
   @override
-  Widget build(BuildContext context) {
-    if (selected) {
-      background = Theme.of(context).colorScheme.onSurface.withOpacity(0.12);
+  void didChangeDependencies() {
+    if (widget.index.value == widget.artist.id) {
+      background = Theme.of(context).colorScheme.onSurface.withOpacity(0.24);
+      _controller.animateTo(1, duration: Duration(microseconds: 0));
     }
 
     final fading = _animation.drive<Color?>(
       ColorTween(
-          begin: Theme.of(context).colorScheme.surfaceVariant,
-          end: Theme.of(context).colorScheme.onSurface.withOpacity(0.12)),
+          begin: Colors.transparent,
+          end: Theme.of(context).colorScheme.onSurface.withOpacity(0.24)),
     );
     fading.addListener(() {
       setState(() {
         background = fading.value!;
       });
     });
+  }
 
-    return Container(
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
       height: 125,
       child: Card(
         elevation: 0,
-        color: background,
+        color: Theme.of(context).colorScheme.surfaceVariant,
+        clipBehavior: Clip.antiAlias,
         //color: Theme.of(context).colorScheme.surfaceVariant,
         child: GestureDetector(
           behavior: HitTestBehavior.translucent,
           onTap: () {
             widget.index.value = widget.artist.id;
           },
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  SizedBox(
-                    height: 80,
-                    child: Row(
-                      children: [
-                        AspectRatio(
-                          aspectRatio: 1,
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(50),
-                            child: widget.artist.img == null
-                                ? FutureBuilder(
-                                    future: widget.artist.fetchCover(),
-                                    builder: (context, snapshot) {
-                                      if (snapshot.hasData &&
-                                          snapshot.requireData &&
-                                          widget.artist.img != null) {
-                                        return Image(
-                                          image: widget.artist.img!,
-                                        );
-                                      } else {
-                                        return Container(
-                                          width: 75,
-                                          height: 75,
-                                          color: Colors.black,
-                                        );
-                                      }
-                                    })
-                                : Image(
-                                    image: widget.artist.img!,
-                                  ),
-                          ),
-                        ),
-                        Padding(padding: EdgeInsets.only(left: 16)),
-                        Expanded(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                widget.artist.name,
-                                maxLines: 2,
-                                style: Theme.of(context).textTheme.titleMedium,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              Text(
-                                "Album count: ${widget.artist.albumsCount}",
-                                style: Theme.of(context).textTheme.bodyMedium,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ),
-                        ),
-                        Column(
-                          children: [
-                            IconButton(
-                                onPressed: () {}, icon: Icon(Icons.favorite)),
-                          ],
-                        )
-                      ],
-                    ),
-                  ),
-                ],
+          child: Stack(
+            children: [
+              Container(
+                color: background,
               ),
-            ),
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      SizedBox(
+                        height: 80,
+                        child: Row(
+                          children: [
+                            AspectRatio(
+                              aspectRatio: 1,
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(50),
+                                child: widget.artist.img == null
+                                    ? FutureBuilder(
+                                        future: widget.artist.fetchCover(),
+                                        builder: (context, snapshot) {
+                                          if (snapshot.hasData &&
+                                              snapshot.requireData &&
+                                              widget.artist.img != null) {
+                                            return Image(
+                                              image: widget.artist.img!,
+                                            );
+                                          } else {
+                                            return Container(
+                                              width: 75,
+                                              height: 75,
+                                              color: Colors.black,
+                                            );
+                                          }
+                                        })
+                                    : Image(
+                                        image: widget.artist.img!,
+                                      ),
+                              ),
+                            ),
+                            Padding(padding: EdgeInsets.only(left: 16)),
+                            Expanded(
+                              child: Column(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceAround,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    widget.artist.name,
+                                    maxLines: 2,
+                                    style:
+                                        Theme.of(context).textTheme.titleMedium,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  Text(
+                                    "Album count: ${widget.artist.albumsCount}",
+                                    style:
+                                        Theme.of(context).textTheme.bodyMedium,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Column(
+                              children: [
+                                IconButton(
+                                    onPressed: () {},
+                                    icon: Icon(Icons.favorite)),
+                              ],
+                            )
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
