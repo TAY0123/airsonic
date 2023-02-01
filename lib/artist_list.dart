@@ -242,53 +242,65 @@ class _ArtistViewListState extends State<ArtistViewList>
                       ? "/artist/${widget.artist?.id ?? ""}"
                       : "/",
                   onGenerateRoute: (settings) {
-                    print(settings.name);
-                    Widget page = Center(
-                      child: Text("Page not found :("),
-                    );
-
-                    if (settings.name == "/") {
-                      page = LayoutBuilder(builder: (context, constraints) {
-                        return Column(
-                          children: [
-                            Spacer(),
-                            Stack(
-                              alignment: Alignment.bottomCenter,
-                              children: [
-                                AnimatedWave(
+                    Widget page =
+                        LayoutBuilder(builder: (context, constraints) {
+                      return Column(
+                        children: [
+                          Spacer(),
+                          Stack(
+                            alignment: Alignment.bottomCenter,
+                            children: [
+                              AnimatedWave(
+                                height: constraints.maxHeight / 4,
+                                speed: 0.3,
+                                color: Theme.of(context).primaryColor,
+                              ),
+                              AnimatedWave(
                                   height: constraints.maxHeight / 4,
-                                  speed: 0.3,
-                                  color: Theme.of(context).primaryColor,
-                                ),
-                                AnimatedWave(
-                                    height: constraints.maxHeight / 4,
-                                    speed: 0.2,
-                                    color:
-                                        Theme.of(context).colorScheme.surface),
-                                AnimatedWave(
-                                    height: constraints.maxHeight / 4,
-                                    speed: 0.4,
-                                    color: Theme.of(context).primaryColorLight),
-                              ],
-                            ),
-                          ],
-                        );
-                      });
+                                  speed: 0.2,
+                                  color: Theme.of(context).colorScheme.surface),
+                              AnimatedWave(
+                                  height: constraints.maxHeight / 4,
+                                  speed: 0.4,
+                                  color: Theme.of(context).primaryColorLight),
+                            ],
+                          ),
+                        ],
+                      );
+                    });
+                    Object? err;
+                    Uri? uri;
+                    try {
+                      uri = Uri.parse(settings.name ?? "");
+                    } catch (e) {
+                      err = e;
                     }
+                    if (err == null &&
+                        (uri?.pathSegments.isNotEmpty ?? false)) {
+                      switch (uri?.pathSegments.first) {
+                        case "artist":
+                          if (uri?.pathSegments.length == 2) {
+                            if (settings.arguments != null) {
+                              page = Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: ArtistInfo(
+                                    artist: settings.arguments as Artist),
+                              );
+                            } else {
+                              var id = uri?.pathSegments[1] ?? "";
+                              page = Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: ArtistInfo(
+                                  artist: Artist(id, ""),
+                                ),
+                              );
+                            }
+                          }
+                          break;
+                        default:
+                          print("default");
 
-                    // Handle '/artist/:id'
-                    var uri = Uri.parse(settings.name ?? "");
-                    if (uri.pathSegments.length == 2 &&
-                        uri.pathSegments.first == 'artist') {
-                      var id = uri.pathSegments[1];
-
-                      if (settings.arguments != null) {
-                        print((settings.arguments as Album).name);
-                        page = ArtistInfo(artist: settings.arguments as Artist);
-                      } else {
-                        page = ArtistInfo(
-                          artist: Artist(id, ""),
-                        );
+                          break;
                       }
                     }
 
@@ -297,7 +309,7 @@ class _ArtistViewListState extends State<ArtistViewList>
                       settings: settings,
                       pageBuilder: (context, animation, secondaryAnimation) =>
                           Scaffold(
-                        body: page,
+                        body: Card(child: page),
                       ),
                       transitionsBuilder:
                           (context, animation, secondaryAnimation, child) {

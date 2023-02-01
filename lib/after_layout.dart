@@ -17,7 +17,7 @@ class AfterLayout extends SingleChildRenderObjectWidget {
   @override
   void updateRenderObject(
       BuildContext context, RenderAfterLayout renderObject) {
-    renderObject..callback = callback;
+    renderObject.callback = callback;
   }
 
   ///组件树布局结束后会被触发，注意，并不是当前组件布局结束后触发

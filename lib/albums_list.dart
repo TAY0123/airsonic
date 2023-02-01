@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:airsonic/airsonic_connection.dart';
+import 'package:airsonic/albums_grid.dart';
 import 'package:airsonic/search.dart';
 import 'package:flutter/material.dart';
 
@@ -38,6 +39,8 @@ class _AlbumViewListState extends State<AlbumViewList>
   var _currentType = AlbumListType.recent;
 
   ValueNotifier<String> _index = ValueNotifier("");
+
+  late List<PopupMenuEntry<AlbumListType>> b;
 
   @override
   void initState() {
@@ -84,6 +87,14 @@ class _AlbumViewListState extends State<AlbumViewList>
               arguments: _listController.value.album?.albums
                   .firstWhere((element) => element.id == _index.value)),
     );
+
+    b = chipss.entries
+        .map((element) => PopupMenuItem<AlbumListType>(
+              value: element.value,
+              child: Text(element.key),
+            ))
+        .toList();
+
     fetchUntilScrollable();
   }
 
@@ -149,12 +160,6 @@ class _AlbumViewListState extends State<AlbumViewList>
                   child: LayoutBuilder(builder: (context, constraints) {
                     final a = _listController.value.album!;
 
-                    final List<PopupMenuEntry<AlbumListType>> b = chipss.entries
-                        .map((element) => PopupMenuItem<AlbumListType>(
-                              value: element.value,
-                              child: Text(element.key),
-                            ))
-                        .toList();
                     return Padding(
                         padding: const EdgeInsets.only(
                             top: 4, left: 8.0, right: 8.0),
@@ -173,6 +178,20 @@ class _AlbumViewListState extends State<AlbumViewList>
                                       Row(
                                         children: [
                                           Spacer(),
+                                          IconButton(
+                                              tooltip: "change mode",
+                                              onPressed: () {
+                                                Navigator.of(context)
+                                                    .pushReplacement(
+                                                        PageRouteBuilder(
+                                                  pageBuilder: (context,
+                                                      animation,
+                                                      secondaryAnimation) {
+                                                    return AlbumViewGrid();
+                                                  },
+                                                ));
+                                              },
+                                              icon: Icon(Icons.list)),
                                           PopupMenuButton(
                                               tooltip: "sorting",
                                               initialValue: _currentType,
@@ -192,8 +211,6 @@ class _AlbumViewListState extends State<AlbumViewList>
                                               }),
                                         ],
                                       ),
-                                      Padding(
-                                          padding: EdgeInsets.only(bottom: 30))
                                     ])),
                                     SliverList(
                                         delegate: SliverChildListDelegate(
@@ -276,20 +293,14 @@ class _AlbumViewListState extends State<AlbumViewList>
                         if (uri?.pathSegments.length == 2) {
                           var id = uri?.pathSegments[1];
                           if (settings.arguments != null) {
-                            page = Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: AlbumInfo(settings.arguments as Album),
-                            );
+                            page = AlbumInfo(settings.arguments as Album);
                           } else {
-                            page = Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: AlbumInfo(Album(id!, "", "")),
-                            );
+                            page = AlbumInfo(Album(id!, "", ""));
                           }
                         }
                         break;
                       default:
-                        print("defauklt");
+                        print("default");
 
                         break;
                     }

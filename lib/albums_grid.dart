@@ -4,6 +4,7 @@ import 'package:airsonic/airsonic_connection.dart';
 import 'package:airsonic/search.dart';
 import 'package:flutter/material.dart';
 
+import 'albums_list.dart';
 import 'card.dart';
 
 class AlbumViewGrid extends StatefulWidget {
@@ -41,6 +42,9 @@ class _AlbumViewGridState extends State<AlbumViewGrid>
   late final ScrollController _scrollController;
   final StreamController<AirSonicResult?> result = StreamController();
 
+  var _currentType = AlbumListType.recent;
+  late List<PopupMenuEntry<AlbumListType>> b;
+
   @override
   void initState() {
     super.initState();
@@ -66,6 +70,14 @@ class _AlbumViewGridState extends State<AlbumViewGrid>
         fetchUntilScrollable();
       },
     );
+
+    b = chipss.entries
+        .map((element) => PopupMenuItem<AlbumListType>(
+              value: element.value,
+              child: Text(element.key),
+            ))
+        .toList();
+
     fetchUntilScrollable();
   }
 
@@ -148,19 +160,43 @@ class _AlbumViewGridState extends State<AlbumViewGrid>
                 controller: !widget.listenOnly ? _scrollController : null,
                 slivers: [
                   if (widget.searchBar)
-                    SliverFixedExtentList(
-                        delegate: SliverChildListDelegate([
-                          Center(
-                              child: Row(
-                            children: [
-                              Expanded(child: SearchingBar(result)),
-                              IconButton(
-                                  onPressed: () {},
-                                  icon: Icon(Icons.filter_list))
-                            ],
-                          ))
-                        ]),
-                        itemExtent: 80),
+                    SliverList(
+                      delegate: SliverChildListDelegate([
+                        SearchingBar(result),
+                        Padding(padding: EdgeInsets.only(bottom: 8)),
+                        Row(
+                          children: [
+                            Spacer(),
+                            IconButton(
+                                tooltip: "change mode",
+                                onPressed: () {
+                                  Navigator.of(context)
+                                      .pushReplacement(PageRouteBuilder(
+                                    pageBuilder: (context, animation,
+                                        secondaryAnimation) {
+                                      return AlbumViewList();
+                                    },
+                                  ));
+                                },
+                                icon: Icon(Icons.list)),
+                            PopupMenuButton(
+                                tooltip: "sorting",
+                                initialValue: _currentType,
+                                icon: Icon(Icons.filter_list),
+                                itemBuilder: (context) => b,
+                                onSelected: (value) {
+                                  if (_currentType == value) return;
+                                  setState(() {
+                                    _currentType = value;
+                                    _defaultController =
+                                        mp.fetchAlbumList(type: value);
+                                  });
+                                  _listController.value = _defaultController;
+                                }),
+                          ],
+                        ),
+                      ]),
+                    ),
                   SliverGrid.builder(
                       itemCount: a.albums.length,
                       gridDelegate:

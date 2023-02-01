@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 class TRoute<T> extends PageRoute<T> with MaterialRouteTransitionMixin<T> {
   final WidgetBuilder builder;
 
-  @override
   final String? title;
 
   /// Builds the primary contents of the route.

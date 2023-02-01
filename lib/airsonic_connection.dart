@@ -6,6 +6,7 @@ import 'package:airsonic/shared.dart';
 import 'package:audio_service/audio_service.dart';
 
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/http.dart';
@@ -29,6 +30,7 @@ class MediaPlayer {
   late Future<ValueStream<List<MediaItem>>> playlist;
   late Future<Stream<Duration>> currentPosition;
   late Future<ValueStream<PlaybackState>> playerStatus;
+  final preferenceStorage = SharedPreferences.getInstance();
 
   /// private constructor
   MediaPlayer._() {
@@ -71,6 +73,13 @@ class MediaPlayer {
   void _listenToChangesInPlaylist() {
     playlist = () async {
       final player = await futurePlayer;
+      player.queue.listen((playlist) async {
+        if (!playlist.isEmpty) {
+          final storage = await preferenceStorage;
+          storage.setString(
+              "queue", jsonEncode(playlist.map((e) => e.toJson()).toList()));
+        }
+      });
       return player.queue;
     }();
     /*
@@ -154,11 +163,11 @@ class MediaPlayer {
     );
     if (res.status) {
       //write credentials to storage
-      final prefs = await SharedPreferences.getInstance();
-      prefs.setString("domain", domain);
-      prefs.setString("username", username);
-      prefs.setString("token", token);
-      prefs.setString("salt", salt);
+      final storage = await preferenceStorage;
+      storage.setString("domain", domain);
+      storage.setString("username", username);
+      storage.setString("token", token);
+      storage.setString("salt", salt);
     }
     return res;
   }
@@ -239,6 +248,9 @@ class MediaPlayer {
     for (var artist in root.findAllElements("artist")) {
       result.artists.add(Artist.fromElement(artist));
     }
+    for (var playlist in root.findAllElements("playlist")) {
+      result.playlists.add(Playlist.fromElement(playlist));
+    }
     return result;
   }
 
@@ -291,14 +303,16 @@ class MediaPlayer {
     result.keywords = keyword;
     result.album = AlbumList((offset, count) async {
       return _xmlEndpoint("search3", query: {
-        "query": Uri.encodeQueryComponent(keyword),
-        "albumOffset": "$offset"
+        "query": keyword,
+        "albumOffset": "$offset",
+        "albumCount": "$count",
       });
     });
     result.artist = ArtistList((offset, count) async {
       return _xmlEndpoint("search3", query: {
-        "query": Uri.encodeQueryComponent(keyword),
-        "artistOffset": "$offset"
+        "query": keyword,
+        "artistOffset": "$offset",
+        "artistCount": "$count",
       });
     });
     return result;
@@ -333,6 +347,10 @@ class MediaPlayer {
         return MemoryImage(data.bodyBytes);
       }
     }
+  }
+
+  Future<XMLResult> fetchPlaylists() async {
+    return _xmlEndpoint("getPlaylists");
   }
 
   Future<Uri?> _coverUri(String id) async {
@@ -390,6 +408,7 @@ class XMLResult {
   List<Album> albums = [];
   List<Song> songs = [];
   List<Artist> artists = [];
+  List<Playlist> playlists = [];
 }
 
 class Album {
@@ -414,7 +433,7 @@ class Album {
 
   ///fetch all albumInfo from server
   ///return false if failed and true on success
-  Future<bool> fetchInfo() async {
+  Future<bool> fetchInfo({bool combine = false}) async {
     final connection = MediaPlayer.instance;
     try {
       final result = await connection.fetchAlbumInfo(id);
@@ -426,10 +445,29 @@ class Album {
         name = result.albums[0].name;
         coverArt = result.albums[0].coverArt;
       }
+      if (combine) {
+        final others = connection.fetchSearchResult(name);
+        while (!(others.album?.finished ?? true)) {
+          await others.album?.fetchNext(count: 40);
+          if (others.album?.albums.last.name != name) {
+            break;
+          }
+        }
+        for (var a in others.album?.albums ?? List<Album>.empty()) {
+          if (a.name == name) {
+            if (a.id != id) {
+              final result = await connection.fetchAlbumInfo(a.id);
+              songs?.addAll(result.albums[0].songs ?? []);
+            }
+          } else {
+            break;
+          }
+        }
+      }
     } catch (e) {
       return false;
     }
-
+    songs?.sort((a, b) => a.track - b.track);
     return true;
   }
 
@@ -517,7 +555,7 @@ class Artist {
       element.getAttribute("id") ?? "",
       element.getAttribute("name") ?? "",
       coverID: element.getAttribute("coverArt") ?? "",
-      albumsCount: int.parse(element.getAttribute("albumCount") ?? ""),
+      albumsCount: int.tryParse(element.getAttribute("albumCount") ?? "") ?? 0,
     );
     if (element.childElements.isNotEmpty) {
       res.albums = [];
@@ -565,6 +603,43 @@ class Artist {
   }
 }
 
+class Playlist {
+  final String id;
+  String? name;
+  String? comment;
+  int? songCount;
+  String? owner;
+  bool? public;
+  Duration? duration;
+  DateTime? created;
+  String? coverArt;
+
+  Playlist(this.id,
+      {this.name,
+      this.comment,
+      this.songCount,
+      this.owner,
+      this.public,
+      this.duration,
+      this.created,
+      this.coverArt});
+
+  factory Playlist.fromElement(XmlElement element) {
+    return Playlist(
+      element.getAttribute("id") ?? "",
+      name: element.getAttribute("name"),
+      comment: element.getAttribute("comment") ?? "",
+      songCount: int.tryParse(element.getAttribute("songCount") ?? "") ?? 0,
+      owner: element.getAttribute("owner") ?? "",
+      duration: Duration(
+          seconds: int.tryParse(element.getAttribute("duration") ?? "") ?? 0),
+      coverArt: element.getAttribute("coverArt") ?? "",
+      //public
+      //created
+    );
+  }
+}
+
 enum AlbumListType {
   random,
   newest,
@@ -576,17 +651,6 @@ enum AlbumListType {
   alphabeticalByArtist,
   byYear,
   byGenre
-}
-
-extension FutureExtension<T> on Future<T> {
-  /// Checks if the future has returned a value, using a Completer.
-  bool isCompleted() {
-    final completer = Completer<T>();
-    then((v) {
-      return completer.complete(v);
-    }).catchError(completer.completeError);
-    return completer.isCompleted;
-  }
 }
 
 class AlbumList {
@@ -641,4 +705,17 @@ class AirSonicResult {
   AlbumList? album;
   ArtistList? artist;
   String keywords = "";
+}
+
+extension ToJSON on MediaItem {
+  Map<String, dynamic> toJson() {
+    return {
+      'title': title,
+      'id': id,
+      'artist': artist,
+      'album': album,
+      'artUri': artUri.toString(),
+      'duration': duration?.inSeconds,
+    };
+  }
 }

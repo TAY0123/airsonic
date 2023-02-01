@@ -35,6 +35,7 @@ class _ArtistInfoState extends State<ArtistInfo> {
             headerSliverBuilder: (context, innerBoxIsScrolled) {
               return [
                 SliverAppBar.large(
+                    backgroundColor: Colors.transparent,
                     expandedHeight: 300,
                     automaticallyImplyLeading: false,
                     surfaceTintColor: Colors.transparent,
