@@ -1,3 +1,4 @@
+import 'dart:ffi';
 import 'dart:io';
 
 import 'package:airsonic/player_vlc.dart';
@@ -5,6 +6,7 @@ import 'package:audio_service/audio_service.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:rxdart/rxdart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Future<AudioHandler> initAudioService() async {
@@ -15,10 +17,6 @@ Future<AudioHandler> initAudioService() async {
   if ((Platform.isWindows || Platform.isLinux) && !kIsWeb) {
     return await AudioService.init(
       builder: () => VlcAudioHandler(),
-      config: const AudioServiceConfig(
-        androidNotificationChannelId: 'com.mycompany.myapp.audio',
-        androidNotificationChannelName: 'Audio Service Demo',
-      ),
     );
   } else {
     return await AudioService.init(
@@ -100,6 +98,43 @@ class MyAudioHandler extends BaseAudioHandler {
   }
 
   void _notifyAudioHandlerAboutPlaybackEvents() {
+    _player.playerStateStream.listen((event) {
+      print(event.processingState.name);
+      late MediaControl btn;
+      bool playing = event.playing;
+      if (event.processingState == ProcessingState.completed) {
+        playing = false;
+      }
+      if (!event.playing) {
+        btn = MediaControl.pause;
+      } else {
+        btn = MediaControl.play;
+      }
+
+      playbackState.add(playbackState.value.copyWith(
+        controls: [
+          MediaControl.skipToPrevious,
+          btn,
+          MediaControl.stop,
+          MediaControl.skipToNext,
+        ],
+        systemActions: const {
+          MediaAction.seek,
+        },
+        androidCompactActionIndices: const [0, 1, 3],
+        processingState: const {
+          ProcessingState.idle: AudioProcessingState.idle,
+          ProcessingState.loading: AudioProcessingState.loading,
+          ProcessingState.buffering: AudioProcessingState.buffering,
+          ProcessingState.ready: AudioProcessingState.ready,
+          ProcessingState.completed: AudioProcessingState.completed,
+        }[event.processingState]!,
+        playing: playing,
+        updatePosition: _player.position,
+        bufferedPosition: _player.bufferedPosition,
+        speed: _player.speed,
+      ));
+    });
     _player.playbackEventStream.listen((PlaybackEvent event) {
       final playing = _player.playing;
       playbackState.add(playbackState.value.copyWith(
@@ -147,13 +182,13 @@ class MyAudioHandler extends BaseAudioHandler {
     await inited;
     // manage Just Audio
     final audioSource = mediaItems.map(_createAudioSource);
-    _playlist.addAll(audioSource.toList());
+    await _playlist.addAll(audioSource.toList());
     // notify system
     final newQueue = queue.value..addAll(mediaItems);
     //final newQueue = mediaItems;
     queue.add(newQueue);
     try {
-      _player.load();
+      await _player.load();
     } catch (e) {
       print(e);
     }
@@ -165,14 +200,14 @@ class MyAudioHandler extends BaseAudioHandler {
     // manage Just Audio
     final audioSource = mediaItems.map(_createAudioSource);
     //clear playlist
-    _playlist.clear();
-    _playlist.addAll(audioSource.toList());
+    await _playlist.clear();
+    await _playlist.addAll(audioSource.toList());
     // notify system
     //final newQueue = queue.value..addAll(mediaItems);
     final newQueue = mediaItems;
     queue.add(newQueue);
     try {
-      _player.load();
+      await _player.load();
     } catch (e) {
       print(e);
     }
@@ -196,8 +231,11 @@ class MyAudioHandler extends BaseAudioHandler {
 
   @override
   Future<void> play() async {
+    if (_player.processingState == ProcessingState.completed) {
+      await _player.seek(Duration.zero);
+    }
     try {
-      _player.play();
+      await _player.play();
     } catch (e) {
       print(e);
     }
@@ -205,7 +243,7 @@ class MyAudioHandler extends BaseAudioHandler {
 
   @override
   Future<void> pause() async {
-    _player.pause();
+    await _player.pause();
   }
 
   @override
@@ -214,8 +252,16 @@ class MyAudioHandler extends BaseAudioHandler {
   }
 
   @override
+  Future<void> skipToQueueItem(int index) async {
+    await _player.seek(null, index: index);
+  }
+
+  @override
   Future<void> skipToPrevious() async {
     await _player.seekToPrevious();
+    if (_player.processingState == ProcessingState.completed) {
+      await play();
+    }
   }
 
   @override

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:math';
 
 import 'package:airsonic/album_info.dart';
@@ -69,8 +70,8 @@ class _AlbumCardState extends State<AlbumCard>
           children: [
             Hero(
               tag: "${widget.album.id}-Cover}",
-              child: AlbumImage(
-                album: widget.album,
+              child: CoverImage.fromAlbum(
+                widget.album,
               ),
             ),
             Expanded(
@@ -201,8 +202,8 @@ class _AlbumTileState extends State<AlbumTile>
                   padding: const EdgeInsets.only(right: 16),
                   child: Row(
                     children: [
-                      AlbumImage(
-                        album: widget.album,
+                      CoverImage.fromAlbum(
+                        widget.album,
                       ),
                       Expanded(
                           child: Padding(
@@ -246,49 +247,62 @@ class _AlbumTileState extends State<AlbumTile>
   }
 }
 
-class AlbumImage extends StatelessWidget {
-  final Album album;
+class CoverImage extends StatelessWidget {
+  late Future<ImageProvider?> data;
 
   final BoxFit fit;
+  final MediaPlayer mp = MediaPlayer.instance;
 
-  const AlbumImage({
+  CoverImage(
+    String coverId, {
     super.key,
-    required this.album,
     this.fit = BoxFit.cover,
-  });
+    ImageProvider? provider,
+  }) {
+    if (provider != null) {
+      data = Future.value(provider);
+      return;
+    } else {
+      data = mp.fetchCover(coverId);
+    }
+  }
+
+  factory CoverImage.fromAlbum(Album album, {BoxFit fit = BoxFit.cover}) {
+    if (album.img != null) {
+      return CoverImage("", fit: fit, provider: album.img);
+    } else {
+      return CoverImage(album.coverArt, fit: fit);
+    }
+  }
+
+  factory CoverImage.fromFileUri(Uri? uri) {
+    if (uri == null) {
+      return CoverImage("");
+    }
+    return CoverImage(
+      "",
+      provider: FileImage(File.fromUri(uri)),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     Widget content;
 
-    if (album.img != null) {
-      content = fit == BoxFit.cover
-          ? img()
-          : Center(
-              child: ClipRRect(
-                borderRadius: const BorderRadius.all(Radius.circular(12)),
-                child: img(),
-              ),
-            );
-    } else {
-      content = FutureBuilder(
-        future: album.fetchCover(),
-        builder: (context, snapshot) {
-          if (snapshot.hasData) {
-            if (snapshot.requireData) {
-              if (fit == BoxFit.cover) {
-                return img();
-              } else {
-                return Center(
-                  child: ClipRRect(
-                    borderRadius: const BorderRadius.all(Radius.circular(12)),
-                    child: img(),
-                  ),
-                );
-              }
+    content = FutureBuilder(
+      future: data,
+      builder: (context, snapshot) {
+        if (snapshot.hasData) {
+          if (snapshot.requireData != null) {
+            final displayImage = snapshot.requireData!;
+            if (fit == BoxFit.cover) {
+              return img(displayImage);
             } else {
-              return Container(
-                color: Theme.of(context).primaryColorDark,
+              return Center(
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.all(Radius.circular(12)),
+                  child: img(displayImage),
+                ),
               );
             }
           } else {
@@ -296,9 +310,13 @@ class AlbumImage extends StatelessWidget {
               color: Theme.of(context).primaryColorDark,
             );
           }
-        },
-      );
-    }
+        } else {
+          return Container(
+            color: Colors.transparent,
+          );
+        }
+      },
+    );
 
     return ClipRRect(
       borderRadius: const BorderRadius.all(Radius.circular(12)),
@@ -313,12 +331,12 @@ class AlbumImage extends StatelessWidget {
     );
   }
 
-  FadeInImage img() {
+  FadeInImage img(ImageProvider img) {
     return FadeInImage(
       fadeInCurve: Curves.easeInCubic,
       fadeInDuration: const Duration(milliseconds: 250),
       placeholder: MemoryImage(kTransparentImage),
-      image: album.img ?? MemoryImage(kTransparentImage),
+      image: img ?? MemoryImage(kTransparentImage),
       fit: fit,
       imageErrorBuilder: (context, error, stackTrace) => Container(),
     );
@@ -567,6 +585,115 @@ class _ArtistTileState extends State<ArtistTile>
           ),
         ),
       ),
+    );
+  }
+}
+
+class DashboardCoverCard extends StatelessWidget {
+  DashboardCoverCard({super.key});
+
+  final MediaPlayer mp = MediaPlayer.instance;
+  @override
+  Widget build(BuildContext context) {
+    final getCurrentAlbum = () async {
+      final current = await mp.currentItem;
+      return current.value;
+    }();
+    return FutureBuilder(
+      future: getCurrentAlbum,
+      builder: (context, snapshot) {
+        if (snapshot.hasData) {
+          final currentItem = snapshot.requireData;
+          if (currentItem != null) {
+            return Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    Flexible(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          AspectRatio(
+                              aspectRatio: 1,
+                              child:
+                                  CoverImage.fromFileUri(currentItem.artUri)),
+                          Flexible(
+                              flex: 2,
+                              child: Padding(
+                                padding: const EdgeInsets.only(left: 8.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      currentItem.title,
+                                      maxLines: 2,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleLarge,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    Spacer(),
+                                    Row(
+                                      children: [
+                                        Padding(
+                                          padding:
+                                              const EdgeInsets.only(right: 8.0),
+                                          child: Icon(Icons.album),
+                                        ),
+                                        Flexible(
+                                          child: Text(
+                                            currentItem.album ?? "",
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Padding(
+                                        padding: EdgeInsets.only(bottom: 8)),
+                                    Row(
+                                      children: [
+                                        Padding(
+                                          padding:
+                                              const EdgeInsets.only(right: 8.0),
+                                          child: Icon(Icons.people),
+                                        ),
+                                        Flexible(
+                                            child: Text(
+                                          currentItem.artist ?? "",
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        )),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              )),
+                        ],
+                      ),
+                    ),
+                    Divider(),
+                    ButtonBar(
+                      children: [
+                        FilledButton.icon(
+                            onPressed: () {},
+                            label: Text("Continue"),
+                            icon: Icon(Icons.arrow_forward))
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          } else {
+            return Card();
+          }
+        } else {
+          return Card();
+        }
+      },
     );
   }
 }

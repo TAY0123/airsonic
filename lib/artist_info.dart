@@ -39,7 +39,7 @@ class _ArtistInfoState extends State<ArtistInfo> {
                     expandedHeight: 300,
                     automaticallyImplyLeading: false,
                     surfaceTintColor: Colors.transparent,
-                    title: Padding(
+                    flexibleSpace: Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: Row(
                         children: [
@@ -54,14 +54,24 @@ class _ArtistInfoState extends State<ArtistInfo> {
                           ),
                           Padding(padding: EdgeInsets.only(left: 8)),
                           Expanded(
-                            child: Text(
-                              widget.artist.name,
-                              style: Theme.of(context).textTheme.titleLarge,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Spacer(),
+                                Text(
+                                  widget.artist.name,
+                                  style: Theme.of(context).textTheme.titleLarge,
+                                ),
+                                Spacer()
+                              ],
                             ),
                           ),
+                          //monitor scroll controller to fade btn with icon
+                          IconButton(
+                              onPressed: () {}, icon: Icon(Icons.play_arrow))
                         ],
                       ),
-                    ))
+                    )),
               ];
             },
             body: Column(

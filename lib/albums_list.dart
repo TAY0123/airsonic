@@ -122,12 +122,14 @@ class _AlbumViewListState extends State<AlbumViewList>
   }
 
   Future<bool> fetchAlbums() async {
-    if (_listController.value.album!.finished) {
+    if (_listController.value.album!.finished && mounted) {
       setState(() {});
       return true;
     }
     await _listController.value.album?.fetchNext();
-    setState(() {});
+    if (mounted) {
+      setState(() {});
+    }
     return true;
   }
 
@@ -293,9 +295,11 @@ class _AlbumViewListState extends State<AlbumViewList>
                         if (uri?.pathSegments.length == 2) {
                           var id = uri?.pathSegments[1];
                           if (settings.arguments != null) {
-                            page = AlbumInfo(settings.arguments as Album);
+                            final album = settings.arguments as Album;
+                            album.combine = true;
+                            page = AlbumInfo(album);
                           } else {
-                            page = AlbumInfo(Album(id!, "", ""));
+                            page = AlbumInfo(Album(id!, "", "", combine: true));
                           }
                         }
                         break;

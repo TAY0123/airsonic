@@ -10,6 +10,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/http.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -375,10 +376,13 @@ class MediaPlayer {
     return imageFile.uri;
   }
 
+  StreamSubscription<PlaybackState>? waitForPlayerReady;
+
   void playPlaylist(List<Song> playlist, {int index = 0}) async {
+    waitForPlayerReady?.cancel();
     final fplayer = await futurePlayer;
     List<MediaItem> res = [];
-    for (Song song in playlist.skip(index)) {
+    for (Song song in playlist) {
       res.add(MediaItem(
         id: song.id,
         artUri: await _coverUri(song.coverArt),
@@ -389,13 +393,19 @@ class MediaPlayer {
       ));
     }
     await fplayer.updateQueue(res);
+    if (index != 0) await fplayer.skipToQueueItem(index);
+    fplayer.play();
 
     /*
+    waitForPlayerReady = (await playerStatus).listen((event) {
+      if (event.processingState == AudioProcessingState.ready) {
+        waitForPlayerReady?.cancel();
+        () async {}();
+      }
+    });
       player.playFromUri(_apiEndpointUrl("stream",
           query: {"id": playlist[i].id, "format": "mp3"}));
           */
-
-    fplayer.play();
   }
 
   Future<XMLResult> fetchArtist(String id) async {
@@ -412,7 +422,8 @@ class XMLResult {
 }
 
 class Album {
-  Album(this.id, this.name, this.coverArt, {this.artist, this.songs});
+  Album(this.id, this.name, this.coverArt,
+      {this.artist, this.songs, this.combine = false});
 
   String id;
   String name;
@@ -420,6 +431,7 @@ class Album {
   Artist? artist;
   List<Song>? songs;
   ImageProvider? img;
+  bool combine;
 
   Future<bool> fetchCover() async {
     final connection = MediaPlayer.instance;
@@ -445,24 +457,28 @@ class Album {
         name = result.albums[0].name;
         coverArt = result.albums[0].coverArt;
       }
-      if (combine) {
+      if (this.combine || combine) {
         final others = connection.fetchSearchResult(name);
         while (!(others.album?.finished ?? true)) {
-          await others.album?.fetchNext(count: 40);
+          await others.album?.fetchNext(count: 10);
+
           if (others.album?.albums.last.name != name) {
             break;
           }
         }
+        List<Future<void>> results = [];
         for (var a in others.album?.albums ?? List<Album>.empty()) {
           if (a.name == name) {
             if (a.id != id) {
-              final result = await connection.fetchAlbumInfo(a.id);
-              songs?.addAll(result.albums[0].songs ?? []);
+              results.add(connection
+                  .fetchAlbumInfo(a.id)
+                  .then((value) => songs?.addAll(value.albums[0].songs ?? [])));
             }
           } else {
             break;
           }
         }
+        await Future.wait(results);
       }
     } catch (e) {
       return false;
@@ -471,6 +487,8 @@ class Album {
     return true;
   }
 
+  ///Parameter	Required	Default	Comment
+  ///id	        Yes		    The album or song ID.
   static Future<Album> fromId(String id) async {
     final result = Album(id, "", "");
     await result.fetchInfo();

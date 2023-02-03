@@ -113,12 +113,12 @@ class _ArtistViewListState extends State<ArtistViewList>
   }
 
   Future<bool> fetchAlbums() async {
-    if (_listController.value.artist?.finished ?? false) {
+    if ((_listController.value.artist?.finished ?? false) && mounted) {
       setState(() {});
       return true;
     }
     await _listController.value.artist?.fetchNext();
-    setState(() {});
+    if (mounted) setState(() {});
     return true;
   }
 

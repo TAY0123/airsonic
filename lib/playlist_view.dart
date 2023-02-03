@@ -1,4 +1,5 @@
 import 'package:airsonic/airsonic_connection.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/src/animation/animation_controller.dart';
 import 'package:flutter/src/widgets/framework.dart';
 import 'package:flutter/src/widgets/placeholder.dart';
@@ -21,10 +22,6 @@ class _PlayListViewState extends State<PlayListView>
   void initState() {
     super.initState();
     _controller = AnimationController(vsync: this);
-    () async {
-      final c = await mp.fetchPlaylists();
-      print(c.playlists.length);
-    }();
   }
 
   @override
@@ -35,6 +32,24 @@ class _PlayListViewState extends State<PlayListView>
 
   @override
   Widget build(BuildContext context) {
-    return const ;
+    return FutureBuilder(
+      future: mp.fetchPlaylists(),
+      builder: (context, snapshot) {
+        if (snapshot.hasData) {
+          return GridView.builder(
+            itemCount: snapshot.requireData.playlists.length,
+            gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 500, childAspectRatio: 1.5),
+            itemBuilder: (context, index) {
+              return Card(
+                child: Text(snapshot.requireData.playlists[index].name ?? ""),
+              );
+            },
+          );
+        } else {
+          return CircularProgressIndicator();
+        }
+      },
+    );
   }
 }

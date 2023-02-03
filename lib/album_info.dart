@@ -36,7 +36,7 @@ class _AlbumInfoState extends State<AlbumInfo>
     super.initState();
     _controller = AnimationController(vsync: this);
     albumFetchStatus = () async {
-      return await widget.album.fetchInfo(combine: true);
+      return await widget.album.fetchInfo();
     }();
   }
 
@@ -92,27 +92,30 @@ class _AlbumInfoState extends State<AlbumInfo>
                         Hero(
                             tag: "${widget.album.id}-Cover}",
                             child: Center(
-                              child: widget.album.img != null
-                                  ? AlbumImage(
-                                      album: widget.album,
-                                      fit: BoxFit.contain,
-                                    )
-                                  : FutureBuilder(
-                                      future: albumFetchStatus,
-                                      builder: (context, snapshot) {
-                                        if (snapshot.hasData) {
-                                          final currentAlbum = widget.album;
-                                          return AlbumImage(
-                                            album: currentAlbum,
-                                            fit: BoxFit.contain,
-                                          );
-                                        } else {
-                                          return Container(
-                                            color: Colors.black,
-                                          );
-                                        }
-                                      },
-                                    ),
+                              child: AspectRatio(
+                                aspectRatio: 1,
+                                child: widget.album.img != null
+                                    ? CoverImage.fromAlbum(
+                                        widget.album,
+                                        fit: BoxFit.contain,
+                                      )
+                                    : FutureBuilder(
+                                        future: albumFetchStatus,
+                                        builder: (context, snapshot) {
+                                          if (snapshot.hasData) {
+                                            final currentAlbum = widget.album;
+                                            return CoverImage.fromAlbum(
+                                              currentAlbum,
+                                              fit: BoxFit.contain,
+                                            );
+                                          } else {
+                                            return Container(
+                                              color: Colors.transparent,
+                                            );
+                                          }
+                                        },
+                                      ),
+                              ),
                             )),
                         const Padding(
                           padding: EdgeInsets.only(left: 16),
@@ -235,7 +238,9 @@ class _AlbumInfoState extends State<AlbumInfo>
                                 padding: const EdgeInsets.only(top: 32.0),
                                 child: FilledButton.icon(
                                   icon: Icon(Icons.play_arrow),
-                                  onPressed: () {},
+                                  onPressed: () {
+                                    mp.playPlaylist(widget.album.songs ?? []);
+                                  },
                                   label: Text("Play All"),
                                 ),
                               )
@@ -274,8 +279,17 @@ class _AlbumInfoState extends State<AlbumInfo>
                             },
                           );
                         } else {
-                          return const Center(
-                              child: CircularProgressIndicator());
+                          return Center(
+                              child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              CircularProgressIndicator(),
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8.0),
+                                child: Text("fetching songs ..."),
+                              )
+                            ],
+                          ));
                         }
                       },
                     ),
@@ -306,16 +320,16 @@ class _AlbumInfoState extends State<AlbumInfo>
                   Hero(
                     tag: "${widget.album.id}-Cover}",
                     child: widget.album.img != null
-                        ? AlbumImage(
-                            album: widget.album,
+                        ? CoverImage.fromAlbum(
+                            widget.album,
                             fit: BoxFit.contain,
                           )
                         : FutureBuilder(
                             future: albumFetchStatus,
                             builder: (context, snapshot) {
                               if (snapshot.hasData) {
-                                return AlbumImage(
-                                  album: widget.album,
+                                return CoverImage.fromAlbum(
+                                  widget.album,
                                   fit: BoxFit.contain,
                                 );
                               } else {
@@ -469,6 +483,7 @@ class _AlbumInfoListTileState extends State<AlbumInfoListTile> {
         return ListTile(
           selected: selected,
           onTap: () {
+            if (widget.songs[widget.index].id == current?.value?.id) return;
             setState(() {
               selected = true;
             });
