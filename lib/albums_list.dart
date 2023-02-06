@@ -10,8 +10,9 @@ import 'animatedwave.dart';
 import 'card.dart';
 
 class AlbumViewList extends StatefulWidget {
-  const AlbumViewList({super.key});
+  const AlbumViewList({super.key, this.display});
 
+  final Album? display;
   @override
   State<AlbumViewList> createState() => _AlbumViewListState();
 }
@@ -254,7 +255,9 @@ class _AlbumViewListState extends State<AlbumViewList>
               flex: 2,
               child: Navigator(
                 key: localNavigator,
-                initialRoute: "/",
+                initialRoute: widget.display == null
+                    ? "/"
+                    : "/album/${widget.display?.id ?? ""}",
                 onGenerateRoute: (settings) {
                   print(settings.name);
                   Widget page = LayoutBuilder(builder: (context, constraints) {
@@ -299,7 +302,7 @@ class _AlbumViewListState extends State<AlbumViewList>
                             album.combine = true;
                             page = AlbumInfo(album);
                           } else {
-                            page = AlbumInfo(Album(id!, "", "", combine: true));
+                            page = AlbumInfo(Album(id!, combine: true));
                           }
                         }
                         break;

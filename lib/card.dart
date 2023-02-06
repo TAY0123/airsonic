@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:airsonic/album_info.dart';
+import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:simple_animations/simple_animations.dart';
 import 'package:transparent_image/transparent_image.dart';
@@ -117,8 +118,10 @@ class _AlbumCardState extends State<AlbumCard>
 class AlbumTile extends StatefulWidget {
   final Album album;
   final ValueNotifier<String> index;
+  final bool? selectable;
 
-  const AlbumTile(this.album, {super.key, required this.index});
+  const AlbumTile(this.album,
+      {super.key, required this.index, this.selectable});
 
   @override
   State<AlbumTile> createState() => _AlbumTileState();
@@ -131,7 +134,8 @@ class _AlbumTileState extends State<AlbumTile>
   bool full = false;
   bool selected = false;
   late CurvedAnimation _animation;
-  late Color background = Theme.of(context).colorScheme.surfaceVariant;
+  //late Color background = Theme.of(context).colorScheme.surfaceVariant;
+  late Color background = Colors.transparent;
   void indexUpdated() {
     if (widget.index.value == widget.album.id) {
       _controller.forward();
@@ -146,10 +150,12 @@ class _AlbumTileState extends State<AlbumTile>
     if (widget.index.value == widget.album.id) {
       selected = true;
     }
-    widget.index.addListener(indexUpdated);
-    _controller =
-        AnimationController(vsync: this, duration: Duration(milliseconds: 250));
-    _animation = CurvedAnimation(parent: _controller, curve: Curves.linear);
+    if (widget.selectable == true || widget.selectable == null) {
+      widget.index.addListener(indexUpdated);
+      _controller = AnimationController(
+          vsync: this, duration: Duration(milliseconds: 250));
+      _animation = CurvedAnimation(parent: _controller, curve: Curves.linear);
+    }
   }
 
   @override
@@ -186,7 +192,8 @@ class _AlbumTileState extends State<AlbumTile>
       child: Card(
         elevation: 0,
         clipBehavior: Clip.antiAlias,
-        color: Theme.of(context).colorScheme.surfaceVariant,
+        //color: Theme.of(context).colorScheme.surfaceVariant,
+        color: Colors.transparent,
         child: GestureDetector(
           behavior: HitTestBehavior.translucent,
           onTap: () {
@@ -207,7 +214,7 @@ class _AlbumTileState extends State<AlbumTile>
                       ),
                       Expanded(
                           child: Padding(
-                        padding: const EdgeInsets.only(left: 8, top: 8),
+                        padding: const EdgeInsets.only(left: 8, top: 4),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -217,9 +224,16 @@ class _AlbumTileState extends State<AlbumTile>
                               style: Theme.of(context).textTheme.titleMedium,
                               overflow: TextOverflow.ellipsis,
                             ),
+                            Padding(padding: EdgeInsets.only(top: 8)),
                             Text(
                               widget.album.artist?.name ?? "N.A",
-                              style: Theme.of(context).textTheme.bodyMedium,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -310,6 +324,13 @@ class CoverImage extends StatelessWidget {
               color: Theme.of(context).primaryColorDark,
             );
           }
+        } else if (snapshot.hasError) {
+          return Container(
+            color: Theme.of(context).colorScheme.primaryContainer,
+            child: Center(
+              child: Icon(Icons.music_note),
+            ),
+          );
         } else {
           return Container(
             color: Colors.transparent,
@@ -596,95 +617,38 @@ class DashboardCoverCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final getCurrentAlbum = () async {
-      final current = await mp.currentItem;
-      return current.value;
+      return await mp.currentItem;
     }();
     return FutureBuilder(
       future: getCurrentAlbum,
       builder: (context, snapshot) {
         if (snapshot.hasData) {
-          final currentItem = snapshot.requireData;
-          if (currentItem != null) {
+          final currentItemStream = snapshot.requireData;
+          if (currentItemStream != null) {
             return Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    Flexible(
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          AspectRatio(
-                              aspectRatio: 1,
-                              child:
-                                  CoverImage.fromFileUri(currentItem.artUri)),
-                          Flexible(
-                              flex: 2,
-                              child: Padding(
-                                padding: const EdgeInsets.only(left: 8.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      currentItem.title,
-                                      maxLines: 2,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleLarge,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    Spacer(),
-                                    Row(
-                                      children: [
-                                        Padding(
-                                          padding:
-                                              const EdgeInsets.only(right: 8.0),
-                                          child: Icon(Icons.album),
-                                        ),
-                                        Flexible(
-                                          child: Text(
-                                            currentItem.album ?? "",
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    Padding(
-                                        padding: EdgeInsets.only(bottom: 8)),
-                                    Row(
-                                      children: [
-                                        Padding(
-                                          padding:
-                                              const EdgeInsets.only(right: 8.0),
-                                          child: Icon(Icons.people),
-                                        ),
-                                        Flexible(
-                                            child: Text(
-                                          currentItem.artist ?? "",
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        )),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              )),
-                        ],
-                      ),
-                    ),
-                    Divider(),
-                    ButtonBar(
-                      children: [
-                        FilledButton.icon(
-                            onPressed: () {},
-                            label: Text("Continue"),
-                            icon: Icon(Icons.arrow_forward))
-                      ],
-                    ),
-                  ],
-                ),
+                child: StreamBuilder(
+                    stream: currentItemStream,
+                    builder: (context, value) {
+                      if (value.hasData) {
+                        final currentItem = value.data!;
+                        return cardContent(currentItem, context);
+                      } else {
+                        return FutureBuilder(
+                          future: mp.previousQueue,
+                          builder: (context, snapshot) {
+                            if (snapshot.hasData &&
+                                snapshot.requireData.isNotEmpty) {
+                              final currentItem = snapshot.requireData[0];
+                              return cardContent(currentItem, context);
+                            } else {
+                              return Center(child: CircularProgressIndicator());
+                            }
+                          },
+                        );
+                      }
+                    }),
               ),
             );
           } else {
@@ -694,6 +658,87 @@ class DashboardCoverCard extends StatelessWidget {
           return Card();
         }
       },
+    );
+  }
+
+  Widget cardContent(MediaItem currentItem, BuildContext context) {
+    return Column(
+      children: [
+        Flexible(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              AspectRatio(
+                  aspectRatio: 1,
+                  child: CoverImage.fromFileUri(currentItem.artUri)),
+              Flexible(
+                  flex: 2,
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 8.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          currentItem.title,
+                          maxLines: 2,
+                          style: Theme.of(context).textTheme.titleLarge,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Spacer(),
+                        Row(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.only(right: 8.0),
+                              child: Icon(Icons.album),
+                            ),
+                            Flexible(
+                              child: Text(
+                                currentItem.album ?? "",
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Padding(padding: EdgeInsets.only(bottom: 8)),
+                        Row(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.only(right: 8.0),
+                              child: Icon(Icons.people),
+                            ),
+                            Flexible(
+                                child: Text(
+                              currentItem.artist ?? "",
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            )),
+                          ],
+                        ),
+                      ],
+                    ),
+                  )),
+            ],
+          ),
+        ),
+        Divider(),
+        ButtonBar(
+          children: [
+            FilledButton.icon(
+                onPressed: () async {
+                  final a = Song(currentItem.id);
+                  final info = await a.getInfo();
+                  Navigator.of(context).pushReplacementNamed(
+                      "/album/${a.album?.id ?? ""}",
+                      arguments: a.album);
+                },
+                //label: Text("Continue"),
+                icon: Container(),
+                label: Icon(Icons.arrow_forward))
+          ],
+        ),
+      ],
     );
   }
 }

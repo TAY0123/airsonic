@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:airsonic/card.dart';
 import 'package:airsonic/const.dart';
@@ -41,85 +42,85 @@ class _DashboardState extends State<Dashboard>
 
   @override
   Widget build(BuildContext context) {
-    List<Widget> root = [
-      SearchingBar(search),
-      Padding(padding: EdgeInsets.only(bottom: 8)),
-    ];
-    List<Widget> rootM = [
-      SearchingBar(search),
-      Padding(padding: EdgeInsets.only(bottom: 8)),
-    ];
-    List<Widget> content = [
-      Center(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: LayoutBuilder(builder: (context, constraints) {
+        return Column(
           children: [
-            Text("Dashboard", style: Theme.of(context).textTheme.headlineLarge),
-            SizedBox(
-              height: 125 * 2 + 40,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Flexible(
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(minWidth: 400, maxWidth: 550),
-                      child: DashboardCoverCard(),
-                    ),
-                  ),
-                  Padding(padding: EdgeInsets.only(left: 16)),
-                  Flexible(child: DashBoardRandomGrtidView())
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16.0),
+              child: SearchingBar(search),
+            ),
+            Flexible(
+              child: CustomScrollView(
+                slivers: [
+                  SliverList(
+                      delegate: SliverChildListDelegate([
+                    /* Text("Dashboard",
+                        style: Theme.of(context).textTheme.headlineLarge), */
+                    constraints.maxWidth > breakpointM
+                        ? Center(
+                            child: SizedBox(
+                              height: 125 * 2 + 40,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  SizedBox(
+                                    width: min(
+                                        max(450, constraints.maxWidth / 3),
+                                        550),
+                                    //constraints: BoxConstraints(
+                                    //    minWidth: 400, maxWidth: 550),
+                                    child:
+                                        Expanded(child: DashboardCoverCard()),
+                                  ),
+                                  Padding(padding: EdgeInsets.only(left: 16)),
+                                  Flexible(
+                                      child: SizedBox.expand(
+                                          child: DashBoardRandomGrtidView()))
+                                ],
+                              ),
+                            ),
+                          )
+                        : Center(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                SizedBox(
+                                  height: 125 * 2 + 40,
+                                  child: DashboardCoverCard(),
+                                ),
+                                SizedBox(
+                                    height: 125 * 2 + 40,
+                                    child: DashBoardRandomGrtidView()),
+                              ],
+                            ),
+                          ),
+                  ]))
                 ],
               ),
             ),
           ],
-        ),
-      )
-    ];
-
-    List<Widget> contentM = [
-      Center(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text("Dashboard", style: Theme.of(context).textTheme.headlineLarge),
-            SizedBox(
-              height: 125 * 2 + 40,
-              child: DashboardCoverCard(),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(left: 8.0, bottom: 8),
-              child: Text(
-                "Random",
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-            ),
-            SizedBox(height: 125 * 2 + 40, child: DashBoardRandomGrtidView()),
-          ],
-        ),
-      )
-    ];
-
-    root.addAll(content
-        .map((e) => Padding(padding: const EdgeInsets.all(8.0), child: e)));
-    rootM.addAll(contentM
-        .map((e) => Padding(padding: const EdgeInsets.all(8.0), child: e)));
-    return SafeArea(
-      child: LayoutBuilder(builder: (context, constraints) {
-        return Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: constraints.maxWidth > breakpointM ? root : rootM,
-          ),
         );
       }),
     );
   }
 }
 
-class DashBoardRandomGrtidView extends StatelessWidget {
-  const DashBoardRandomGrtidView({super.key});
+class DashBoardRandomGrtidView extends StatefulWidget {
+  DashBoardRandomGrtidView({super.key});
+
+  @override
+  State<DashBoardRandomGrtidView> createState() =>
+      _DashBoardRandomGrtidViewState();
+}
+
+class _DashBoardRandomGrtidViewState extends State<DashBoardRandomGrtidView> {
+  final AirSonicResult albums =
+      MediaPlayer.instance.fetchAlbumList(type: AlbumListType.random);
+
+  ValueNotifier<String> selected = ValueNotifier("");
 
   @override
   Widget build(BuildContext context) {
@@ -127,23 +128,36 @@ class DashBoardRandomGrtidView extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(left: 8.0, bottom: 8),
-          child: Text(
-            "Random",
-            style: Theme.of(context).textTheme.titleLarge,
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "Random",
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              TextButton.icon(
+                  onPressed: () {},
+                  icon: Icon(Icons.arrow_forward),
+                  label: Text("more"))
+            ],
           ),
         ),
         Flexible(
-          child: GridView(
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 450,
-              mainAxisExtent: 125,
-              mainAxisSpacing: 4,
-              crossAxisSpacing: 4,
-            ),
-            children: List.generate(10, (index) => Card()),
-          ),
+          child: FutureBuilder(
+              future: albums.album!.fetchNext(),
+              builder: (context, snapshot) {
+                return GridView(
+                  gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                      maxCrossAxisExtent: 750, mainAxisExtent: 125),
+                  children: albums.album!.albums
+                      .map((e) => AlbumTile(
+                            e,
+                            index: selected,
+                          ))
+                      .toList(),
+                );
+              }),
         ),
       ],
     );

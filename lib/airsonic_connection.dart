@@ -33,6 +33,8 @@ class MediaPlayer {
   late Future<ValueStream<PlaybackState>> playerStatus;
   final preferenceStorage = SharedPreferences.getInstance();
 
+  late Future<List<MediaItem>> previousQueue;
+
   /// private constructor
   MediaPlayer._() {
     () async {
@@ -40,8 +42,34 @@ class MediaPlayer {
       _listenToChangesInPlaylist();
       _listenToCurrentPosition();
       _listenToPlayerStatus();
+      previousQueue = _loadPreviousQueue();
     }();
   }
+
+  Future<List<MediaItem>> _loadPreviousQueue() async {
+    final List<MediaItem> result = [];
+    final storage = await preferenceStorage;
+    final data = storage.getString("queue");
+    List<dynamic> objects = jsonDecode(
+      data ?? "[]",
+    );
+    for (var element in objects) {
+      result.add(MediaItem(
+          id: element["id"],
+          title: element["title"],
+          artist: element["artist"],
+          album: element["album"],
+          artUri: Uri.parse(element["artUri"]),
+          duration: Duration(seconds: element["duration"])));
+    }
+
+    //optional: load previous queue to mediaplayer
+    //final player = await futurePlayer;
+    //player.updateQueue(result);
+
+    return result;
+  }
+
   void _listenToChangesInSong() {
     currentItem = () async {
       final player = await futurePlayer;
@@ -252,6 +280,9 @@ class MediaPlayer {
     for (var playlist in root.findAllElements("playlist")) {
       result.playlists.add(Playlist.fromElement(playlist));
     }
+    for (var song in root.findAllElements("song")) {
+      result.songs.add(Song.fromElement(song));
+    }
     return result;
   }
 
@@ -288,6 +319,10 @@ class MediaPlayer {
 
   Future<XMLResult> fetchAlbumInfo(String albumId) async {
     return await _xmlEndpoint("getAlbum", query: {"id": albumId});
+  }
+
+  Future<XMLResult> fetchSong(String songId) async {
+    return await _xmlEndpoint("getSong", query: {"id": songId});
   }
 
   Future<XMLResult> fetchFolder(String folderId) async {
@@ -422,8 +457,12 @@ class XMLResult {
 }
 
 class Album {
-  Album(this.id, this.name, this.coverArt,
-      {this.artist, this.songs, this.combine = false});
+  Album(this.id,
+      {this.name = "",
+      this.coverArt = "",
+      this.artist,
+      this.songs,
+      this.combine = false});
 
   String id;
   String name;
@@ -452,6 +491,7 @@ class Album {
       if (result.albums.isEmpty) {
         return false;
       } else {
+        id = result.albums[0].id;
         artist = result.albums[0].artist;
         songs = result.albums[0].songs;
         name = result.albums[0].name;
@@ -490,16 +530,15 @@ class Album {
   ///Parameter	Required	Default	Comment
   ///id	        Yes		    The album or song ID.
   static Future<Album> fromId(String id) async {
-    final result = Album(id, "", "");
+    final result = Album(id);
     await result.fetchInfo();
     return result;
   }
 
   factory Album.fromElement(XmlElement element) {
-    final a = Album(
-        element.getAttribute("id") ?? "",
-        element.getAttribute("name") ?? "",
-        element.getAttribute("coverArt") ?? "",
+    final a = Album(element.getAttribute("id") ?? "",
+        name: element.getAttribute("name") ?? "",
+        coverArt: element.getAttribute("coverArt") ?? "",
         artist: element.getAttribute("artistId") != null
             ? Artist.FromAlbum(element)
             : null);
@@ -526,15 +565,37 @@ class Song {
   Artist? artist;
   int track;
 
-  Song(this.id, this.title, this.coverArt, this.duration,
-      {this.track = 0, this.album, this.artist});
+  Song(this.id,
+      {this.title = "",
+      this.coverArt = "",
+      this.duration = 0,
+      this.track = 0,
+      this.album,
+      this.artist});
+
+  Future<bool> getInfo() async {
+    final mp = MediaPlayer.instance;
+    final result = await mp.fetchSong(id);
+    if (result.songs.isEmpty) {
+      return false;
+    }
+    final currentSong = result.songs[0];
+    id = currentSong.id;
+    album = currentSong.album;
+    artist = currentSong.artist;
+    duration = currentSong.duration;
+    title = currentSong.title;
+    coverArt = currentSong.coverArt;
+    track = currentSong.track;
+
+    return true;
+  }
 
   factory Song.fromAlbum(Album album, XmlElement element) {
-    var re = Song(
-        element.getAttribute("id") ?? "",
-        element.getAttribute("title") ?? "",
-        element.getAttribute("coverArt") ?? "",
-        int.parse(element.getAttribute("duration") ?? ""),
+    var re = Song(element.getAttribute("id") ?? "",
+        title: element.getAttribute("title") ?? "",
+        coverArt: element.getAttribute("coverArt") ?? "",
+        duration: int.parse(element.getAttribute("duration") ?? ""),
         track: int.tryParse(element.getAttribute("track") ?? "") ?? 0,
         album: album);
     final a = element.getAttribute("artistId");
@@ -542,6 +603,18 @@ class Song {
       re.artist = Artist.FromSong(element);
     }
     return re;
+  }
+
+  factory Song.fromElement(XmlElement element) {
+    return Song(element.getAttribute("id") ?? "",
+        title: element.getAttribute("title") ?? "",
+        coverArt: element.getAttribute("coverArt") ?? "",
+        duration: int.parse(element.getAttribute("duration") ?? ""),
+        track: int.tryParse(element.getAttribute("track") ?? "") ?? 0,
+        artist: Artist(element.getAttribute("artistId") ?? "",
+            element.getAttribute("artist") ?? ""),
+        album: Album(element.getAttribute("albumId") ?? "",
+            name: element.getAttribute("album") ?? ""));
   }
 }
 

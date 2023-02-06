@@ -118,14 +118,16 @@ class _MyAppState extends State<MyApp> {
                   case "album":
                     _index.value = 1;
                     if (uri?.pathSegments.length == 2) {
+                      page = AlbumViewList(
+                        display: Album(uri?.pathSegments[1] ?? ""),
+                      );
+                    } else {
                       page =
                           const AlbumViewList(); //album: Album(id: uri?.pathSegments[1]) );
-                    } else {
-                      page = const AlbumViewList();
                     }
-                    if (settings.arguments != null) {
+                    /* if (settings.arguments != null) {
                       page = AlbumInfo(settings.arguments as Album);
-                    }
+                    } */
                     break;
                   case "playlist":
                     _index.value = 3;
