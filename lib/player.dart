@@ -250,7 +250,14 @@ class MyAudioHandler extends BaseAudioHandler {
 
   @override
   Future<void> skipToQueueItem(int index) async {
-    await _player.seek(null, index: index);
+    await _player.seek(Duration.zero, index: index);
+  }
+
+  @override
+  Future<void> stop() async {
+    if (_player.playing) {
+      await _player.stop();
+    }
   }
 
   @override
