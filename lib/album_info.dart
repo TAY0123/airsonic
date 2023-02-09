@@ -129,27 +129,51 @@ class _AlbumInfoState extends State<AlbumInfo>
                               Hero(
                                 tag: "${widget.album.id}-Title}",
                                 child: widget.album.img != null
-                                    ? Text(
-                                        widget.album.name,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .headlineMedium,
-                                      )
+                                    ? GestureDetector(
+                                        onLongPress: () {
+                                          Clipboard.setData(ClipboardData(
+                                              text: widget.album.name));
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(new SnackBar(
+                                            content:
+                                                Text("Copied to Clipboard"),
+                                          ));
+                                        },
+                                        child: Text(
+                                          widget.album.name,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .headlineMedium,
+                                        ))
                                     : FutureBuilder(
                                         future: albumFetchStatus,
                                         builder: (context, snapshot) {
                                           if (snapshot.hasData) {
                                             final currentAlbum = widget.album;
-                                            return Text(
-                                              currentAlbum.name,
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .headlineMedium,
-                                            );
+                                            return GestureDetector(
+                                                onLongPress: () {
+                                                  Clipboard.setData(
+                                                      ClipboardData(
+                                                          text: widget
+                                                              .album.name));
+                                                  ScaffoldMessenger.of(context)
+                                                      .showSnackBar(
+                                                          new SnackBar(
+                                                    content: Text(
+                                                        "Copied to Clipboard"),
+                                                  ));
+                                                },
+                                                child: Text(
+                                                  widget.album.name,
+                                                  maxLines: 2,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .headlineMedium,
+                                                ));
                                           } else {
                                             return Text("");
                                           }
@@ -236,12 +260,28 @@ class _AlbumInfoState extends State<AlbumInfo>
                               ),
                               Padding(
                                 padding: const EdgeInsets.only(top: 32.0),
-                                child: FilledButton.icon(
-                                  icon: Icon(Icons.play_arrow),
-                                  onPressed: () {
-                                    mp.playPlaylist(widget.album.songs ?? []);
-                                  },
-                                  label: Text("Play All"),
+                                child: Row(
+                                  children: [
+                                    Padding(
+                                      padding:
+                                          const EdgeInsets.only(right: 4.0),
+                                      child: FilledButton.icon(
+                                        icon: Icon(Icons.play_arrow),
+                                        onPressed: () {
+                                          mp.playPlaylist(
+                                              widget.album.songs ?? []);
+                                        },
+                                        label: Text("Play All"),
+                                      ),
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.only(
+                                          left: 4.0, right: 4.0),
+                                      child: IconButton(
+                                          onPressed: () {},
+                                          icon: Icon(Icons.favorite)),
+                                    )
+                                  ],
                                 ),
                               )
                             ],
@@ -347,11 +387,21 @@ class _AlbumInfoState extends State<AlbumInfo>
                     alignment: Alignment.centerLeft,
                     child: Hero(
                       tag: "${widget.album.id}-Title}",
-                      child: Text(
-                        widget.album.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.headlineMedium,
+                      child: GestureDetector(
+                        onLongPress: () {
+                          Clipboard.setData(
+                              ClipboardData(text: widget.album.name));
+                          ScaffoldMessenger.of(context)
+                              .showSnackBar(new SnackBar(
+                            content: Text("Copied to Clipboard"),
+                          ));
+                        },
+                        child: Text(
+                          widget.album.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.headlineMedium,
+                        ),
                       ),
                     ),
                   ),
@@ -362,11 +412,10 @@ class _AlbumInfoState extends State<AlbumInfo>
                       tag: "${widget.album.id}-Artist}",
                       child: GestureDetector(
                         onLongPress: () {
-                          Clipboard.setData(new ClipboardData(
+                          Clipboard.setData(ClipboardData(
                               text: widget.album.artist?.name ?? ""));
-                          ScaffoldMessenger.of(context)
-                              .showSnackBar(new SnackBar(
-                            content: new Text("Artist Copied to Clipboard"),
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            content: new Text("Copied to Clipboard"),
                           ));
                         },
                         child: Text(

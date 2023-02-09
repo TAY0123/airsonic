@@ -24,7 +24,7 @@ import 'albums_grid.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // Must add this line.
-  if (Platform.isLinux || Platform.isMacOS || Platform.isWindows && !kIsWeb) {
+  if (!kIsWeb && (Platform.isLinux || Platform.isMacOS || Platform.isWindows)) {
     await DesktopInit();
   }
   runApp(const MyApp());

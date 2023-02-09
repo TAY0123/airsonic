@@ -1,36 +1,20 @@
-import 'dart:ffi';
-import 'dart:io';
-
-import 'package:airsonic/player_vlc.dart';
 import 'package:audio_service/audio_service.dart';
-import 'package:audio_session/audio_session.dart';
-import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:rxdart/rxdart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+//this initalizer is for web only
 Future<AudioHandler> initAudioService() async {
-  if (Platform.isIOS || Platform.isMacOS) {
-    final session = await AudioSession.instance;
-    await session.configure(const AudioSessionConfiguration.music());
-  }
-  if ((Platform.isWindows || Platform.isLinux) && !kIsWeb) {
-    return await AudioService.init(
-      builder: () => VlcAudioHandler(),
-    );
-  } else {
-    return await AudioService.init(
-      builder: () => MyAudioHandler(),
-      config: const AudioServiceConfig(
-        androidNotificationChannelId: 'com.mycompany.myapp.audio',
-        androidNotificationChannelName: 'Audio Service Demo',
-      ),
-    );
-  }
+  return await AudioService.init(
+    builder: () => MyAudioHandler(),
+    config: const AudioServiceConfig(
+      androidNotificationChannelId: 'com.mycompany.myapp.audio',
+      androidNotificationChannelName: 'Audio Service Demo',
+    ),
+  );
 }
 
 //TODO: prev info not correct
-
+// this handler work for iOS macOS Android
 class MyAudioHandler extends BaseAudioHandler {
   final _player = AudioPlayer();
   final _playlist = ConcatenatingAudioSource(children: []);
@@ -42,10 +26,14 @@ class MyAudioHandler extends BaseAudioHandler {
 
   late Future<bool> inited;
 
-  Uri _apiEndpointUrl(String ednpoint, {Map<String, String>? query}) {
+  Future<Uri> _apiEndpointUrl(String ednpoint,
+      {Map<String, String>? query}) async {
     Map<String, dynamic> p = Map.from(_param);
     if (query != null) {
       p.addAll(query);
+    }
+    if (!_base.isAbsolute) {
+      await _init();
     }
     final a = _base.replace(
         pathSegments: _segments.followedBy([ednpoint]), queryParameters: p);
@@ -181,7 +169,11 @@ class MyAudioHandler extends BaseAudioHandler {
   Future<void> addQueueItems(List<MediaItem> mediaItems) async {
     await inited;
     // manage Just Audio
-    final audioSource = mediaItems.map(_createAudioSource);
+    List<UriAudioSource> audioSource = [];
+    for (final e in mediaItems) {
+      final c = await _createAudioSource(e);
+      audioSource.add(c);
+    }
     await _playlist.addAll(audioSource.toList());
     // notify system
     final newQueue = queue.value..addAll(mediaItems);
@@ -198,10 +190,14 @@ class MyAudioHandler extends BaseAudioHandler {
   Future<void> updateQueue(List<MediaItem> mediaItems) async {
     await inited;
     // manage Just Audio
-    final audioSource = mediaItems.map(_createAudioSource);
+    List<UriAudioSource> audioSource = [];
+    for (final e in mediaItems) {
+      final c = await _createAudioSource(e);
+      audioSource.add(c);
+    }
     //clear playlist
     await _playlist.clear();
-    await _playlist.addAll(audioSource.toList());
+    await _playlist.addAll(audioSource);
     // notify system
     //final newQueue = queue.value..addAll(mediaItems);
     final newQueue = mediaItems;
@@ -213,9 +209,10 @@ class MyAudioHandler extends BaseAudioHandler {
     }
   }
 
-  UriAudioSource _createAudioSource(MediaItem mediaItem) {
+  Future<UriAudioSource> _createAudioSource(MediaItem mediaItem) async {
     return AudioSource.uri(
-      _apiEndpointUrl("stream", query: {"id": mediaItem.id, "format": "raw"}),
+      await _apiEndpointUrl("stream",
+          query: {"id": mediaItem.id, "format": "raw"}),
       tag: mediaItem,
     );
   }

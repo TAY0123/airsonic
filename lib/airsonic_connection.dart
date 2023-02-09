@@ -229,6 +229,16 @@ class MediaPlayer {
     return resp.status;
   }
 
+  Uri _getApiUri(String ednpoint, {Map<String, String>? query}) {
+    Map<String, dynamic> p = Map.from(_param);
+    if (query != null) {
+      p.addAll(query);
+    }
+    final a = _base.replace(
+        pathSegments: _segments.followedBy([ednpoint]), queryParameters: p);
+    return a;
+  }
+
   Future<Response> _apiEndpoint(String ednpoint,
       {Map<String, String>? query}) async {
     Map<String, dynamic> p = Map.from(_param);
@@ -356,31 +366,36 @@ class MediaPlayer {
 
   Future<ImageProvider?> fetchCover(String id, {full = false}) async {
     if (id.isEmpty) return Future.error(Exception("no image data"));
-    final Directory temp = await getTemporaryDirectory();
-    final File imageFile = File('${temp.path}/images/$id.png');
-
-    if ((await imageFile.exists()) && (await imageFile.length()) != 0) {
-      // Use the cached images if it exists
-      if (!full) {
-        return MemoryImage(await imageFile.readAsBytes(), scale: 0.75);
-      } else {
-        return MemoryImage(await imageFile.readAsBytes());
-      }
+    if (kIsWeb) {
+      final url = _getApiUri("getCoverArt", query: {"id": id});
+      return NetworkImage(url.toString());
     } else {
-      // Image doesn't exist in cache
-      final file = await imageFile.create(recursive: true);
-      final data = await _apiEndpoint("getCoverArt", query: {"id": id});
-      if (data.headers["content-type"]?.contains("image") ?? false) {
-        file.writeAsBytes(data.bodyBytes);
-      } else {
-        throw "Content type is not image";
-      }
+      final Directory temp = await getTemporaryDirectory();
+      final File imageFile = File('${temp.path}/images/$id.png');
 
-      // Download the image and write to above file
-      if (!full) {
-        return MemoryImage(data.bodyBytes, scale: 0.75);
+      if ((await imageFile.exists()) && (await imageFile.length()) != 0) {
+        // Use the cached images if it exists
+        if (!full) {
+          return MemoryImage(await imageFile.readAsBytes(), scale: 0.75);
+        } else {
+          return MemoryImage(await imageFile.readAsBytes());
+        }
       } else {
-        return MemoryImage(data.bodyBytes);
+        // Image doesn't exist in cache
+        final file = await imageFile.create(recursive: true);
+        final data = await _apiEndpoint("getCoverArt", query: {"id": id});
+        if (data.headers["content-type"]?.contains("image") ?? false) {
+          file.writeAsBytes(data.bodyBytes);
+        } else {
+          throw "Content type is not image";
+        }
+
+        // Download the image and write to above file
+        if (!full) {
+          return MemoryImage(data.bodyBytes, scale: 0.75);
+        } else {
+          return MemoryImage(data.bodyBytes);
+        }
       }
     }
   }
@@ -391,6 +406,7 @@ class MediaPlayer {
 
   Future<Uri?> _coverUri(String id) async {
     if (id.isEmpty) return null;
+    if (kIsWeb) return _getApiUri("getCoverArt", query: {"id": id});
     final Directory temp = await getTemporaryDirectory();
     final File imageFile = File('${temp.path}/images/$id.png');
 

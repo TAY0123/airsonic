@@ -10,17 +10,13 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Future<AudioHandler> initAudioService() async {
-  if (Platform.isIOS || Platform.isMacOS) {
+  if (!kIsWeb && (Platform.isIOS || Platform.isMacOS)) {
     final session = await AudioSession.instance;
     await session.configure(const AudioSessionConfiguration.music());
   }
-  if ((Platform.isWindows || Platform.isLinux) && !kIsWeb) {
+  if (!kIsWeb && (Platform.isWindows || Platform.isLinux)) {
     return await AudioService.init(
       builder: () => VlcAudioHandler(),
-      config: const AudioServiceConfig(
-        androidNotificationChannelId: 'com.mycompany.myapp.audio',
-        androidNotificationChannelName: 'Audio Service Demo',
-      ),
     );
   } else {
     return await AudioService.init(
@@ -33,6 +29,7 @@ Future<AudioHandler> initAudioService() async {
   }
 }
 
+// this handler work for Windows and Linux
 class VlcAudioHandler extends BaseAudioHandler {
   final _player = vlc.Player(
     id: 69420,

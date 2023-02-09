@@ -6,6 +6,7 @@ import 'package:airsonic/const.dart';
 import 'package:airsonic/login.dart';
 import 'package:airsonic/playerControl.dart';
 import 'package:airsonic/search.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:window_manager/window_manager.dart';
@@ -16,7 +17,7 @@ import 'route.dart';
 class SplitView extends StatelessWidget {
   final Widget content;
 
-  final bool _mac = Platform.isMacOS;
+  final bool _mac = !kIsWeb && Platform.isMacOS;
 
   bool _maximize = false;
 

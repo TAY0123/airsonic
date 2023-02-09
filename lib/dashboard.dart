@@ -120,8 +120,6 @@ class _DashBoardRandomGrtidViewState extends State<DashBoardRandomGrtidView> {
   final AirSonicResult albums =
       MediaPlayer.instance.fetchAlbumList(type: AlbumListType.random);
 
-  ValueNotifier<String> selected = ValueNotifier("");
-
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -153,7 +151,11 @@ class _DashBoardRandomGrtidViewState extends State<DashBoardRandomGrtidView> {
                   children: albums.album!.albums
                       .map((e) => AlbumTile(
                             e,
-                            index: selected,
+                            selectable: false,
+                            onTap: (album) {
+                              Navigator.of(context)
+                                  .pushReplacementNamed("/album/${album.id}");
+                            },
                           ))
                       .toList(),
                 );

@@ -96,10 +96,11 @@ class _PlayBackControlState extends State<PlayBackControl>
         coverImage.child = ClipRRect(
             borderRadius: const BorderRadius.all(Radius.circular(12)),
             child: current.artUri != null
-                ? Image.file(
-                    File.fromUri(current.artUri ?? Uri()),
-                    filterQuality: FilterQuality.high,
-                  )
+                ? Image(
+                    image: current.artUri?.isScheme("file") ?? false
+                        ? FileImage(File.fromUri(current.artUri!))
+                        : NetworkImage(current.artUri.toString())
+                            as ImageProvider)
                 : Container(
                     color: Theme.of(context).primaryColorDark,
                   ));

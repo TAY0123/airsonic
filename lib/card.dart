@@ -1,10 +1,8 @@
 import 'dart:io';
-import 'dart:math';
 
 import 'package:airsonic/album_info.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
-import 'package:simple_animations/simple_animations.dart';
 import 'package:transparent_image/transparent_image.dart';
 
 import 'airsonic_connection.dart';
@@ -117,11 +115,12 @@ class _AlbumCardState extends State<AlbumCard>
 
 class AlbumTile extends StatefulWidget {
   final Album album;
-  final ValueNotifier<String> index;
+  final ValueNotifier<String>? index;
   final bool? selectable;
+  final void Function(Album album)? onTap;
 
   const AlbumTile(this.album,
-      {super.key, required this.index, this.selectable});
+      {super.key, this.index, this.selectable, this.onTap});
 
   @override
   State<AlbumTile> createState() => _AlbumTileState();
@@ -137,21 +136,23 @@ class _AlbumTileState extends State<AlbumTile>
   //late Color background = Theme.of(context).colorScheme.surfaceVariant;
   late Color background = Colors.transparent;
   void indexUpdated() {
-    if (widget.index.value == widget.album.id) {
-      _controller.forward();
-    } else {
-      _controller.reverse();
+    if (widget.index != null) {
+      if (widget.index?.value == widget.album.id) {
+        _controller.forward();
+      } else {
+        _controller.reverse();
+      }
     }
   }
 
   @override
   void initState() {
     super.initState();
-    if (widget.index.value == widget.album.id) {
+    if (widget.index?.value == widget.album.id) {
       selected = true;
     }
     if (widget.selectable == true || widget.selectable == null) {
-      widget.index.addListener(indexUpdated);
+      widget.index?.addListener(indexUpdated);
       _controller = AnimationController(
           vsync: this, duration: Duration(milliseconds: 250));
       _animation = CurvedAnimation(parent: _controller, curve: Curves.linear);
@@ -160,29 +161,33 @@ class _AlbumTileState extends State<AlbumTile>
 
   @override
   void dispose() {
-    _animation.dispose();
-    _controller.dispose();
-    widget.index.removeListener(indexUpdated);
+    if (widget.selectable != false) {
+      _animation.dispose();
+      _controller.dispose();
+    }
+    widget.index?.removeListener(indexUpdated);
     super.dispose();
   }
 
   @override
   void didChangeDependencies() {
-    if (widget.index.value == widget.album.id) {
-      background = Theme.of(context).colorScheme.onSurface.withOpacity(0.24);
-      _controller.animateTo(1, duration: Duration(microseconds: 0));
-    }
+    if (widget.selectable != false) {
+      if (widget.index?.value == widget.album.id) {
+        background = Theme.of(context).colorScheme.onSurface.withOpacity(0.24);
+        _controller.animateTo(1, duration: Duration(microseconds: 0));
+      }
 
-    final fading = _animation.drive<Color?>(
-      ColorTween(
-          begin: Colors.transparent,
-          end: Theme.of(context).colorScheme.onSurface.withOpacity(0.24)),
-    );
-    fading.addListener(() {
-      setState(() {
-        background = fading.value!;
+      final fading = _animation.drive<Color?>(
+        ColorTween(
+            begin: Colors.transparent,
+            end: Theme.of(context).colorScheme.onSurface.withOpacity(0.24)),
+      );
+      fading.addListener(() {
+        setState(() {
+          background = fading.value!;
+        });
       });
-    });
+    }
   }
 
   @override
@@ -197,7 +202,10 @@ class _AlbumTileState extends State<AlbumTile>
         child: GestureDetector(
           behavior: HitTestBehavior.translucent,
           onTap: () {
-            widget.index.value = widget.album.id;
+            if (widget.onTap != null) {
+              widget.onTap!(widget.album);
+            }
+            widget.index?.value = widget.album.id;
           },
           child: Stack(
             children: [
@@ -295,7 +303,9 @@ class CoverImage extends StatelessWidget {
     }
     return CoverImage(
       "",
-      provider: FileImage(File.fromUri(uri)),
+      provider: uri.isScheme("file")
+          ? FileImage(File.fromUri(uri))
+          : NetworkImage(uri.toString()) as ImageProvider,
     );
   }
 
@@ -357,7 +367,12 @@ class CoverImage extends StatelessWidget {
       fadeInCurve: Curves.easeInCubic,
       fadeInDuration: const Duration(milliseconds: 250),
       placeholder: MemoryImage(kTransparentImage),
-      image: img ?? MemoryImage(kTransparentImage),
+      placeholderErrorBuilder: (context, error, stackTrace) => Container(
+          color: Theme.of(context).colorScheme.primaryContainer,
+          child: Center(
+            child: Icon(Icons.music_note),
+          )),
+      image: img,
       fit: fit,
       imageErrorBuilder: (context, error, stackTrace) => Container(),
     );
@@ -633,7 +648,16 @@ class DashboardCoverCard extends StatelessWidget {
                     builder: (context, value) {
                       if (value.hasData) {
                         final currentItem = value.data!;
-                        return cardContent(currentItem, context);
+                        final currentSong = Song(currentItem.id);
+                        final fetch = currentSong.getInfo();
+                        return GestureDetector(
+                            onTap: () async {
+                              await fetch;
+                              Navigator.of(context).pushReplacementNamed(
+                                "/album/${currentSong.album?.id ?? ""}",
+                              );
+                            },
+                            child: cardContent(currentItem, context));
                       } else {
                         return FutureBuilder(
                           future: mp.previousQueue,
@@ -641,7 +665,16 @@ class DashboardCoverCard extends StatelessWidget {
                             if (snapshot.hasData &&
                                 snapshot.requireData.isNotEmpty) {
                               final currentItem = snapshot.requireData[0];
-                              return cardContent(currentItem, context);
+                              final currentSong = Song(currentItem.id);
+                              final fetch = currentSong.getInfo();
+                              return GestureDetector(
+                                  onTap: () async {
+                                    await fetch;
+                                    Navigator.of(context).pushReplacementNamed(
+                                      "/album/${currentSong.album?.id ?? ""}",
+                                    );
+                                  },
+                                  child: cardContent(currentItem, context));
                             } else {
                               return Center(child: CircularProgressIndicator());
                             }
