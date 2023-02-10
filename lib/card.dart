@@ -38,6 +38,7 @@ class _AlbumCardState extends State<AlbumCard>
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: () async {
         /* context.pushTransparentRoute(AlbumInfo(
@@ -67,12 +68,52 @@ class _AlbumCardState extends State<AlbumCard>
         }
       },
       child: Card(
+        clipBehavior: Clip.antiAlias,
         child: Column(
           children: [
             Hero(
               tag: "${widget.album.id}-Cover}",
-              child: CoverImage.fromAlbum(
-                widget.album,
+              child: Stack(
+                children: [
+                  FutureBuilder(
+                      future: Future.delayed(Duration(milliseconds: 500)),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.done) {
+                          return CoverImage.fromAlbum(
+                            widget.album,
+                            size: ImageSize.grid,
+                          );
+                        } else {
+                          return AspectRatio(
+                            aspectRatio: 1,
+                            child: Container(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .primaryContainer,
+                                child: const Center(
+                                  child: Icon(Icons.music_note),
+                                )),
+                          );
+                        }
+                      }),
+                  if (widget.album.combined)
+                    Positioned(
+                        right: 8,
+                        top: 8,
+                        child: IconButton(
+                            style: IconButton.styleFrom(
+                              foregroundColor: colors.onPrimary,
+                              backgroundColor: colors.primary,
+                              disabledBackgroundColor: colors.primary,
+                              disabledForegroundColor: colors.onPrimary,
+                              hoverColor: colors.onPrimary.withOpacity(0.08),
+                              focusColor: colors.onPrimary.withOpacity(0.12),
+                              highlightColor:
+                                  colors.onPrimary.withOpacity(0.12),
+                            ),
+                            onPressed: null,
+                            icon: Icon(Icons.library_music)))
+                ],
               ),
             ),
             Expanded(
@@ -230,12 +271,14 @@ class _AlbumTileState extends State<AlbumTile>
                             ? StackedAlbumImage(
                                 child: CoverImage.fromAlbum(
                                   widget.album,
+                                  size: ImageSize.avatar,
                                 ),
                               )
                             : Align(
                                 alignment: Alignment.centerLeft,
                                 child: CoverImage.fromAlbum(
                                   widget.album,
+                                  size: ImageSize.avatar,
                                 ),
                               ),
                       ),
@@ -294,29 +337,46 @@ class CoverImage extends StatelessWidget {
   final BoxFit fit;
   final MediaPlayer mp = MediaPlayer.instance;
 
+  late Widget placeholder;
+
+  final ImageSize size;
+
   CoverImage(
     String coverId, {
     super.key,
     this.fit = BoxFit.cover,
     ImageProvider? provider,
+    this.size = ImageSize.grid,
   }) {
     if (provider != null) {
       data = Future.value(provider);
       return;
     } else {
-      data = mp.fetchCover(coverId);
+      data = mp.fetchCover(coverId, size: size);
     }
   }
 
-  factory CoverImage.fromAlbum(Album album, {BoxFit fit = BoxFit.cover}) {
-    if (album.img != null) {
-      return CoverImage("", fit: fit, provider: album.img);
+  factory CoverImage.fromAlbum(
+    Album album, {
+    BoxFit fit = BoxFit.cover,
+    ImageSize size = ImageSize.grid,
+  }) {
+    if (album.image != null && album.image?.size == size) {
+      return CoverImage("", fit: fit, provider: album.image!.image);
     } else {
-      return CoverImage(album.coverArt, fit: fit);
+      return CoverImage(
+        album.coverArt,
+        fit: fit,
+        size: size,
+      );
     }
   }
 
-  factory CoverImage.fromFileUri(Uri? uri) {
+  factory CoverImage.fromFileUri(
+    Uri? uri, {
+    BoxFit fit = BoxFit.cover,
+    ImageSize size = ImageSize.grid,
+  }) {
     if (uri == null) {
       return CoverImage("");
     }
@@ -325,14 +385,19 @@ class CoverImage extends StatelessWidget {
       provider: uri.isScheme("file")
           ? FileImage(File.fromUri(uri))
           : NetworkImage(uri.toString()) as ImageProvider,
+      size: size,
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    Widget content;
+    placeholder = Container(
+        color: Theme.of(context).colorScheme.primaryContainer,
+        child: const Center(
+          child: Icon(Icons.music_note),
+        ));
 
-    content = FutureBuilder(
+    Widget content = FutureBuilder(
       future: data,
       builder: (context, snapshot) {
         if (snapshot.hasData) {
@@ -349,21 +414,14 @@ class CoverImage extends StatelessWidget {
               );
             }
           } else {
-            return Container(
-              color: Theme.of(context).primaryColorDark,
-            );
+            return placeholder;
           }
-        } else if (snapshot.hasError) {
-          return Container(
-            color: Theme.of(context).colorScheme.primaryContainer,
-            child: Center(
-              child: Icon(Icons.music_note),
-            ),
-          );
+        } else if (snapshot.hasError ||
+            snapshot.connectionState == ConnectionState.done) {
+          //TODO: fade in placeholder
+          return placeholder;
         } else {
-          return Container(
-            color: Colors.transparent,
-          );
+          return Container();
         }
       },
     );
@@ -382,12 +440,6 @@ class CoverImage extends StatelessWidget {
   }
 
   Widget img(BuildContext context, ImageProvider img) {
-    final placeholder = Container(
-        color: Theme.of(context).colorScheme.primaryContainer,
-        child: const Center(
-          child: Icon(Icons.music_note),
-        ));
-
     return FadeInImage(
       fadeInCurve: Curves.easeInCubic,
       fadeInDuration: const Duration(milliseconds: 250),
@@ -775,7 +827,10 @@ class DashboardCoverCard extends StatelessWidget {
             children: [
               AspectRatio(
                   aspectRatio: 1,
-                  child: CoverImage.fromFileUri(currentItem.artUri)),
+                  child: CoverImage.fromFileUri(
+                    currentItem.artUri,
+                    size: ImageSize.grid,
+                  )),
               Flexible(
                   flex: 2,
                   child: Padding(

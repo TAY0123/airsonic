@@ -32,7 +32,7 @@ class _AlbumViewGridState extends State<AlbumViewGrid>
   bool ended = false;
 
   late AirSonicResult _defaultController =
-      widget.controller ?? MediaPlayer.instance.fetchAlbumList();
+      widget.controller ?? MediaPlayer.instance.fetchAlbumList(combined: true);
 
   late Completer completer = Completer();
 
@@ -207,10 +207,8 @@ class _AlbumViewGridState extends State<AlbumViewGrid>
                               mainAxisSpacing: 16),
                       itemBuilder: ((context, index) {
                         final album = a.albums[index];
-                        return CardSwipeAction(
-                          child: AlbumCard(album,
-                              pushNamed: widget.pushNamedNavigation),
-                        );
+                        return AlbumCard(album,
+                            pushNamed: widget.pushNamedNavigation);
                       })),
                   SliverFixedExtentList(
                       delegate: SliverChildListDelegate([

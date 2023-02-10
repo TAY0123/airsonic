@@ -8,6 +8,7 @@ import 'package:audio_service/audio_service.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/http.dart';
 import 'package:just_audio/just_audio.dart';
@@ -247,7 +248,7 @@ class MediaPlayer {
     }
     final a = _base.replace(
         pathSegments: _segments.followedBy([ednpoint]), queryParameters: p);
-    print(a);
+    debugPrint(a.toString());
     late Response resp;
     try {
       resp = await http.get(a);
@@ -368,40 +369,47 @@ class MediaPlayer {
     return result;
   }
 
-  Future<ImageProvider?> fetchCover(String id, {full = false}) async {
+  ImageProvider _resizeImage(ImageProvider src, ImageSize size) {
+    switch (size) {
+      case ImageSize.thumb:
+        return ResizeImage(src, width: 50);
+      case ImageSize.avatar:
+        return ResizeImage(src, width: 256);
+      case ImageSize.grid:
+        return ResizeImage(src, width: 300);
+      case ImageSize.card:
+        return ResizeImage(src, width: 512);
+      case ImageSize.original:
+        return src;
+    }
+  }
+
+  Future<ImageProvider?> fetchCover(String id,
+      {ImageSize size = ImageSize.grid}) async {
     if (id.isEmpty) return null;
     if (kIsWeb) {
       final url = _getApiUri("getCoverArt", query: {"id": id});
-      return NetworkImage(url.toString());
-    } else
-      ;
-    {
+      return _resizeImage(NetworkImage(url.toString()), size);
+    } else {
       final Directory temp = await getTemporaryDirectory();
       final File imageFile = File('${temp.path}/images/$id.png');
 
       if ((await imageFile.exists()) && (await imageFile.length()) != 0) {
         // Use the cached images if it exists
-        if (!full) {
-          return MemoryImage(await imageFile.readAsBytes(), scale: 0.75);
-        } else {
-          return MemoryImage(await imageFile.readAsBytes());
-        }
+        return _resizeImage(FileImage(imageFile), size);
       } else {
         // Image doesn't exist in cache
         final file = await imageFile.create(recursive: true);
         final data = await _apiEndpoint("getCoverArt", query: {"id": id});
         if (data.headers["content-type"]?.contains("image") ?? false) {
+          // Download the image and write to above file
           file.writeAsBytes(data.bodyBytes);
         } else {
-          throw "Content type is not image";
+          return null;
+          //throw "Content type is not image";
         }
 
-        // Download the image and write to above file
-        if (!full) {
-          return MemoryImage(data.bodyBytes, scale: 0.75);
-        } else {
-          return MemoryImage(data.bodyBytes);
-        }
+        return _resizeImage(MemoryImage(data.bodyBytes), size);
       }
     }
   }
@@ -479,6 +487,13 @@ class XMLResult {
   List<Playlist> playlists = [];
 }
 
+class CachedImage {
+  ImageSize size;
+  ImageProvider? image;
+
+  CachedImage(this.image, this.size);
+}
+
 class Album {
   Album(this.id,
       {this.name = "",
@@ -492,14 +507,14 @@ class Album {
   String coverArt;
   Artist? artist;
   List<Song>? songs;
-  ImageProvider? img;
+  CachedImage? image;
   bool combined = false; //it indicate if a album has already combined
   bool combine; //if true fetching will combine all song under same album name
 
-  Future<bool> fetchCover() async {
+  Future<bool> fetchCover({ImageSize size = ImageSize.grid}) async {
     final connection = MediaPlayer.instance;
     try {
-      img = await connection.fetchCover(coverArt);
+      image = CachedImage(await connection.fetchCover(coverArt), size);
     } catch (e) {
       return false;
     }
@@ -769,6 +784,8 @@ enum AlbumListType {
   byGenre
 }
 
+enum ImageSize { thumb, avatar, grid, card, original }
+
 class AlbumList {
   int _offset = 0;
   List<Album> albums = [];
@@ -786,11 +803,9 @@ class AlbumList {
     final result = (await _fetch(_offset, count)).albums;
 
     if (combine) {
-      print("result : ${result.length}");
       for (var resultAlbum in result) {
         final index =
             albums.indexWhere((element) => element.name == resultAlbum.name);
-        print(index);
         if (index != -1) {
           albums[index].songs?.addAll(resultAlbum.songs ?? []);
           //indicate the album has combined other album id
@@ -804,8 +819,6 @@ class AlbumList {
     } else {
       albums.addAll(result);
     }
-
-    print("Album : ${albums.length}");
 
     _offset += result.length;
 

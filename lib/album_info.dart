@@ -94,10 +94,11 @@ class _AlbumInfoState extends State<AlbumInfo>
                             child: Center(
                               child: AspectRatio(
                                 aspectRatio: 1,
-                                child: widget.album.img != null
+                                child: widget.album.image != null
                                     ? CoverImage.fromAlbum(
                                         widget.album,
                                         fit: BoxFit.contain,
+                                        size: ImageSize.original,
                                       )
                                     : FutureBuilder(
                                         future: albumFetchStatus,
@@ -107,6 +108,7 @@ class _AlbumInfoState extends State<AlbumInfo>
                                             return CoverImage.fromAlbum(
                                               currentAlbum,
                                               fit: BoxFit.contain,
+                                              size: ImageSize.original,
                                             );
                                           } else {
                                             return Container(
@@ -128,7 +130,7 @@ class _AlbumInfoState extends State<AlbumInfo>
                               Spacer(),
                               Hero(
                                 tag: "${widget.album.id}-Title}",
-                                child: widget.album.img != null
+                                child: widget.album.image != null
                                     ? GestureDetector(
                                         onLongPress: () {
                                           Clipboard.setData(ClipboardData(
@@ -201,7 +203,7 @@ class _AlbumInfoState extends State<AlbumInfo>
                                   fit: FlexFit.loose,
                                   child: Hero(
                                     tag: "${widget.album.id}-Artist}",
-                                    child: widget.album.img != null
+                                    child: widget.album.image != null
                                         ? Text(
                                             widget.album.artist?.name ?? "",
                                             maxLines: 1,
@@ -359,10 +361,11 @@ class _AlbumInfoState extends State<AlbumInfo>
                   ),
                   Hero(
                     tag: "${widget.album.id}-Cover}",
-                    child: widget.album.img != null
+                    child: widget.album.image != null
                         ? CoverImage.fromAlbum(
                             widget.album,
                             fit: BoxFit.contain,
+                            size: ImageSize.original,
                           )
                         : FutureBuilder(
                             future: albumFetchStatus,
@@ -371,6 +374,7 @@ class _AlbumInfoState extends State<AlbumInfo>
                                 return CoverImage.fromAlbum(
                                   widget.album,
                                   fit: BoxFit.contain,
+                                  size: ImageSize.original,
                                 );
                               } else {
                                 return Container(

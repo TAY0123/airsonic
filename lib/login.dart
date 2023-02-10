@@ -50,7 +50,6 @@ class _LoginPageState extends State<LoginPage> {
     try {
       final result = await mp.login(
           domain: domain, username: username, password: password);
-      print(result.status);
       success = result.status;
     } catch (e) {
       setState(() {
@@ -59,7 +58,6 @@ class _LoginPageState extends State<LoginPage> {
       });
     }
 
-    print(success);
     if (success) {
       (await SharedPreferences.getInstance()).setBool("login", true);
       Navigator.of(context).popAndPushNamed("/album");

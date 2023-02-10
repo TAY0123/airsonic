@@ -307,9 +307,6 @@ class _AlbumViewListState extends State<AlbumViewList>
                         }
                         break;
                       default:
-                        print("default");
-
-                        break;
                     }
                   }
                   // Handle '/album/:id'
