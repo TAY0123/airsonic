@@ -18,27 +18,25 @@ class AlbumCard extends StatefulWidget {
   State<AlbumCard> createState() => _AlbumCardState();
 }
 
-class _AlbumCardState extends State<AlbumCard>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
+class _AlbumCardState extends State<AlbumCard> {
   bool full = false;
+  final timer = Future.delayed(Duration(milliseconds: 500));
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this);
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    timer.ignore();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+
     return GestureDetector(
       onTap: () async {
         /* context.pushTransparentRoute(AlbumInfo(
@@ -76,7 +74,7 @@ class _AlbumCardState extends State<AlbumCard>
               child: Stack(
                 children: [
                   FutureBuilder(
-                      future: Future.delayed(Duration(milliseconds: 500)),
+                      future: timer,
                       builder: (context, snapshot) {
                         if (snapshot.connectionState == ConnectionState.done) {
                           return CoverImage.fromAlbum(
@@ -86,13 +84,17 @@ class _AlbumCardState extends State<AlbumCard>
                         } else {
                           return AspectRatio(
                             aspectRatio: 1,
-                            child: Container(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .primaryContainer,
-                                child: const Center(
-                                  child: Icon(Icons.music_note),
-                                )),
+                            child: ClipRRect(
+                              borderRadius:
+                                  const BorderRadius.all(Radius.circular(12)),
+                              child: Container(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .primaryContainer,
+                                  child: const Center(
+                                    child: Icon(Icons.music_note),
+                                  )),
+                            ),
                           );
                         }
                       }),
@@ -331,14 +333,12 @@ class _AlbumTileState extends State<AlbumTile>
   }
 }
 
-class CoverImage extends StatelessWidget {
+class CoverImage extends StatefulWidget {
+  final MediaPlayer mp = MediaPlayer.instance;
+
   late Future<ImageProvider?> data;
 
   final BoxFit fit;
-  final MediaPlayer mp = MediaPlayer.instance;
-
-  late Widget placeholder;
-
   final ImageSize size;
 
   CoverImage(
@@ -386,24 +386,97 @@ class CoverImage extends StatelessWidget {
           ? FileImage(File.fromUri(uri))
           : NetworkImage(uri.toString()) as ImageProvider,
       size: size,
+      fit: fit,
     );
   }
 
   @override
-  Widget build(BuildContext context) {
-    placeholder = Container(
-        color: Theme.of(context).colorScheme.primaryContainer,
-        child: const Center(
-          child: Icon(Icons.music_note),
-        ));
+  State<CoverImage> createState() => _CoverImageState();
+}
 
+class _CoverImageState extends State<CoverImage>
+    with SingleTickerProviderStateMixin {
+  late Widget placeholder;
+
+  late AnimationController _controller;
+
+  CrossFadeState status = CrossFadeState.showFirst;
+
+  @override
+  void initState() {
+    super.initState();
+    () async {
+      final result = await widget.data;
+      if (mounted && result != null) {
+        setState(() {
+          status = CrossFadeState.showSecond;
+        });
+      }
+    }();
+    _controller = AnimationController(vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final content = ClipRRect(
+      borderRadius: const BorderRadius.all(Radius.circular(12)),
+      child: AnimatedCrossFade(
+          firstCurve: Curves.easeInCubic,
+          layoutBuilder: (topChild, topChildKey, bottomChild, bottomChildKey) {
+            return Stack(
+              children: [
+                Positioned.fill(child: topChild),
+                Positioned.fill(child: bottomChild)
+              ],
+            );
+          },
+          firstChild: Container(
+              color: Theme.of(context).colorScheme.primaryContainer,
+              child: const Center(
+                child: Icon(Icons.music_note),
+              )),
+          secondChild: FutureBuilder(
+            future: widget.data,
+            builder: (context, snapshot) {
+              if (snapshot.hasData) {
+                final img = Image(
+                  image: snapshot.requireData!,
+                  fit: widget.fit,
+                );
+                if (widget.fit != BoxFit.cover) {
+                  return Center(
+                    child: ClipRRect(
+                        borderRadius:
+                            const BorderRadius.all(Radius.circular(12)),
+                        child: img),
+                  );
+                } else {
+                  return img;
+                }
+              } else {
+                return Container();
+              }
+            },
+          ),
+          crossFadeState: status,
+          duration: Duration(milliseconds: 250)),
+    );
+
+    /*
+     placeholder = 
     Widget content = FutureBuilder(
-      future: data,
+      future: widget.data,
       builder: (context, snapshot) {
         if (snapshot.hasData) {
           if (snapshot.requireData != null) {
             final displayImage = snapshot.requireData!;
-            if (fit == BoxFit.cover) {
+            if (widget.fit == BoxFit.cover) {
               return img(context, displayImage);
             } else {
               return Center(
@@ -425,28 +498,18 @@ class CoverImage extends StatelessWidget {
         }
       },
     );
-
-    return ClipRRect(
-      borderRadius: const BorderRadius.all(Radius.circular(12)),
-      child: AspectRatio(
-        aspectRatio: 1,
-        child: fit == BoxFit.cover
-            ? Container(
-                child: content,
-              )
-            : content,
-      ),
-    );
+*/
+    return AspectRatio(aspectRatio: 1, child: content);
   }
 
   Widget img(BuildContext context, ImageProvider img) {
     return FadeInImage(
       fadeInCurve: Curves.easeInCubic,
       fadeInDuration: const Duration(milliseconds: 250),
-      placeholder: MemoryImage(kTransparentImage),
+      placeholder: TransparentPlaceholder,
       placeholderErrorBuilder: (context, error, stackTrace) => placeholder,
       image: img,
-      fit: fit,
+      fit: widget.fit,
       imageErrorBuilder: (context, error, stackTrace) => Container(),
     );
   }
@@ -459,6 +522,8 @@ class StackedAlbumImage extends StatefulWidget {
   @override
   State<StackedAlbumImage> createState() => _StackedAlbumImageState();
 }
+
+ImageProvider TransparentPlaceholder = MemoryImage(kTransparentImage);
 
 class _StackedAlbumImageState extends State<StackedAlbumImage> {
   double height = 0;
