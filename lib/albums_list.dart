@@ -25,7 +25,7 @@ class _AlbumViewListState extends State<AlbumViewList>
 
   bool ended = false;
 
-  var _defaultController = MediaPlayer.instance.fetchAlbumList();
+  var _defaultController = MediaPlayer.instance.fetchAlbumList(combined: true);
 
   late Completer completer = Completer();
 
@@ -100,8 +100,8 @@ class _AlbumViewListState extends State<AlbumViewList>
   }
 
   void fetchUntilScrollable() async {
-    final local_completer = Completer();
-    completer = local_completer;
+    final localCompleter = Completer();
+    completer = localCompleter;
     await fetchAlbums();
     while ((!_scrollController.hasClients ||
             _scrollController.position.maxScrollExtent == 0.0) &&
@@ -109,7 +109,7 @@ class _AlbumViewListState extends State<AlbumViewList>
         !(_listController.value.album?.finished ?? true)) {
       await fetchAlbums();
     }
-    local_completer.complete();
+    localCompleter.complete();
   }
 
   @override

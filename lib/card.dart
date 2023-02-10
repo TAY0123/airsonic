@@ -1,8 +1,10 @@
 import 'dart:io';
 
+import 'package:airsonic/after_layout.dart';
 import 'package:airsonic/album_info.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
+import 'package:simple_animations/simple_animations.dart';
 import 'package:transparent_image/transparent_image.dart';
 
 import 'airsonic_connection.dart';
@@ -119,8 +121,13 @@ class AlbumTile extends StatefulWidget {
   final bool? selectable;
   final void Function(Album album)? onTap;
 
-  const AlbumTile(this.album,
-      {super.key, this.index, this.selectable, this.onTap});
+  const AlbumTile(
+    this.album, {
+    super.key,
+    this.index,
+    this.selectable,
+    this.onTap,
+  });
 
   @override
   State<AlbumTile> createState() => _AlbumTileState();
@@ -217,8 +224,20 @@ class _AlbumTileState extends State<AlbumTile>
                   padding: const EdgeInsets.only(right: 16),
                   child: Row(
                     children: [
-                      CoverImage.fromAlbum(
-                        widget.album,
+                      AspectRatio(
+                        aspectRatio: 1.2,
+                        child: widget.album.combined
+                            ? StackedAlbumImage(
+                                child: CoverImage.fromAlbum(
+                                  widget.album,
+                                ),
+                              )
+                            : Align(
+                                alignment: Alignment.centerLeft,
+                                child: CoverImage.fromAlbum(
+                                  widget.album,
+                                ),
+                              ),
                       ),
                       Expanded(
                           child: Padding(
@@ -320,12 +339,12 @@ class CoverImage extends StatelessWidget {
           if (snapshot.requireData != null) {
             final displayImage = snapshot.requireData!;
             if (fit == BoxFit.cover) {
-              return img(displayImage);
+              return img(context, displayImage);
             } else {
               return Center(
                 child: ClipRRect(
                   borderRadius: const BorderRadius.all(Radius.circular(12)),
-                  child: img(displayImage),
+                  child: img(context, displayImage),
                 ),
               );
             }
@@ -362,19 +381,71 @@ class CoverImage extends StatelessWidget {
     );
   }
 
-  FadeInImage img(ImageProvider img) {
+  Widget img(BuildContext context, ImageProvider img) {
+    final placeholder = Container(
+        color: Theme.of(context).colorScheme.primaryContainer,
+        child: const Center(
+          child: Icon(Icons.music_note),
+        ));
+
     return FadeInImage(
       fadeInCurve: Curves.easeInCubic,
       fadeInDuration: const Duration(milliseconds: 250),
       placeholder: MemoryImage(kTransparentImage),
-      placeholderErrorBuilder: (context, error, stackTrace) => Container(
-          color: Theme.of(context).colorScheme.primaryContainer,
-          child: Center(
-            child: Icon(Icons.music_note),
-          )),
+      placeholderErrorBuilder: (context, error, stackTrace) => placeholder,
       image: img,
       fit: fit,
       imageErrorBuilder: (context, error, stackTrace) => Container(),
+    );
+  }
+}
+
+class StackedAlbumImage extends StatefulWidget {
+  final Widget child;
+  const StackedAlbumImage({super.key, required this.child});
+
+  @override
+  State<StackedAlbumImage> createState() => _StackedAlbumImageState();
+}
+
+class _StackedAlbumImageState extends State<StackedAlbumImage> {
+  double height = 0;
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        Positioned(
+          left: height / 12 * 2,
+          width: height,
+          height: height,
+          child: Card(
+            elevation: 4,
+            margin: EdgeInsets.all(0),
+            child: Container(),
+          ),
+        ),
+        Positioned(
+          left: height / 12,
+          width: height,
+          height: height,
+          child: Card(
+            elevation: 8,
+            margin: EdgeInsets.all(0),
+            child: Container(),
+          ),
+        ),
+        AfterLayout(
+          callback: (value) {
+            setState(() {
+              height = value.size.height;
+            });
+          },
+          child: AspectRatio(
+            aspectRatio: 1,
+            child: widget.child,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -773,5 +844,144 @@ class DashboardCoverCard extends StatelessWidget {
         ),
       ],
     );
+  }
+}
+
+class PlayListCard extends StatelessWidget {
+  const PlayListCard({super.key, required this.playlist});
+
+  final Playlist playlist;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Flexible(
+              child: Row(
+                children: [
+                  CoverImage(playlist.coverArt ?? ""),
+                  Flexible(
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 8.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            playlist.name ?? "",
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          Text("Songs: ${playlist.songCount}")
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Divider(),
+            ButtonBar(
+              children: [
+                FilledButton.icon(
+                    onPressed: () async {},
+                    //label: Text("Continue"),
+                    icon: Container(),
+                    label: Icon(Icons.play_arrow))
+              ],
+            )
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class CardSwipeAction extends StatefulWidget {
+  final Widget child;
+  const CardSwipeAction({super.key, required this.child});
+
+  @override
+  State<CardSwipeAction> createState() => _CardSwipeActionState();
+}
+
+class _CardSwipeActionState extends State<CardSwipeAction>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  late Animation<double> animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller =
+        AnimationController(vsync: this, duration: Duration(milliseconds: 250));
+    animation = _controller.drive(Tween(begin: 0, end: 40));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(onSecondaryTap: () {
+      if (animation.value > 20) {
+        _controller.reverse();
+      } else {
+        _controller.forward();
+      }
+    }, onHorizontalDragUpdate: (details) {
+      // Note: Sensitivity is integer used when you don't want to mess up vertical drag
+      int sensitivity = 8;
+      if (details.delta.dx > sensitivity) {
+        _controller.play();
+      } else if (details.delta.dx < -sensitivity) {
+        _controller.reverse();
+      }
+    }, child: LayoutBuilder(
+      builder: (context, constraints) {
+        return Stack(
+          children: [
+            SizedBox(
+              width: 90,
+              child: Card(
+                elevation: 0,
+                color: Theme.of(context).colorScheme.surfaceVariant,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Container(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        IconButton(onPressed: () {}, icon: Icon(Icons.add)),
+                        IconButton(
+                            onPressed: () {}, icon: Icon(Icons.favorite)),
+                        IconButton(onPressed: () {}, icon: Icon(Icons.delete)),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            AnimatedBuilder(
+              animation: animation,
+              builder: (context, child) {
+                return Positioned(
+                  width: constraints.maxWidth - animation.value,
+                  height: constraints.maxHeight,
+                  left: animation.value,
+                  child: child!,
+                );
+              },
+              child: widget.child,
+            )
+          ],
+        );
+      },
+    ));
   }
 }

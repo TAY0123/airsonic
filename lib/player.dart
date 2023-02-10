@@ -156,7 +156,8 @@ class MyAudioHandler extends BaseAudioHandler {
     _player.durationStream.listen((duration) {
       final index = _player.currentIndex;
       final newQueue = queue.value;
-      if (index == null || newQueue.isEmpty) return;
+      if (index == null || newQueue.isEmpty || newQueue.length - 1 < index)
+        return;
       final oldMediaItem = newQueue[index];
       final newMediaItem = oldMediaItem.copyWith(duration: duration);
       newQueue[index] = newMediaItem;

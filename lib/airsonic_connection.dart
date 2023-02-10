@@ -299,20 +299,24 @@ class MediaPlayer {
   AirSonicResult fetchAlbumList(
       {int count = 0,
       AlbumListType type = AlbumListType.recent,
-      String folderId = ""}) {
+      String folderId = "",
+      bool combined = false}) {
     final res = AirSonicResult();
 
-    res.album = AlbumList((offset, count) async {
-      await _inited;
-      Map<String, String> q = {};
-      if (folderId.isNotEmpty) {
-        q["musicFolderId"] = folderId;
-      }
-      q["type"] = type.name;
-      q["offset"] = "$offset";
+    res.album = AlbumList(
+      (offset, count) async {
+        await _inited;
+        Map<String, String> q = {};
+        if (folderId.isNotEmpty) {
+          q["musicFolderId"] = folderId;
+        }
+        q["type"] = type.name;
+        q["offset"] = "$offset";
 
-      return await _xmlEndpoint("getAlbumList2", query: q);
-    });
+        return await _xmlEndpoint("getAlbumList2", query: q);
+      },
+      combine: combined,
+    );
 
     return res;
   }
@@ -365,11 +369,13 @@ class MediaPlayer {
   }
 
   Future<ImageProvider?> fetchCover(String id, {full = false}) async {
-    if (id.isEmpty) return Future.error(Exception("no image data"));
+    if (id.isEmpty) return null;
     if (kIsWeb) {
       final url = _getApiUri("getCoverArt", query: {"id": id});
       return NetworkImage(url.toString());
-    } else {
+    } else
+      ;
+    {
       final Directory temp = await getTemporaryDirectory();
       final File imageFile = File('${temp.path}/images/$id.png');
 
@@ -432,6 +438,7 @@ class MediaPlayer {
   void playPlaylist(List<Song> playlist, {int index = 0}) async {
     waitForPlayerReady?.cancel();
     final fplayer = await futurePlayer;
+    await fplayer.stop();
     List<MediaItem> res = [];
     for (Song song in playlist) {
       res.add(MediaItem(
@@ -444,7 +451,7 @@ class MediaPlayer {
       ));
     }
     await fplayer.updateQueue(res);
-    if (index != 0) await fplayer.skipToQueueItem(index);
+    await fplayer.skipToQueueItem(index);
     fplayer.play();
 
     /*
@@ -486,7 +493,8 @@ class Album {
   Artist? artist;
   List<Song>? songs;
   ImageProvider? img;
-  bool combine;
+  bool combined = false; //it indicate if a album has already combined
+  bool combine; //if true fetching will combine all song under same album name
 
   Future<bool> fetchCover() async {
     final connection = MediaPlayer.instance;
@@ -514,6 +522,7 @@ class Album {
         coverArt = result.albums[0].coverArt;
       }
       if (this.combine || combine) {
+        combined = true;
         final others = connection.fetchSearchResult(name);
         while (!(others.album?.finished ?? true)) {
           await others.album?.fetchNext(count: 10);
@@ -764,17 +773,40 @@ class AlbumList {
   int _offset = 0;
   List<Album> albums = [];
   bool finished = false;
+  bool combine;
 
   final Future<XMLResult> Function(int offset, int count) _fetch;
 
-  AlbumList(this._fetch);
+  AlbumList(this._fetch, {this.combine = false});
   final mp = MediaPlayer.instance;
 
   ///fetch next count of item to album list and
   ///return count of success fetched albums
   Future<int> fetchNext({int count = 10}) async {
     final result = (await _fetch(_offset, count)).albums;
-    albums.addAll(result);
+
+    if (combine) {
+      print("result : ${result.length}");
+      for (var resultAlbum in result) {
+        final index =
+            albums.indexWhere((element) => element.name == resultAlbum.name);
+        print(index);
+        if (index != -1) {
+          albums[index].songs?.addAll(resultAlbum.songs ?? []);
+          //indicate the album has combined other album id
+          albums[index].combined = true;
+          //enable album to fetch all song under same name
+          albums[index].combine = true;
+        } else {
+          albums.add(resultAlbum);
+        }
+      }
+    } else {
+      albums.addAll(result);
+    }
+
+    print("Album : ${albums.length}");
+
     _offset += result.length;
 
     if (result.isEmpty || result.length != count) {

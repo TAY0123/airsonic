@@ -207,8 +207,10 @@ class _AlbumViewGridState extends State<AlbumViewGrid>
                               mainAxisSpacing: 16),
                       itemBuilder: ((context, index) {
                         final album = a.albums[index];
-                        return AlbumCard(album,
-                            pushNamed: widget.pushNamedNavigation);
+                        return CardSwipeAction(
+                          child: AlbumCard(album,
+                              pushNamed: widget.pushNamedNavigation),
+                        );
                       })),
                   SliverFixedExtentList(
                       delegate: SliverChildListDelegate([
