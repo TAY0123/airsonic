@@ -20,7 +20,7 @@ class AlbumCard extends StatefulWidget {
 
 class _AlbumCardState extends State<AlbumCard> {
   bool full = false;
-  final timer = Future.delayed(Duration(milliseconds: 500));
+  final timer = Future.delayed(Duration(milliseconds: 250));
 
   @override
   void initState() {
@@ -43,6 +43,7 @@ class _AlbumCardState extends State<AlbumCard> {
           widget.album,
           img: await img,
         )); */
+        /*
         if (widget.pushNamed) {
           Navigator.pushNamed(context, "/album/${widget.album.id}",
               arguments: widget.album);
@@ -64,6 +65,21 @@ class _AlbumCardState extends State<AlbumCard> {
                 },
               ));
         }
+        */
+        //TODO: add dialog to route so it display on url navigate
+        //DialogRoute(context: context, builder: builder)
+        showDialog(
+            context: context,
+            builder: (context) => Dialog(
+                  alignment: Alignment.center,
+                  child: FractionallySizedBox(
+                    heightFactor: 0.95,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: AlbumInfo(widget.album),
+                    ),
+                  ),
+                ));
       },
       child: Card(
         clipBehavior: Clip.antiAlias,
@@ -80,6 +96,7 @@ class _AlbumCardState extends State<AlbumCard> {
                           return CoverImage.fromAlbum(
                             widget.album,
                             size: ImageSize.grid,
+                            cache: true,
                           );
                         } else {
                           return AspectRatio(
@@ -209,6 +226,8 @@ class _AlbumTileState extends State<AlbumTile>
     }
   }
 
+  Animation<Color?>? fading;
+
   @override
   void dispose() {
     if (widget.selectable != false) {
@@ -221,22 +240,18 @@ class _AlbumTileState extends State<AlbumTile>
 
   @override
   void didChangeDependencies() {
+    super.didChangeDependencies();
     if (widget.selectable != false) {
       if (widget.index?.value == widget.album.id) {
         background = Theme.of(context).colorScheme.onSurface.withOpacity(0.24);
         _controller.animateTo(1, duration: Duration(microseconds: 0));
       }
 
-      final fading = _animation.drive<Color?>(
+      fading = _animation.drive<Color?>(
         ColorTween(
             begin: Colors.transparent,
             end: Theme.of(context).colorScheme.onSurface.withOpacity(0.24)),
       );
-      fading.addListener(() {
-        setState(() {
-          background = fading.value!;
-        });
-      });
     }
   }
 
@@ -259,9 +274,13 @@ class _AlbumTileState extends State<AlbumTile>
           },
           child: Stack(
             children: [
-              Container(
-                color: background,
-              ),
+              if (fading != null)
+                AnimatedBuilder(
+                  animation: fading!,
+                  builder: (context, child) => Container(
+                    color: fading!.value!,
+                  ),
+                ),
               Center(
                 child: Padding(
                   padding: const EdgeInsets.only(right: 16),
@@ -274,6 +293,7 @@ class _AlbumTileState extends State<AlbumTile>
                                 child: CoverImage.fromAlbum(
                                   widget.album,
                                   size: ImageSize.avatar,
+                                  cache: true,
                                 ),
                               )
                             : Align(
@@ -281,6 +301,7 @@ class _AlbumTileState extends State<AlbumTile>
                                 child: CoverImage.fromAlbum(
                                   widget.album,
                                   size: ImageSize.avatar,
+                                  cache: true,
                                 ),
                               ),
                       ),
@@ -345,30 +366,39 @@ class CoverImage extends StatefulWidget {
     String coverId, {
     super.key,
     this.fit = BoxFit.cover,
-    ImageProvider? provider,
+    Future<ImageProvider?>? provider,
     this.size = ImageSize.grid,
   }) {
-    if (provider != null) {
-      data = Future.value(provider);
-      return;
-    } else {
-      data = mp.fetchCover(coverId, size: size);
-    }
+    data = provider ?? mp.fetchCover(coverId, size: size);
   }
 
   factory CoverImage.fromAlbum(
     Album album, {
     BoxFit fit = BoxFit.cover,
     ImageSize size = ImageSize.grid,
+    bool cache = false,
   }) {
     if (album.image != null && album.image?.size == size) {
-      return CoverImage("", fit: fit, provider: album.image!.image);
+      return CoverImage("",
+          fit: fit, provider: Future.value(album.image!.image));
     } else {
-      return CoverImage(
-        album.coverArt,
-        fit: fit,
-        size: size,
-      );
+      if (cache) {
+        return CoverImage(
+          "",
+          fit: fit,
+          size: size,
+          provider: () async {
+            await album.fetchCover(size: size);
+            return album.image?.image;
+          }(),
+        );
+      } else {
+        return CoverImage(
+          album.coverArt,
+          fit: fit,
+          size: size,
+        );
+      }
     }
   }
 
@@ -382,9 +412,9 @@ class CoverImage extends StatefulWidget {
     }
     return CoverImage(
       "",
-      provider: uri.isScheme("file")
+      provider: Future.value(uri.isScheme("file")
           ? FileImage(File.fromUri(uri))
-          : NetworkImage(uri.toString()) as ImageProvider,
+          : NetworkImage(uri.toString()) as ImageProvider),
       size: size,
       fit: fit,
     );
@@ -394,18 +424,17 @@ class CoverImage extends StatefulWidget {
   State<CoverImage> createState() => _CoverImageState();
 }
 
-class _CoverImageState extends State<CoverImage>
-    with SingleTickerProviderStateMixin {
+class _CoverImageState extends State<CoverImage> {
   late Widget placeholder;
 
-  late AnimationController _controller;
-
   CrossFadeState status = CrossFadeState.showFirst;
+
+  late Future<void> task;
 
   @override
   void initState() {
     super.initState();
-    () async {
+    task = () async {
       final result = await widget.data;
       if (mounted && result != null) {
         setState(() {
@@ -413,12 +442,11 @@ class _CoverImageState extends State<CoverImage>
         });
       }
     }();
-    _controller = AnimationController(vsync: this);
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    task.ignore();
     super.dispose();
   }
 
@@ -448,6 +476,9 @@ class _CoverImageState extends State<CoverImage>
                 final img = Image(
                   image: snapshot.requireData!,
                   fit: widget.fit,
+                  filterQuality: widget.fit == ImageSize.grid
+                      ? FilterQuality.high
+                      : FilterQuality.low,
                 );
                 if (widget.fit != BoxFit.cover) {
                   return Center(
@@ -468,37 +499,6 @@ class _CoverImageState extends State<CoverImage>
           duration: Duration(milliseconds: 250)),
     );
 
-    /*
-     placeholder = 
-    Widget content = FutureBuilder(
-      future: widget.data,
-      builder: (context, snapshot) {
-        if (snapshot.hasData) {
-          if (snapshot.requireData != null) {
-            final displayImage = snapshot.requireData!;
-            if (widget.fit == BoxFit.cover) {
-              return img(context, displayImage);
-            } else {
-              return Center(
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.all(Radius.circular(12)),
-                  child: img(context, displayImage),
-                ),
-              );
-            }
-          } else {
-            return placeholder;
-          }
-        } else if (snapshot.hasError ||
-            snapshot.connectionState == ConnectionState.done) {
-          //TODO: fade in placeholder
-          return placeholder;
-        } else {
-          return Container();
-        }
-      },
-    );
-*/
     return AspectRatio(aspectRatio: 1, child: content);
   }
 
@@ -537,6 +537,7 @@ class _StackedAlbumImageState extends State<StackedAlbumImage> {
           height: height,
           child: Card(
             elevation: 4,
+            color: Theme.of(context).colorScheme.surfaceVariant,
             margin: EdgeInsets.all(0),
             child: Container(),
           ),
@@ -546,7 +547,8 @@ class _StackedAlbumImageState extends State<StackedAlbumImage> {
           width: height,
           height: height,
           child: Card(
-            elevation: 8,
+            color: Theme.of(context).colorScheme.surfaceVariant,
+            elevation: 12,
             margin: EdgeInsets.all(0),
             child: Container(),
           ),

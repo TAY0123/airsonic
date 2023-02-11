@@ -107,7 +107,7 @@ class _AlbumViewGridState extends State<AlbumViewGrid>
       setState(() {});
       return true;
     }
-    await _listController.value.album?.fetchNext();
+    await _listController.value.album?.fetchNext(count: 300);
     setState(() {});
     return true;
   }
@@ -133,100 +133,97 @@ class _AlbumViewGridState extends State<AlbumViewGrid>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: NotificationListener<SizeChangedLayoutNotification>(
-        onNotification: (notification) {
-          () async {
-            await completer.future;
+    return NotificationListener<SizeChangedLayoutNotification>(
+      onNotification: (notification) {
+        () async {
+          await completer.future;
 
-            completer = Completer();
-            while ((!_scrollController.hasClients ||
-                    _scrollController.position.maxScrollExtent == 0.0) &&
-                error == null &&
-                !(_listController.value.album?.finished ?? true)) {
-              await fetchAlbums();
-            }
-            completer.complete();
-          }();
+          completer = Completer();
+          while ((!_scrollController.hasClients ||
+                  _scrollController.position.maxScrollExtent == 0.0) &&
+              error == null &&
+              !(_listController.value.album?.finished ?? true)) {
+            await fetchAlbums();
+          }
+          completer.complete();
+        }();
 
-          return true;
-        },
-        child: SizeChangedLayoutNotifier(
-          child: LayoutBuilder(builder: (context, constraints) {
-            final a = _listController.value.album!;
-            return Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: CustomScrollView(
-                controller: !widget.listenOnly ? _scrollController : null,
-                slivers: [
-                  if (widget.searchBar)
-                    SliverList(
-                      delegate: SliverChildListDelegate([
-                        SearchingBar(result),
-                        Padding(padding: EdgeInsets.only(bottom: 8)),
-                        Row(
-                          children: [
-                            Spacer(),
-                            IconButton(
-                                tooltip: "change mode",
-                                onPressed: () {
-                                  Navigator.of(context)
-                                      .pushReplacement(PageRouteBuilder(
-                                    pageBuilder: (context, animation,
-                                        secondaryAnimation) {
-                                      return AlbumViewList();
-                                    },
-                                  ));
-                                },
-                                icon: Icon(Icons.list)),
-                            PopupMenuButton(
-                                tooltip: "sorting",
-                                initialValue: _currentType,
-                                icon: Icon(Icons.filter_list),
-                                itemBuilder: (context) => b,
-                                onSelected: (value) {
-                                  if (_currentType == value) return;
-                                  setState(() {
-                                    _currentType = value;
-                                    _defaultController =
-                                        mp.fetchAlbumList(type: value);
-                                  });
-                                  _listController.value = _defaultController;
-                                }),
-                          ],
-                        ),
-                      ]),
-                    ),
-                  SliverGrid.builder(
-                      itemCount: a.albums.length,
-                      gridDelegate:
-                          const SliverGridDelegateWithMaxCrossAxisExtent(
-                              childAspectRatio: 0.75,
-                              maxCrossAxisExtent: 250,
-                              crossAxisSpacing: 16,
-                              mainAxisSpacing: 16),
-                      itemBuilder: ((context, index) {
-                        final album = a.albums[index];
-                        return AlbumCard(album,
-                            pushNamed: widget.pushNamedNavigation);
-                      })),
-                  SliverFixedExtentList(
-                      delegate: SliverChildListDelegate([
-                        Center(
-                            child: a.finished
-                                ? Text(
-                                    "Total Album: ${a.albums.length}",
-                                    style:
-                                        Theme.of(context).textTheme.bodyLarge,
-                                  )
-                                : CircularProgressIndicator())
-                      ]),
-                      itemExtent: 100),
-                ],
-              ),
-            );
-          }),
-        ),
+        return true;
+      },
+      child: SizeChangedLayoutNotifier(
+        child: LayoutBuilder(builder: (context, constraints) {
+          final a = _listController.value.album!;
+          return Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: CustomScrollView(
+              controller: !widget.listenOnly ? _scrollController : null,
+              slivers: [
+                if (widget.searchBar)
+                  SliverList(
+                    delegate: SliverChildListDelegate([
+                      SearchingBar(result),
+                      Padding(padding: EdgeInsets.only(bottom: 8)),
+                      Row(
+                        children: [
+                          Spacer(),
+                          IconButton(
+                              tooltip: "change mode",
+                              onPressed: () {
+                                Navigator.of(context)
+                                    .pushReplacement(PageRouteBuilder(
+                                  pageBuilder:
+                                      (context, animation, secondaryAnimation) {
+                                    return AlbumViewList();
+                                  },
+                                ));
+                              },
+                              icon: Icon(Icons.list)),
+                          PopupMenuButton(
+                              tooltip: "sorting",
+                              initialValue: _currentType,
+                              icon: Icon(Icons.filter_list),
+                              itemBuilder: (context) => b,
+                              onSelected: (value) {
+                                if (_currentType == value) return;
+                                setState(() {
+                                  _currentType = value;
+                                  _defaultController =
+                                      mp.fetchAlbumList(type: value);
+                                });
+                                _listController.value = _defaultController;
+                              }),
+                        ],
+                      ),
+                    ]),
+                  ),
+                SliverGrid.builder(
+                    itemCount: a.albums.length,
+                    gridDelegate:
+                        const SliverGridDelegateWithMaxCrossAxisExtent(
+                            childAspectRatio: 0.75,
+                            maxCrossAxisExtent: 250,
+                            crossAxisSpacing: 16,
+                            mainAxisSpacing: 16),
+                    itemBuilder: ((context, index) {
+                      final album = a.albums[index];
+                      return AlbumCard(album,
+                          pushNamed: widget.pushNamedNavigation);
+                    })),
+                SliverFixedExtentList(
+                    delegate: SliverChildListDelegate([
+                      Center(
+                          child: a.finished
+                              ? Text(
+                                  "Total Album: ${a.albums.length}",
+                                  style: Theme.of(context).textTheme.bodyLarge,
+                                )
+                              : CircularProgressIndicator())
+                    ]),
+                    itemExtent: 100),
+              ],
+            ),
+          );
+        }),
       ),
     );
   }

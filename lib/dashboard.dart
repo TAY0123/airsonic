@@ -12,6 +12,7 @@ import 'package:flutter/src/widgets/placeholder.dart';
 import 'package:flutter/src/widgets/ticker_provider.dart';
 
 import 'airsonic_connection.dart';
+import 'album_info.dart';
 
 class Dashboard extends StatefulWidget {
   const Dashboard({super.key});
@@ -153,8 +154,18 @@ class _DashBoardRandomGrtidViewState extends State<DashBoardRandomGrtidView> {
                             e,
                             selectable: false,
                             onTap: (album) {
-                              Navigator.of(context)
-                                  .pushReplacementNamed("/album/${album.id}");
+                              showDialog(
+                                  context: context,
+                                  builder: (context) => Dialog(
+                                        alignment: Alignment.center,
+                                        child: FractionallySizedBox(
+                                          heightFactor: 0.95,
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(16.0),
+                                            child: AlbumInfo(album),
+                                          ),
+                                        ),
+                                      ));
                             },
                           ))
                       .toList(),

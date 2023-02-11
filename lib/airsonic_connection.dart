@@ -298,8 +298,7 @@ class MediaPlayer {
   }
 
   AirSonicResult fetchAlbumList(
-      {int count = 0,
-      AlbumListType type = AlbumListType.recent,
+      {AlbumListType type = AlbumListType.recent,
       String folderId = "",
       bool combined = false}) {
     final res = AirSonicResult();
@@ -313,6 +312,7 @@ class MediaPlayer {
         }
         q["type"] = type.name;
         q["offset"] = "$offset";
+        q["size"] = "$count";
 
         return await _xmlEndpoint("getAlbumList2", query: q);
       },
@@ -376,7 +376,7 @@ class MediaPlayer {
       case ImageSize.avatar:
         return ResizeImage(src, width: 256);
       case ImageSize.grid:
-        return ResizeImage(src, width: 300);
+        return ResizeImage(src, width: 350);
       case ImageSize.card:
         return ResizeImage(src, width: 512);
       case ImageSize.original:
@@ -396,7 +396,13 @@ class MediaPlayer {
 
       if ((await imageFile.exists()) && (await imageFile.length()) != 0) {
         // Use the cached images if it exists
-        return _resizeImage(FileImage(imageFile), size);
+        ImageProvider file;
+        try {
+          file = FileImage(imageFile);
+        } catch (e) {
+          return null;
+        }
+        return _resizeImage(file, size);
       } else {
         // Image doesn't exist in cache
         final file = await imageFile.create(recursive: true);
