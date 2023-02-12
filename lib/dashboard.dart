@@ -5,6 +5,7 @@ import 'package:airsonic/card.dart';
 import 'package:airsonic/const.dart';
 import 'package:airsonic/search.dart';
 import 'package:collection/collection.dart';
+import 'package:dismissible_page/dismissible_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/src/animation/animation_controller.dart';
@@ -30,9 +31,9 @@ class _DashboardState extends State<Dashboard>
 
   MediaPlayer mp = MediaPlayer.instance;
 
-  final double cardHeight = 125 * 2 + 40;
-  final double rowDesktopHeight = 125 * 2 + 40;
-  final double rowMobileHeight = 125 * 4 + 40;
+  final double cardHeight = 125 * 2 + 45;
+  final double rowDesktopHeight = 125 * 2 + 45;
+  final double rowMobileHeight = 125 * 4 + 45;
 
   @override
   void initState() {
@@ -48,12 +49,17 @@ class _DashboardState extends State<Dashboard>
 
   @override
   Widget build(BuildContext context) {
+    final textStyle = Theme.of(context).textTheme;
     final covercard = DashboardCoverCard();
     final random =
-        albumGrid("Random", mp.fetchAlbumList(type: AlbumListType.random));
+        albumTileGrid("Random", mp.fetchAlbumList(type: AlbumListType.random));
 
     final recentGrid =
-        albumGrid("Recent", mp.fetchAlbumList(type: AlbumListType.recent));
+        albumCardGrid("Recent", mp.fetchAlbumList(type: AlbumListType.recent));
+
+    final newestGrid =
+        albumCardGrid("Newest", mp.fetchAlbumList(type: AlbumListType.newest));
+
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: LayoutBuilder(builder: (context, constraints) {
@@ -88,7 +94,7 @@ class _DashboardState extends State<Dashboard>
                                         550),
                                     //constraints: BoxConstraints(
                                     //    minWidth: 400, maxWidth: 550),
-                                    child: Expanded(child: covercard),
+                                    child: covercard,
                                   ),
                                   Padding(padding: EdgeInsets.only(left: 16)),
                                   Flexible(
@@ -112,7 +118,14 @@ class _DashboardState extends State<Dashboard>
                     Padding(
                       padding: const EdgeInsets.only(top: 16.0, bottom: 16),
                       child: SizedBox(
-                        height: height,
+                        height: height + 60,
+                        child: newestGrid,
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 16.0, bottom: 16),
+                      child: SizedBox(
+                        height: height + 60,
                         child: recentGrid,
                       ),
                     ),
@@ -126,7 +139,88 @@ class _DashboardState extends State<Dashboard>
     );
   }
 
-  Widget albumGrid(String title, AirSonicResult albumsController) {
+  Widget albumCardGrid(
+    String? title,
+    AirSonicResult albumsController,
+  ) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            if (title != null)
+              Text(
+                title,
+                style: Theme.of(context).textTheme.headlineMedium,
+              ),
+            TextButton.icon(
+                onPressed: () {},
+                icon: Icon(Icons.arrow_forward),
+                label: Text("more"))
+          ],
+        ),
+      ),
+      Flexible(
+        child: FutureBuilder(
+            future: albumsController.album!.fetchNext(count: 30),
+            builder: (context, snapshot) {
+              if (albumsController.album != null &&
+                  albumsController.album!.albums.isNotEmpty) {
+                return LayoutBuilder(
+                  builder: (context, constraints) {
+                    int row = (constraints.maxWidth / (250 + 4))
+                        .floor(); //max width should be 750 + padding
+                    if (row <= 0) {
+                      row = 1;
+                    }
+                    int col = (constraints.maxHeight / (250 + 4)).floor();
+                    if (col <= 0) {
+                      col = 1;
+                    }
+                    List<Widget> child = [];
+                    for (var i = 0; i < col; i++) {
+                      List<Widget> currentRowChild = [];
+                      for (var x = 0; x < row; x++) {
+                        final currentAlbum = albumsController.album?.albums
+                            .elementAtOrNull(i * row + x);
+                        if (currentAlbum == null) {
+                          break;
+                        }
+                        currentRowChild.add(Flexible(
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: AlbumCard(
+                              currentAlbum,
+                              pushNamed: false,
+                            ),
+                          ),
+                        ));
+                      }
+                      child.add(Flexible(
+                        child: Row(
+                          children: currentRowChild,
+                        ),
+                      ));
+                    }
+                    return Column(
+                      children: child,
+                    );
+                  },
+                );
+              } else {
+                return Container(
+                  child: Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                );
+              }
+            }),
+      ),
+    ]);
+  }
+
+  Widget albumTileGrid(String? title, AirSonicResult albumsController) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -135,10 +229,11 @@ class _DashboardState extends State<Dashboard>
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                title,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
+              if (title != null)
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.headlineMedium,
+                ),
               TextButton.icon(
                   onPressed: () {},
                   icon: Icon(Icons.arrow_forward),
@@ -174,8 +269,10 @@ class _DashboardState extends State<Dashboard>
                           }
                           currentRowChild.add(tiles(currentAlbum));
                         }
-                        child.add(Row(
-                          children: currentRowChild,
+                        child.add(Flexible(
+                          child: Row(
+                            children: currentRowChild,
+                          ),
                         ));
                       }
                       return Column(
@@ -202,6 +299,18 @@ class _DashboardState extends State<Dashboard>
         currentAlbum,
         selectable: false,
         onTap: (album) {
+          /*
+          context.pushTransparentRoute(Dialog(
+            alignment: Alignment.center,
+            child: FractionallySizedBox(
+              heightFactor: 0.95,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: AlbumInfo(album),
+              ),
+            ),
+          ));
+          */
           showDialog(
               context: context,
               builder: (context) => Dialog(

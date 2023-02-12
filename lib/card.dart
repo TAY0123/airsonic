@@ -81,95 +81,91 @@ class _AlbumCardState extends State<AlbumCard> {
                   ),
                 ));
       },
-      child: Card(
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          children: [
-            Hero(
-              tag: "${widget.album.id}-Cover}",
-              child: Stack(
-                children: [
-                  FutureBuilder(
-                      future: timer,
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.done) {
-                          return CoverImage.fromAlbum(
-                            widget.album,
-                            size: ImageSize.grid,
-                            cache: true,
-                          );
-                        } else {
-                          return AspectRatio(
-                            aspectRatio: 1,
-                            child: ClipRRect(
-                              borderRadius:
-                                  const BorderRadius.all(Radius.circular(12)),
-                              child: Container(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .primaryContainer,
-                                  child: const Center(
-                                    child: Icon(Icons.music_note),
-                                  )),
-                            ),
-                          );
-                        }
-                      }),
-                  if (widget.album.combined)
-                    Positioned(
-                        right: 8,
-                        top: 8,
-                        child: IconButton(
-                            style: IconButton.styleFrom(
-                              foregroundColor: colors.onPrimary,
-                              backgroundColor: colors.primary,
-                              disabledBackgroundColor: colors.primary,
-                              disabledForegroundColor: colors.onPrimary,
-                              hoverColor: colors.onPrimary.withOpacity(0.08),
-                              focusColor: colors.onPrimary.withOpacity(0.12),
-                              highlightColor:
-                                  colors.onPrimary.withOpacity(0.12),
-                            ),
-                            onPressed: null,
-                            icon: Icon(Icons.library_music)))
-                ],
-              ),
+      child: Column(
+        children: [
+          Hero(
+            tag: "${widget.album.id}-Cover}",
+            child: Stack(
+              children: [
+                FutureBuilder(
+                    future: timer,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.done) {
+                        return CoverImage.fromAlbum(
+                          widget.album,
+                          size: ImageSize.grid,
+                          cache: true,
+                        );
+                      } else {
+                        return AspectRatio(
+                          aspectRatio: 1,
+                          child: ClipRRect(
+                            borderRadius:
+                                const BorderRadius.all(Radius.circular(12)),
+                            child: Container(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .primaryContainer,
+                                child: const Center(
+                                  child: Icon(Icons.music_note),
+                                )),
+                          ),
+                        );
+                      }
+                    }),
+                if (widget.album.combined)
+                  Positioned(
+                      right: 8,
+                      top: 8,
+                      child: IconButton(
+                          style: IconButton.styleFrom(
+                            foregroundColor: colors.onPrimary,
+                            backgroundColor: colors.primary,
+                            disabledBackgroundColor: colors.primary,
+                            disabledForegroundColor: colors.onPrimary,
+                            hoverColor: colors.onPrimary.withOpacity(0.08),
+                            focusColor: colors.onPrimary.withOpacity(0.12),
+                            highlightColor: colors.onPrimary.withOpacity(0.12),
+                          ),
+                          onPressed: null,
+                          icon: Icon(Icons.library_music)))
+              ],
             ),
-            Expanded(
-                flex: 6,
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 8, right: 8, top: 5),
-                  child: Column(
-                    children: [
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Hero(
-                          tag: "${widget.album.id}-Title}",
-                          child: Text(
-                            widget.album.name,
-                            maxLines: 1,
-                            style: Theme.of(context).textTheme.titleMedium,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+          ),
+          Expanded(
+              flex: 6,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 8, right: 8, top: 5),
+                child: Column(
+                  children: [
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Hero(
+                        tag: "${widget.album.id}-Title}",
+                        child: Text(
+                          widget.album.name,
+                          maxLines: 1,
+                          style: Theme.of(context).textTheme.titleMedium,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Hero(
-                          tag: "${widget.album.id}-Artist}",
-                          child: Text(
-                            widget.album.artist?.name ?? "N.A",
-                            style: Theme.of(context).textTheme.bodySmall,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                    ),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Hero(
+                        tag: "${widget.album.id}-Artist}",
+                        child: Text(
+                          widget.album.artist?.name ?? "N.A",
+                          style: Theme.of(context).textTheme.bodySmall,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                    ],
-                  ),
-                ))
-          ],
-        ),
+                    ),
+                  ],
+                ),
+              ))
+        ],
       ),
     );
   }
