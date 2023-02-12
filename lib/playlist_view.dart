@@ -57,7 +57,7 @@ class _PlayListViewState extends State<PlayListView>
                   SliverGrid.builder(
                     itemCount: snapshot.requireData.playlists.length,
                     gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                        maxCrossAxisExtent: 500, childAspectRatio: 1.5),
+                        maxCrossAxisExtent: 600, childAspectRatio: 1.5),
                     itemBuilder: (context, index) {
                       final playlist = snapshot.requireData.playlists[index];
                       return CardSwipeAction(

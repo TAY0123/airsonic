@@ -250,10 +250,16 @@ class MediaPlayer {
         pathSegments: _segments.followedBy([ednpoint]), queryParameters: p);
     debugPrint(a.toString());
     late Response resp;
+
+    ///this seem that occur due to too many request at the same time
     try {
       resp = await http.get(a);
     } catch (e) {
-      throw e;
+      if (e == SocketException) {
+        throw "too many request";
+      } else {
+        rethrow;
+      }
     }
     if (resp.statusCode > 299 || resp.statusCode < 200) {
       throw resp.statusCode;

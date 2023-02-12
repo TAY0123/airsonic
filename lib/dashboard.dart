@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:airsonic/card.dart';
 import 'package:airsonic/const.dart';
 import 'package:airsonic/search.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/src/animation/animation_controller.dart';
@@ -43,6 +44,8 @@ class _DashboardState extends State<Dashboard>
 
   @override
   Widget build(BuildContext context) {
+    final covercard = DashboardCoverCard();
+    final randomGrid = DashBoardRandomGrtidView();
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: LayoutBuilder(builder: (context, constraints) {
@@ -73,13 +76,11 @@ class _DashboardState extends State<Dashboard>
                                         550),
                                     //constraints: BoxConstraints(
                                     //    minWidth: 400, maxWidth: 550),
-                                    child:
-                                        Expanded(child: DashboardCoverCard()),
+                                    child: Expanded(child: covercard),
                                   ),
                                   Padding(padding: EdgeInsets.only(left: 16)),
                                   Flexible(
-                                      child: SizedBox.expand(
-                                          child: DashBoardRandomGrtidView()))
+                                      child: SizedBox.expand(child: randomGrid))
                                 ],
                               ),
                             ),
@@ -90,11 +91,10 @@ class _DashboardState extends State<Dashboard>
                               children: [
                                 SizedBox(
                                   height: 125 * 2 + 40,
-                                  child: DashboardCoverCard(),
+                                  child: covercard,
                                 ),
                                 SizedBox(
-                                    height: 125 * 2 + 40,
-                                    child: DashBoardRandomGrtidView()),
+                                    height: 125 * 4 + 40, child: randomGrid),
                               ],
                             ),
                           ),
@@ -146,33 +146,69 @@ class _DashBoardRandomGrtidViewState extends State<DashBoardRandomGrtidView> {
           child: FutureBuilder(
               future: albums.album!.fetchNext(),
               builder: (context, snapshot) {
-                return GridView(
-                  gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                      maxCrossAxisExtent: 750, mainAxisExtent: 125),
-                  children: albums.album!.albums
-                      .map((e) => AlbumTile(
-                            e,
-                            selectable: false,
-                            onTap: (album) {
-                              showDialog(
-                                  context: context,
-                                  builder: (context) => Dialog(
-                                        alignment: Alignment.center,
-                                        child: FractionallySizedBox(
-                                          heightFactor: 0.95,
-                                          child: Padding(
-                                            padding: const EdgeInsets.all(16.0),
-                                            child: AlbumInfo(album),
-                                          ),
-                                        ),
-                                      ));
-                            },
-                          ))
-                      .toList(),
-                );
+                if (albums.album != null && albums.album!.albums.isNotEmpty) {
+                  return LayoutBuilder(
+                    builder: (context, constraints) {
+                      int row = (constraints.maxWidth / (450 + 4))
+                          .floor(); //max width should be 750 + padding
+                      if (row <= 0) {
+                        row = 1;
+                      }
+                      int col = (constraints.maxHeight / (120 + 4)).floor();
+                      if (col <= 0) {
+                        col = 1;
+                      }
+                      List<Widget> child = [];
+                      for (var i = 0; i < col; i++) {
+                        List<Widget> currentRowChild = [];
+                        for (var x = 0; x < row; x++) {
+                          final currentAlbum =
+                              albums.album?.albums.elementAtOrNull(i * row + x);
+                          if (currentAlbum == null) break;
+                          currentRowChild.add(tiles(currentAlbum));
+                        }
+                        child.add(Row(
+                          children: currentRowChild,
+                        ));
+                      }
+                      return Column(
+                        children: child,
+                      );
+                    },
+                  );
+                } else {
+                  return Container(
+                    child: Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  );
+                }
               }),
         ),
       ],
+    );
+  }
+
+  Flexible tiles(Album currentAlbum) {
+    return Flexible(
+      child: AlbumTile(
+        currentAlbum,
+        selectable: false,
+        onTap: (album) {
+          showDialog(
+              context: context,
+              builder: (context) => Dialog(
+                    alignment: Alignment.center,
+                    child: FractionallySizedBox(
+                      heightFactor: 0.95,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: AlbumInfo(album),
+                      ),
+                    ),
+                  ));
+        },
+      ),
     );
   }
 }

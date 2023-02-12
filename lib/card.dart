@@ -953,15 +953,20 @@ class DashboardCoverCard extends StatelessWidget {
           children: [
             FilledButton.icon(
                 onPressed: () async {
+                  /*
                   final a = Song(currentItem.id);
                   final info = await a.getInfo();
                   Navigator.of(context).pushReplacementNamed(
                       "/album/${a.album?.id ?? ""}",
                       arguments: a.album);
+                      */
+                  final player = await mp.futurePlayer;
+                  player.addQueueItems([currentItem]);
+                  player.play();
                 },
                 //label: Text("Continue"),
                 icon: Container(),
-                label: Icon(Icons.arrow_forward))
+                label: Icon(Icons.play_arrow))
           ],
         ),
       ],
