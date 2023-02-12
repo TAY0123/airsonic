@@ -106,7 +106,8 @@ class _AlbumViewListState extends State<AlbumViewList>
     while ((!_scrollController.hasClients ||
             _scrollController.position.maxScrollExtent == 0.0) &&
         error == null &&
-        !(_listController.value.album?.finished ?? true)) {
+        !(_listController.value.album?.finished ?? true) &&
+        mounted) {
       await fetchAlbums();
     }
     localCompleter.complete();
@@ -123,11 +124,11 @@ class _AlbumViewListState extends State<AlbumViewList>
   }
 
   Future<bool> fetchAlbums() async {
-    if (_listController.value.album!.finished && mounted) {
-      setState(() {});
+    if (_listController.value.album!.finished) {
       return true;
     }
-    await _listController.value.album?.fetchNext();
+
+    await _listController.value.album?.fetchNext(count: 300);
     if (mounted) {
       setState(() {});
     }

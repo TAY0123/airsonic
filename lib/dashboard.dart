@@ -30,6 +30,10 @@ class _DashboardState extends State<Dashboard>
 
   MediaPlayer mp = MediaPlayer.instance;
 
+  final double cardHeight = 125 * 2 + 40;
+  final double rowDesktopHeight = 125 * 2 + 40;
+  final double rowMobileHeight = 125 * 4 + 40;
+
   @override
   void initState() {
     super.initState();
@@ -45,10 +49,18 @@ class _DashboardState extends State<Dashboard>
   @override
   Widget build(BuildContext context) {
     final covercard = DashboardCoverCard();
-    final randomGrid = DashBoardRandomGrtidView();
+    final random =
+        albumGrid("Random", mp.fetchAlbumList(type: AlbumListType.random));
+
+    final recentGrid =
+        albumGrid("Recent", mp.fetchAlbumList(type: AlbumListType.recent));
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: LayoutBuilder(builder: (context, constraints) {
+        double height = rowMobileHeight;
+        if (constraints.maxWidth > breakpointM) {
+          height = rowDesktopHeight;
+        }
         return Column(
           children: [
             Padding(
@@ -65,7 +77,7 @@ class _DashboardState extends State<Dashboard>
                     constraints.maxWidth > breakpointM
                         ? Center(
                             child: SizedBox(
-                              height: 125 * 2 + 40,
+                              height: height,
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -80,7 +92,7 @@ class _DashboardState extends State<Dashboard>
                                   ),
                                   Padding(padding: EdgeInsets.only(left: 16)),
                                   Flexible(
-                                      child: SizedBox.expand(child: randomGrid))
+                                      child: SizedBox.expand(child: random))
                                 ],
                               ),
                             ),
@@ -90,14 +102,20 @@ class _DashboardState extends State<Dashboard>
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 SizedBox(
-                                  height: 125 * 2 + 40,
+                                  height: cardHeight,
                                   child: covercard,
                                 ),
-                                SizedBox(
-                                    height: 125 * 4 + 40, child: randomGrid),
+                                SizedBox(height: height, child: random),
                               ],
                             ),
                           ),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 16.0, bottom: 16),
+                      child: SizedBox(
+                        height: height,
+                        child: recentGrid,
+                      ),
+                    ),
                   ]))
                 ],
               ),
@@ -107,22 +125,8 @@ class _DashboardState extends State<Dashboard>
       }),
     );
   }
-}
 
-class DashBoardRandomGrtidView extends StatefulWidget {
-  DashBoardRandomGrtidView({super.key});
-
-  @override
-  State<DashBoardRandomGrtidView> createState() =>
-      _DashBoardRandomGrtidViewState();
-}
-
-class _DashBoardRandomGrtidViewState extends State<DashBoardRandomGrtidView> {
-  final AirSonicResult albums =
-      MediaPlayer.instance.fetchAlbumList(type: AlbumListType.random);
-
-  @override
-  Widget build(BuildContext context) {
+  Widget albumGrid(String title, AirSonicResult albumsController) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -132,7 +136,7 @@ class _DashBoardRandomGrtidViewState extends State<DashBoardRandomGrtidView> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "Random",
+                title,
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               TextButton.icon(
@@ -144,9 +148,10 @@ class _DashBoardRandomGrtidViewState extends State<DashBoardRandomGrtidView> {
         ),
         Flexible(
           child: FutureBuilder(
-              future: albums.album!.fetchNext(),
+              future: albumsController.album!.fetchNext(),
               builder: (context, snapshot) {
-                if (albums.album != null && albums.album!.albums.isNotEmpty) {
+                if (albumsController.album != null &&
+                    albumsController.album!.albums.isNotEmpty) {
                   return LayoutBuilder(
                     builder: (context, constraints) {
                       int row = (constraints.maxWidth / (450 + 4))
@@ -162,9 +167,11 @@ class _DashBoardRandomGrtidViewState extends State<DashBoardRandomGrtidView> {
                       for (var i = 0; i < col; i++) {
                         List<Widget> currentRowChild = [];
                         for (var x = 0; x < row; x++) {
-                          final currentAlbum =
-                              albums.album?.albums.elementAtOrNull(i * row + x);
-                          if (currentAlbum == null) break;
+                          final currentAlbum = albumsController.album?.albums
+                              .elementAtOrNull(i * row + x);
+                          if (currentAlbum == null) {
+                            break;
+                          }
                           currentRowChild.add(tiles(currentAlbum));
                         }
                         child.add(Row(

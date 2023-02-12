@@ -48,6 +48,136 @@ class _AlbumInfoState extends State<AlbumInfo>
 
   @override
   Widget build(BuildContext context) {
+    final albumCover = Hero(
+        tag: "${widget.album.id}-Cover}",
+        child: Center(
+          child: AspectRatio(
+            aspectRatio: 1,
+            child: widget.album.image != null
+                ? CoverImage.fromAlbum(
+                    widget.album,
+                    fit: BoxFit.contain,
+                    size: ImageSize.original,
+                  )
+                : FutureBuilder(
+                    future: albumFetchStatus,
+                    builder: (context, snapshot) {
+                      if (snapshot.hasData) {
+                        final currentAlbum = widget.album;
+                        return CoverImage.fromAlbum(
+                          currentAlbum,
+                          fit: BoxFit.contain,
+                          size: ImageSize.original,
+                        );
+                      } else {
+                        return Container(
+                          color: Colors.transparent,
+                        );
+                      }
+                    },
+                  ),
+          ),
+        ));
+    final artistButton = FilledButton.tonalIcon(
+      onLongPress: () {
+        Clipboard.setData(ClipboardData(text: widget.album.artist?.name ?? ""));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text(
+            "Copied to Clipboard",
+          ),
+        ));
+      },
+      onPressed: () {
+        Navi?.currentState?.pushReplacementNamed(
+          "/artist/${widget.album.artist?.id ?? ""}",
+        );
+      },
+      label: const Icon(Icons.arrow_circle_right),
+      icon: Flexible(
+        fit: FlexFit.loose,
+        child: Hero(
+          tag: "${widget.album.id}-Artist}",
+          child: widget.album.image != null
+              ? Text(
+                  widget.album.artist?.name ?? "",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodyLarge,
+                )
+              : FutureBuilder(
+                  future: albumFetchStatus,
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData) {
+                      final currentAlbum = widget.album;
+                      return Text(
+                        currentAlbum.artist?.name ?? "",
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      );
+                    } else {
+                      return const Text("");
+                    }
+                  },
+                ),
+        ),
+      ),
+    );
+    final albumTitle = Hero(
+      tag: "${widget.album.id}-Title}",
+      child: widget.album.image != null
+          ? GestureDetector(
+              onLongPress: () {
+                Clipboard.setData(ClipboardData(text: widget.album.name));
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                  content: Text("Copied to Clipboard"),
+                ));
+              },
+              child: Text(
+                widget.album.name,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.headlineMedium,
+              ))
+          : FutureBuilder(
+              future: albumFetchStatus,
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  final currentAlbum = widget.album;
+                  return GestureDetector(
+                      onLongPress: () {
+                        Clipboard.setData(
+                            ClipboardData(text: widget.album.name));
+                        ScaffoldMessenger.of(context)
+                            .showSnackBar(const SnackBar(
+                          content: Text("Copied to Clipboard"),
+                        ));
+                      },
+                      child: Text(
+                        widget.album.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.headlineMedium,
+                      ));
+                } else {
+                  return const Text("");
+                }
+              },
+            ),
+    );
+    final loadingPlaceholder = Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: const [
+          CircularProgressIndicator(),
+          Padding(
+            padding: EdgeInsets.only(top: 8.0),
+            child: Text("fetching songs ..."),
+          )
+        ],
+      ),
+    );
+
     return WillPopScope(
       onWillPop: () async {
         Navigator.pop(context);
@@ -62,11 +192,11 @@ class _AlbumInfoState extends State<AlbumInfo>
               appBar: AppBar(
                 backgroundColor: Colors.transparent,
                 actions: [
-                  IconButton(onPressed: () {}, icon: Icon(Icons.add)),
+                  IconButton(onPressed: () {}, icon: const Icon(Icons.add)),
                   Tooltip(
                     message: "combine same Album with different artist",
                     child: Row(children: [
-                      Icon(Icons.collections),
+                      const Icon(Icons.collections),
                       SizedBox(
                           width: 50,
                           height: 34,
@@ -84,41 +214,12 @@ class _AlbumInfoState extends State<AlbumInfo>
               ),
               body: Column(
                 children: [
-                  Padding(padding: EdgeInsets.only(bottom: 8)),
+                  const Padding(padding: EdgeInsets.only(bottom: 8)),
                   Expanded(
                     flex: 7,
                     child: Row(
                       children: [
-                        Hero(
-                            tag: "${widget.album.id}-Cover}",
-                            child: Center(
-                              child: AspectRatio(
-                                aspectRatio: 1,
-                                child: widget.album.image != null
-                                    ? CoverImage.fromAlbum(
-                                        widget.album,
-                                        fit: BoxFit.contain,
-                                        size: ImageSize.original,
-                                      )
-                                    : FutureBuilder(
-                                        future: albumFetchStatus,
-                                        builder: (context, snapshot) {
-                                          if (snapshot.hasData) {
-                                            final currentAlbum = widget.album;
-                                            return CoverImage.fromAlbum(
-                                              currentAlbum,
-                                              fit: BoxFit.contain,
-                                              size: ImageSize.original,
-                                            );
-                                          } else {
-                                            return Container(
-                                              color: Colors.transparent,
-                                            );
-                                          }
-                                        },
-                                      ),
-                              ),
-                            )),
+                        albumCover,
                         const Padding(
                           padding: EdgeInsets.only(left: 16),
                         ),
@@ -127,122 +228,17 @@ class _AlbumInfoState extends State<AlbumInfo>
                             mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Spacer(),
-                              Hero(
-                                tag: "${widget.album.id}-Title}",
-                                child: widget.album.image != null
-                                    ? GestureDetector(
-                                        onLongPress: () {
-                                          Clipboard.setData(ClipboardData(
-                                              text: widget.album.name));
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(new SnackBar(
-                                            content:
-                                                Text("Copied to Clipboard"),
-                                          ));
-                                        },
-                                        child: Text(
-                                          widget.album.name,
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .headlineMedium,
-                                        ))
-                                    : FutureBuilder(
-                                        future: albumFetchStatus,
-                                        builder: (context, snapshot) {
-                                          if (snapshot.hasData) {
-                                            final currentAlbum = widget.album;
-                                            return GestureDetector(
-                                                onLongPress: () {
-                                                  Clipboard.setData(
-                                                      ClipboardData(
-                                                          text: widget
-                                                              .album.name));
-                                                  ScaffoldMessenger.of(context)
-                                                      .showSnackBar(
-                                                          new SnackBar(
-                                                    content: Text(
-                                                        "Copied to Clipboard"),
-                                                  ));
-                                                },
-                                                child: Text(
-                                                  widget.album.name,
-                                                  maxLines: 2,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .headlineMedium,
-                                                ));
-                                          } else {
-                                            return Text("");
-                                          }
-                                        },
-                                      ),
-                              ),
-                              FilledButton.tonalIcon(
-                                onLongPress: () {
-                                  Clipboard.setData(new ClipboardData(
-                                      text: widget.album.artist?.name ?? ""));
-                                  ScaffoldMessenger.of(context)
-                                      .showSnackBar(new SnackBar(
-                                    content: new Text(
-                                      "Copied to Clipboard",
-                                    ),
-                                  ));
-                                },
-                                onPressed: () {
-                                  Navi?.currentState?.pushReplacementNamed(
-                                    "/artist/${widget.album.artist?.id ?? ""}",
-                                  );
-                                },
-                                label: Icon(Icons.arrow_circle_right),
-                                icon: Flexible(
-                                  fit: FlexFit.loose,
-                                  child: Hero(
-                                    tag: "${widget.album.id}-Artist}",
-                                    child: widget.album.image != null
-                                        ? Text(
-                                            widget.album.artist?.name ?? "",
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodyLarge,
-                                          )
-                                        : FutureBuilder(
-                                            future: albumFetchStatus,
-                                            builder: (context, snapshot) {
-                                              if (snapshot.hasData) {
-                                                final currentAlbum =
-                                                    widget.album;
-                                                return Text(
-                                                  currentAlbum.artist?.name ??
-                                                      "",
-                                                  maxLines: 1,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .bodyLarge,
-                                                );
-                                              } else {
-                                                return Text("");
-                                              }
-                                            },
-                                          ),
-                                  ),
-                                ),
-                              ),
-                              Padding(padding: EdgeInsets.only(bottom: 8)),
+                              const Spacer(),
+                              albumTitle,
+                              artistButton,
+                              const Padding(
+                                  padding: EdgeInsets.only(bottom: 8)),
                               FutureBuilder(
                                 future: albumFetchStatus,
                                 builder: (context, snapshot) {
                                   if (snapshot.hasData) {
                                     if (!snapshot.requireData) {
-                                      return Text("No album found");
+                                      return const Text("No album found");
                                     } else {
                                       final currentAlbum = widget.album;
                                       var total = Duration.zero;
@@ -256,7 +252,7 @@ class _AlbumInfoState extends State<AlbumInfo>
                                               "${currentAlbum.songs?.length ?? 0} Songs · Total: ${printDuration(total)}"));
                                     }
                                   } else {
-                                    return Text("Loading Album...");
+                                    return const Text("Loading Album...");
                                   }
                                 },
                               ),
@@ -268,12 +264,12 @@ class _AlbumInfoState extends State<AlbumInfo>
                                       padding:
                                           const EdgeInsets.only(right: 4.0),
                                       child: FilledButton.icon(
-                                        icon: Icon(Icons.play_arrow),
+                                        icon: const Icon(Icons.play_arrow),
                                         onPressed: () {
                                           mp.playPlaylist(
                                               widget.album.songs ?? []);
                                         },
-                                        label: Text("Play All"),
+                                        label: const Text("Play All"),
                                       ),
                                     ),
                                     Padding(
@@ -281,7 +277,7 @@ class _AlbumInfoState extends State<AlbumInfo>
                                           left: 4.0, right: 4.0),
                                       child: IconButton(
                                           onPressed: () {},
-                                          icon: Icon(Icons.favorite)),
+                                          icon: const Icon(Icons.favorite)),
                                     )
                                   ],
                                 ),
@@ -295,7 +291,7 @@ class _AlbumInfoState extends State<AlbumInfo>
                   const Spacer(),
                   const Align(
                       alignment: Alignment.centerLeft, child: Text("Songs")),
-                  Divider(),
+                  const Divider(),
                   Expanded(
                     flex: 7,
                     child: FutureBuilder(
@@ -321,17 +317,7 @@ class _AlbumInfoState extends State<AlbumInfo>
                             },
                           );
                         } else {
-                          return Center(
-                              child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              CircularProgressIndicator(),
-                              Padding(
-                                padding: const EdgeInsets.only(top: 8.0),
-                                child: Text("fetching songs ..."),
-                              )
-                            ],
-                          ));
+                          return loadingPlaceholder;
                         }
                       },
                     ),
@@ -341,135 +327,71 @@ class _AlbumInfoState extends State<AlbumInfo>
             ),
           );
         } else {
-          return Container(
-            color: Theme.of(context).cardColor,
-            child: FractionallySizedBox(
-              widthFactor: 0.9,
-              child: ListView(
-                padding: const EdgeInsets.all(10),
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8.0, bottom: 8),
-                    child: Row(
-                      children: [
-                        FloatingActionButton(
-                          child: const Icon(Icons.close),
-                          onPressed: () => Navigator.pop(context),
-                        )
-                      ],
-                    ),
-                  ),
-                  Hero(
-                    tag: "${widget.album.id}-Cover}",
-                    child: widget.album.image != null
-                        ? CoverImage.fromAlbum(
-                            widget.album,
-                            fit: BoxFit.contain,
-                            size: ImageSize.original,
-                          )
-                        : FutureBuilder(
-                            future: albumFetchStatus,
-                            builder: (context, snapshot) {
-                              if (snapshot.hasData) {
-                                return CoverImage.fromAlbum(
-                                  widget.album,
-                                  fit: BoxFit.contain,
-                                  size: ImageSize.original,
-                                );
-                              } else {
-                                return Container(
-                                  color: Colors.black,
-                                );
-                              }
-                            },
-                          ),
-                  ),
-                  const Padding(
-                    padding: EdgeInsets.only(top: 8),
-                  ),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Hero(
-                      tag: "${widget.album.id}-Title}",
-                      child: GestureDetector(
-                        onLongPress: () {
-                          Clipboard.setData(
-                              ClipboardData(text: widget.album.name));
-                          ScaffoldMessenger.of(context)
-                              .showSnackBar(new SnackBar(
-                            content: Text("Copied to Clipboard"),
-                          ));
-                        },
-                        child: Text(
-                          widget.album.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.headlineMedium,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const Padding(padding: EdgeInsets.only(top: 10)),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Hero(
-                      tag: "${widget.album.id}-Artist}",
-                      child: GestureDetector(
-                        onLongPress: () {
-                          Clipboard.setData(ClipboardData(
-                              text: widget.album.artist?.name ?? ""));
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            content: new Text("Copied to Clipboard"),
-                          ));
-                        },
-                        child: Text(
-                          widget.album.artist?.name ?? "",
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const Padding(padding: EdgeInsets.only(top: 10)),
-                  const Align(
-                      alignment: Alignment.centerLeft, child: Text("Songs")),
-                  FutureBuilder(
-                    future: albumFetchStatus,
-                    builder: (context, snapshot) {
-                      if (snapshot.hasData) {
-                        final currentAlbum = widget.album;
-
-                        int count = currentAlbum.songs?.length ?? 0;
-
-                        List<Song> songs = [];
-                        songs.addAll(currentAlbum.songs ?? []);
-                        return Column(
-                          children: songs
-                              .mapIndexed(((i, song) {
-                                return AlbumInfoListTile(
-                                  i,
-                                  songs,
-                                  artistName: currentAlbum.artist?.name,
-                                );
-                              }))
-                              .expand<Widget>((e) sync* {
-                                yield e;
-                                yield const Divider();
-                              })
-                              .take(songs.length * 2 - 1)
-                              .toList(),
-                        );
-                      } else {
-                        return Column(
-                          children: const [
-                            CircularProgressIndicator(),
+          return Scaffold(
+            backgroundColor: Colors.transparent,
+            appBar: AppBar(
+              backgroundColor: Colors.transparent,
+              surfaceTintColor: Theme.of(context).colorScheme.background,
+            ),
+            body: Center(
+              child: FractionallySizedBox(
+                widthFactor: 0.9,
+                child: ListView(
+                  padding: const EdgeInsets.all(10),
+                  children: [
+                    if (widget.close != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8.0, bottom: 8),
+                        child: Row(
+                          children: [
+                            FloatingActionButton(
+                              child: const Icon(Icons.close),
+                              onPressed: () => Navigator.pop(context),
+                            )
                           ],
-                        );
-                      }
-                    },
-                  )
-                ],
+                        ),
+                      ),
+                    albumCover,
+                    const Padding(
+                      padding: EdgeInsets.only(top: 8),
+                    ),
+                    Align(alignment: Alignment.centerLeft, child: albumTitle),
+                    const Padding(padding: EdgeInsets.only(top: 10)),
+                    Align(alignment: Alignment.centerLeft, child: artistButton),
+                    const Padding(padding: EdgeInsets.only(top: 10)),
+                    const Align(
+                        alignment: Alignment.centerLeft, child: Text("Songs")),
+                    FutureBuilder(
+                      future: albumFetchStatus,
+                      builder: (context, snapshot) {
+                        if (snapshot.hasData) {
+                          final currentAlbum = widget.album;
+
+                          List<Song> songs = [];
+                          songs.addAll(currentAlbum.songs ?? []);
+                          return Column(
+                            children: songs
+                                .mapIndexed(((i, song) {
+                                  return AlbumInfoListTile(
+                                    i,
+                                    songs,
+                                    artistName: currentAlbum.artist?.name,
+                                  );
+                                }))
+                                .expand<Widget>((e) sync* {
+                                  yield e;
+                                  yield const Divider();
+                                })
+                                .take(songs.length * 2 - 1)
+                                .toList(),
+                          );
+                        } else {
+                          return loadingPlaceholder;
+                        }
+                      },
+                    )
+                  ],
+                ),
               ),
             ),
           );

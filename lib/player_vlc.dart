@@ -183,6 +183,19 @@ class VlcAudioHandler extends BaseAudioHandler {
   }
 
   @override
+  Future<void> addQueueItem(MediaItem mediaItem) async {
+    await inited;
+    // manage Just Audio
+    final audioSource = _createAudioSource(mediaItem);
+    //clear playlist
+    _player.add(audioSource);
+
+    // notify system
+    final newQueue = queue.value..add(mediaItem);
+    queue.add(newQueue);
+  }
+
+  @override
   Future<void> updateQueue(List<MediaItem> mediaItems) async {
     await inited;
     // manage Just Audio

@@ -555,9 +555,11 @@ class _StackedAlbumImageState extends State<StackedAlbumImage> {
         ),
         AfterLayout(
           callback: (value) {
-            setState(() {
-              height = value.size.height;
-            });
+            if (mounted) {
+              setState(() {
+                height = value.size.height;
+              });
+            }
           },
           child: AspectRatio(
             aspectRatio: 1,

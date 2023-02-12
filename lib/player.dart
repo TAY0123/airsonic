@@ -183,7 +183,23 @@ class MyAudioHandler extends BaseAudioHandler {
     try {
       await _player.load();
     } catch (e) {
-      print(e);
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> addQueueItem(MediaItem mediaItem) async {
+    await inited;
+    // manage Just Audio
+    await _playlist.add(await _createAudioSource(mediaItem));
+    // notify system
+    final newQueue = queue.value..add(mediaItem);
+    //final newQueue = mediaItems;
+    queue.add(newQueue);
+    try {
+      await _player.load();
+    } catch (e) {
+      rethrow;
     }
   }
 
