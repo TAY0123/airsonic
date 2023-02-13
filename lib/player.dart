@@ -183,7 +183,7 @@ class MyAudioHandler extends BaseAudioHandler {
     try {
       await _player.load();
     } catch (e) {
-      rethrow;
+      print(e);
     }
   }
 
@@ -199,7 +199,7 @@ class MyAudioHandler extends BaseAudioHandler {
     try {
       await _player.load();
     } catch (e) {
-      rethrow;
+      print(e);
     }
   }
 

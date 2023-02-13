@@ -4,5 +4,6 @@ import 'package:flutter/foundation.dart';
 
 var desktop = !kIsWeb && !Platform.isAndroid && !Platform.isIOS;
 
-var breakpointM = 600.0;
-var breakpointL = 1440.0;
+const breakpointM = 600.0;
+const breakpointMScale = 905;
+const breakpointL = 1440.0;

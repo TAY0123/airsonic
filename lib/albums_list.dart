@@ -2,12 +2,14 @@ import 'dart:async';
 
 import 'package:airsonic/airsonic_connection.dart';
 import 'package:airsonic/albums_grid.dart';
+import 'package:airsonic/layout.dart';
 import 'package:airsonic/search.dart';
 import 'package:flutter/material.dart';
 
 import 'album_info.dart';
 import 'animatedwave.dart';
 import 'card.dart';
+import 'const.dart';
 
 class AlbumViewList extends StatefulWidget {
   const AlbumViewList({super.key, this.display});
@@ -25,7 +27,7 @@ class _AlbumViewListState extends State<AlbumViewList>
 
   bool ended = false;
 
-  var _defaultController = MediaPlayer.instance.fetchAlbumList(combined: true);
+  var _defaultController = MediaPlayer.instance.fetchAlbumList();
 
   late Completer completer = Completer();
 
@@ -39,7 +41,7 @@ class _AlbumViewListState extends State<AlbumViewList>
 
   var _currentType = AlbumListType.recent;
 
-  ValueNotifier<String> _index = ValueNotifier("");
+  final ValueNotifier<String> _index = ValueNotifier("");
 
   late List<PopupMenuEntry<AlbumListType>> b;
 
@@ -83,10 +85,19 @@ class _AlbumViewListState extends State<AlbumViewList>
     );
 
     _index.addListener(
-      () => Navigator.of(localNavigator.currentContext!)
-          .pushNamedAndRemoveUntil("/album/${_index.value}", (route) => false,
+      () {
+        if (localNavigator.currentContext != null) {
+          Navigator.of(localNavigator.currentContext!).pushNamedAndRemoveUntil(
+              "/album/${_index.value}", (route) => false,
               arguments: _listController.value.album?.albums
-                  .firstWhere((element) => element.id == _index.value)),
+                  .firstWhere((element) => element.id == _index.value));
+          ;
+        } else {
+          Navigator.of(context).pushNamed("/album/${_index.value}",
+              arguments: _listController.value.album?.albums
+                  .firstWhere((element) => element.id == _index.value));
+        }
+      },
     );
 
     b = chipss.entries
@@ -97,6 +108,11 @@ class _AlbumViewListState extends State<AlbumViewList>
         .toList();
 
     fetchUntilScrollable();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
   }
 
   void fetchUntilScrollable() async {
@@ -137,117 +153,97 @@ class _AlbumViewListState extends State<AlbumViewList>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: Row(
+    final a = _listController.value.album!;
+
+    final changemodeBtn = IconButton(
+        tooltip: "change mode",
+        onPressed: () {
+          Navigator.of(context).pushReplacement(PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) {
+              return AlbumViewGrid();
+            },
+          ));
+        },
+        icon: Icon(Icons.list));
+    final sortingMenu = PopupMenuButton(
+        tooltip: "sorting",
+        initialValue: _currentType,
+        icon: Icon(Icons.filter_list),
+        itemBuilder: (context) => b,
+        onSelected: (value) {
+          if (_currentType == value) return;
+          setState(() {
+            _currentType = value;
+            _defaultController = mp.fetchAlbumList(type: value);
+          });
+          _listController.value = _defaultController;
+        });
+    final albumsList = Column(
+      children: [
+        SearchingBar(result),
+        Padding(padding: EdgeInsets.only(bottom: 8)),
+        Expanded(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: CustomScrollView(
+              controller: _scrollController,
+              slivers: [
+                SliverList(
+                    delegate: SliverChildListDelegate([
+                  Row(
+                    children: [
+                      Spacer(),
+                      changemodeBtn,
+                      sortingMenu,
+                    ],
+                  ),
+                ])),
+                SliverList(
+                    delegate: SliverChildListDelegate(
+                  a.albums
+                      .map((e) => Padding(
+                            padding: const EdgeInsets.only(bottom: 8.0),
+                            child: AlbumTile(
+                              e,
+                              index: _index,
+                            ),
+                          ))
+                      .toList(),
+                )),
+                SliverFixedExtentList(
+                    delegate: SliverChildListDelegate([
+                      Center(
+                          child: a.finished
+                              ? Text(
+                                  "Total Album: ${a.albums.length}",
+                                  style: Theme.of(context).textTheme.bodyLarge,
+                                )
+                              : CircularProgressIndicator())
+                    ]),
+                    itemExtent: 80),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+    return ResponsiveLayout(
+      tablet: (constraints) {
+        return Row(
           children: [
             Expanded(
               child: NotificationListener<SizeChangedLayoutNotification>(
                 onNotification: (notification) {
-                  () async {
-                    await completer.future;
-
-                    completer = Completer();
-                    while ((!_scrollController.hasClients ||
-                            _scrollController.position.maxScrollExtent ==
-                                0.0) &&
-                        error == null &&
-                        !(_listController.value.album?.finished ?? true)) {
-                      await fetchAlbums();
-                    }
-                    completer.complete();
-                  }();
+                  fetchUntilScrollable();
 
                   return true;
                 },
                 child: SizeChangedLayoutNotifier(
                   child: LayoutBuilder(builder: (context, constraints) {
-                    final a = _listController.value.album!;
-
                     return Padding(
                         padding: const EdgeInsets.only(
-                            top: 4, left: 8.0, right: 8.0),
-                        child: Column(
-                          children: [
-                            SearchingBar(result),
-                            Padding(padding: EdgeInsets.only(bottom: 8)),
-                            Expanded(
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
-                                child: CustomScrollView(
-                                  controller: _scrollController,
-                                  slivers: [
-                                    SliverList(
-                                        delegate: SliverChildListDelegate([
-                                      Row(
-                                        children: [
-                                          Spacer(),
-                                          IconButton(
-                                              tooltip: "change mode",
-                                              onPressed: () {
-                                                Navigator.of(context)
-                                                    .pushReplacement(
-                                                        PageRouteBuilder(
-                                                  pageBuilder: (context,
-                                                      animation,
-                                                      secondaryAnimation) {
-                                                    return AlbumViewGrid();
-                                                  },
-                                                ));
-                                              },
-                                              icon: Icon(Icons.list)),
-                                          PopupMenuButton(
-                                              tooltip: "sorting",
-                                              initialValue: _currentType,
-                                              icon: Icon(Icons.filter_list),
-                                              itemBuilder: (context) => b,
-                                              onSelected: (value) {
-                                                if (_currentType == value)
-                                                  return;
-                                                setState(() {
-                                                  _currentType = value;
-                                                  _defaultController =
-                                                      mp.fetchAlbumList(
-                                                          type: value);
-                                                });
-                                                _listController.value =
-                                                    _defaultController;
-                                              }),
-                                        ],
-                                      ),
-                                    ])),
-                                    SliverList(
-                                        delegate: SliverChildListDelegate(
-                                      a.albums
-                                          .map((e) => Padding(
-                                                padding: const EdgeInsets.only(
-                                                    bottom: 8.0),
-                                                child: AlbumTile(
-                                                  e,
-                                                  index: _index,
-                                                ),
-                                              ))
-                                          .toList(),
-                                    )),
-                                    SliverFixedExtentList(
-                                        delegate: SliverChildListDelegate([
-                                          Center(
-                                              child: a.finished
-                                                  ? Text(
-                                                      "Total Album: ${a.albums.length}",
-                                                      style: Theme.of(context)
-                                                          .textTheme
-                                                          .bodyLarge,
-                                                    )
-                                                  : CircularProgressIndicator())
-                                        ]),
-                                        itemExtent: 80),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ));
+                            top: 8, left: 8.0, right: 8.0),
+                        child: albumsList);
                   }),
                 ),
               ),
@@ -300,10 +296,9 @@ class _AlbumViewListState extends State<AlbumViewList>
                           var id = uri?.pathSegments[1];
                           if (settings.arguments != null) {
                             final album = settings.arguments as Album;
-                            album.combine = true;
                             page = AlbumInfo(album);
                           } else {
-                            page = AlbumInfo(Album(id!, combine: true));
+                            page = AlbumInfo(Album(id!));
                           }
                         }
                         break;
@@ -312,11 +307,11 @@ class _AlbumViewListState extends State<AlbumViewList>
                   }
                   // Handle '/album/:id'
                   /*
-                  if (uri.pathSegments.length == 2 &&
-                      uri.pathSegments.first == 'album') {
-                   
-                  }
-                  */
+              if (uri.pathSegments.length == 2 &&
+                  uri.pathSegments.first == 'album') {
+               
+              }
+              */
 
                   return PageRouteBuilder(
                     transitionDuration: Duration(milliseconds: 250),
@@ -337,8 +332,14 @@ class _AlbumViewListState extends State<AlbumViewList>
               ),
             )
           ],
-        ),
-      ),
+        );
+      },
+      mobile: (constraints) {
+        return Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: albumsList,
+        );
+      },
     );
   }
 }

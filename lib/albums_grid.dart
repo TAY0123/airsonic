@@ -12,12 +12,14 @@ class AlbumViewGrid extends StatefulWidget {
   final bool pushNamedNavigation;
   final bool searchBar;
   final bool listenOnly;
+  final Album? display;
   const AlbumViewGrid(
       {super.key,
       this.controller,
       this.pushNamedNavigation = true,
       this.searchBar = true,
-      this.listenOnly = false});
+      this.listenOnly = false,
+      this.display});
 
   @override
   State<AlbumViewGrid> createState() => _AlbumViewGridState();
@@ -32,7 +34,7 @@ class _AlbumViewGridState extends State<AlbumViewGrid>
   bool ended = false;
 
   late AirSonicResult _defaultController =
-      widget.controller ?? MediaPlayer.instance.fetchAlbumList(combined: true);
+      widget.controller ?? MediaPlayer.instance.fetchAlbumList();
 
   late Completer completer = Completer();
 
@@ -104,7 +106,6 @@ class _AlbumViewGridState extends State<AlbumViewGrid>
 
   Future<bool> fetchAlbums() async {
     if (_listController.value.album!.finished) {
-      setState(() {});
       return true;
     }
     await _listController.value.album?.fetchNext(count: 300);
@@ -135,19 +136,7 @@ class _AlbumViewGridState extends State<AlbumViewGrid>
   Widget build(BuildContext context) {
     return NotificationListener<SizeChangedLayoutNotification>(
       onNotification: (notification) {
-        () async {
-          await completer.future;
-
-          completer = Completer();
-          while ((!_scrollController.hasClients ||
-                  _scrollController.position.maxScrollExtent == 0.0) &&
-              error == null &&
-              !(_listController.value.album?.finished ?? true)) {
-            await fetchAlbums();
-          }
-          completer.complete();
-        }();
-
+        fetchUntilScrollable();
         return true;
       },
       child: SizeChangedLayoutNotifier(

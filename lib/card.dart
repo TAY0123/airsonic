@@ -20,7 +20,7 @@ class AlbumCard extends StatefulWidget {
 
 class _AlbumCardState extends State<AlbumCard> {
   bool full = false;
-  final timer = Future.delayed(Duration(milliseconds: 250));
+  final timer = Future.delayed(const Duration(milliseconds: 250));
 
   @override
   void initState() {
@@ -128,7 +128,7 @@ class _AlbumCardState extends State<AlbumCard> {
                             highlightColor: colors.onPrimary.withOpacity(0.12),
                           ),
                           onPressed: null,
-                          icon: Icon(Icons.library_music)))
+                          icon: const Icon(Icons.library_music)))
               ],
             ),
           ),
@@ -217,7 +217,7 @@ class _AlbumTileState extends State<AlbumTile>
     if (widget.selectable == true || widget.selectable == null) {
       widget.index?.addListener(indexUpdated);
       _controller = AnimationController(
-          vsync: this, duration: Duration(milliseconds: 250));
+          vsync: this, duration: const Duration(milliseconds: 250));
       _animation = CurvedAnimation(parent: _controller, curve: Curves.linear);
     }
   }
@@ -240,7 +240,7 @@ class _AlbumTileState extends State<AlbumTile>
     if (widget.selectable != false) {
       if (widget.index?.value == widget.album.id) {
         background = Theme.of(context).colorScheme.onSurface.withOpacity(0.24);
-        _controller.animateTo(1, duration: Duration(microseconds: 0));
+        _controller.animateTo(1, duration: const Duration(microseconds: 0));
       }
 
       fading = _animation.drive<Color?>(
@@ -313,7 +313,7 @@ class _AlbumTileState extends State<AlbumTile>
                               style: Theme.of(context).textTheme.titleMedium,
                               overflow: TextOverflow.ellipsis,
                             ),
-                            Padding(padding: EdgeInsets.only(top: 8)),
+                            const Padding(padding: EdgeInsets.only(top: 8)),
                             Text(
                               widget.album.artist?.name ?? "N.A",
                               style: Theme.of(context)
@@ -330,11 +330,12 @@ class _AlbumTileState extends State<AlbumTile>
                         ),
                       )),
                       Padding(
-                        padding: EdgeInsets.only(top: 8),
+                        padding: const EdgeInsets.only(top: 8),
                         child: Column(
                           children: [
                             IconButton(
-                                onPressed: () {}, icon: Icon(Icons.favorite)),
+                                onPressed: () {},
+                                icon: const Icon(Icons.favorite)),
                           ],
                         ),
                       )
@@ -492,7 +493,7 @@ class _CoverImageState extends State<CoverImage> {
             },
           ),
           crossFadeState: status,
-          duration: Duration(milliseconds: 250)),
+          duration: const Duration(milliseconds: 250)),
     );
 
     return AspectRatio(aspectRatio: 1, child: content);
@@ -534,7 +535,7 @@ class _StackedAlbumImageState extends State<StackedAlbumImage> {
           child: Card(
             elevation: 4,
             color: Theme.of(context).colorScheme.surfaceVariant,
-            margin: EdgeInsets.all(0),
+            margin: const EdgeInsets.all(0),
             child: Container(),
           ),
         ),
@@ -545,7 +546,7 @@ class _StackedAlbumImageState extends State<StackedAlbumImage> {
           child: Card(
             color: Theme.of(context).colorScheme.surfaceVariant,
             elevation: 12,
-            margin: EdgeInsets.all(0),
+            margin: const EdgeInsets.all(0),
             child: Container(),
           ),
         ),
@@ -680,8 +681,8 @@ class _ArtistTileState extends State<ArtistTile>
     super.initState();
 
     widget.index.addListener(indexUpdated);
-    _controller =
-        AnimationController(vsync: this, duration: Duration(milliseconds: 250));
+    _controller = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 250));
     _animation = CurvedAnimation(parent: _controller, curve: Curves.linear);
   }
 
@@ -697,7 +698,7 @@ class _ArtistTileState extends State<ArtistTile>
   void didChangeDependencies() {
     if (widget.index.value == widget.artist.id) {
       background = Theme.of(context).colorScheme.onSurface.withOpacity(0.24);
-      _controller.animateTo(1, duration: Duration(microseconds: 0));
+      _controller.animateTo(1, duration: const Duration(microseconds: 0));
     }
 
     final fading = _animation.drive<Color?>(
@@ -767,7 +768,7 @@ class _ArtistTileState extends State<ArtistTile>
                                       ),
                               ),
                             ),
-                            Padding(padding: EdgeInsets.only(left: 16)),
+                            const Padding(padding: EdgeInsets.only(left: 16)),
                             Expanded(
                               child: Column(
                                 mainAxisAlignment:
@@ -795,7 +796,7 @@ class _ArtistTileState extends State<ArtistTile>
                               children: [
                                 IconButton(
                                     onPressed: () {},
-                                    icon: Icon(Icons.favorite)),
+                                    icon: const Icon(Icons.favorite)),
                               ],
                             )
                           ],
@@ -827,56 +828,53 @@ class DashboardCoverCard extends StatelessWidget {
       builder: (context, snapshot) {
         if (snapshot.hasData) {
           final currentItemStream = snapshot.requireData;
-          if (currentItemStream != null) {
-            return Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: StreamBuilder(
-                    stream: currentItemStream,
-                    builder: (context, value) {
-                      if (value.hasData) {
-                        final currentItem = value.data!;
-                        final currentSong = Song(currentItem.id);
-                        final fetch = currentSong.getInfo();
-                        return GestureDetector(
-                            onTap: () async {
-                              await fetch;
-                              Navigator.of(context).pushReplacementNamed(
-                                "/album/${currentSong.album?.id ?? ""}",
-                              );
-                            },
-                            child: cardContent(currentItem, context));
-                      } else {
-                        return FutureBuilder(
-                          future: mp.previousQueue,
-                          builder: (context, snapshot) {
-                            if (snapshot.hasData &&
-                                snapshot.requireData.isNotEmpty) {
-                              final currentItem = snapshot.requireData[0];
-                              final currentSong = Song(currentItem.id);
-                              final fetch = currentSong.getInfo();
-                              return GestureDetector(
-                                  onTap: () async {
-                                    await fetch;
-                                    Navigator.of(context).pushReplacementNamed(
-                                      "/album/${currentSong.album?.id ?? ""}",
-                                    );
-                                  },
-                                  child: cardContent(currentItem, context));
-                            } else {
-                              return Center(child: CircularProgressIndicator());
-                            }
+          return Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: StreamBuilder(
+                  stream: currentItemStream,
+                  builder: (context, value) {
+                    if (value.hasData) {
+                      final currentItem = value.data!;
+                      final currentSong = Song(currentItem.id);
+                      return GestureDetector(
+                          onTap: () async {
+                            final fetch = currentSong.getInfo();
+                            await fetch;
+                            Navigator.of(context).pushReplacementNamed(
+                              "/album/${currentSong.album?.id ?? ""}",
+                            );
                           },
-                        );
-                      }
-                    }),
-              ),
-            );
-          } else {
-            return Card();
-          }
+                          child: cardContent(currentItem, context));
+                    } else {
+                      return FutureBuilder(
+                        future: mp.previousQueue,
+                        builder: (context, snapshot) {
+                          if (snapshot.hasData &&
+                              snapshot.requireData.isNotEmpty) {
+                            final currentItem = snapshot.requireData[0];
+                            final currentSong = Song(currentItem.id);
+                            return GestureDetector(
+                                onTap: () async {
+                                  final fetch = currentSong.getInfo();
+                                  await fetch;
+                                  Navigator.of(context).pushReplacementNamed(
+                                    "/album/${currentSong.album?.id ?? ""}",
+                                  );
+                                },
+                                child: cardContent(currentItem, context));
+                          } else {
+                            return const Center(
+                                child: CircularProgressIndicator());
+                          }
+                        },
+                      );
+                    }
+                  }),
+            ),
+          );
         } else {
-          return Card();
+          return const Card();
         }
       },
     );
@@ -909,11 +907,11 @@ class DashboardCoverCard extends StatelessWidget {
                           style: Theme.of(context).textTheme.titleLarge,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        Spacer(),
+                        const Spacer(),
                         Row(
                           children: [
-                            Padding(
-                              padding: const EdgeInsets.only(right: 8.0),
+                            const Padding(
+                              padding: EdgeInsets.only(right: 8.0),
                               child: Icon(Icons.album),
                             ),
                             Flexible(
@@ -925,11 +923,11 @@ class DashboardCoverCard extends StatelessWidget {
                             ),
                           ],
                         ),
-                        Padding(padding: EdgeInsets.only(bottom: 8)),
+                        const Padding(padding: EdgeInsets.only(bottom: 8)),
                         Row(
                           children: [
-                            Padding(
-                              padding: const EdgeInsets.only(right: 8.0),
+                            const Padding(
+                              padding: EdgeInsets.only(right: 8.0),
                               child: Icon(Icons.people),
                             ),
                             Flexible(
@@ -946,7 +944,7 @@ class DashboardCoverCard extends StatelessWidget {
             ],
           ),
         ),
-        Divider(),
+        const Divider(),
         ButtonBar(
           children: [
             FilledButton.icon(
@@ -964,7 +962,7 @@ class DashboardCoverCard extends StatelessWidget {
                 },
                 //label: Text("Continue"),
                 icon: Container(),
-                label: Icon(Icons.play_arrow))
+                label: const Icon(Icons.play_arrow))
           ],
         ),
       ],
@@ -1006,14 +1004,14 @@ class PlayListCard extends StatelessWidget {
                 ],
               ),
             ),
-            Divider(),
+            const Divider(),
             ButtonBar(
               children: [
                 FilledButton.icon(
                     onPressed: () async {},
                     //label: Text("Continue"),
                     icon: Container(),
-                    label: Icon(Icons.play_arrow))
+                    label: const Icon(Icons.play_arrow))
               ],
             )
           ],
@@ -1040,8 +1038,8 @@ class _CardSwipeActionState extends State<CardSwipeAction>
   @override
   void initState() {
     super.initState();
-    _controller =
-        AnimationController(vsync: this, duration: Duration(milliseconds: 250));
+    _controller = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 250));
     animation = _controller.drive(Tween(begin: 0, end: 40));
   }
 
@@ -1082,10 +1080,12 @@ class _CardSwipeActionState extends State<CardSwipeAction>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        IconButton(onPressed: () {}, icon: Icon(Icons.add)),
                         IconButton(
-                            onPressed: () {}, icon: Icon(Icons.favorite)),
-                        IconButton(onPressed: () {}, icon: Icon(Icons.delete)),
+                            onPressed: () {}, icon: const Icon(Icons.add)),
+                        IconButton(
+                            onPressed: () {}, icon: const Icon(Icons.favorite)),
+                        IconButton(
+                            onPressed: () {}, icon: const Icon(Icons.delete)),
                       ],
                     ),
                   ),

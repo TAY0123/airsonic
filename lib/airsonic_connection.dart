@@ -301,10 +301,10 @@ class MediaPlayer {
     return result;
   }
 
-  AirSonicResult fetchAlbumList(
-      {AlbumListType type = AlbumListType.recent,
-      String folderId = "",
-      bool combined = false}) {
+  AirSonicResult fetchAlbumList({
+    AlbumListType type = AlbumListType.recent,
+    String folderId = "",
+  }) {
     final res = AirSonicResult();
 
     res.album = AlbumList(
@@ -320,7 +320,6 @@ class MediaPlayer {
 
         return await _xmlEndpoint("getAlbumList2", query: q);
       },
-      combine: combined,
     );
 
     return res;
@@ -509,12 +508,13 @@ class CachedImage {
 }
 
 class Album {
-  Album(this.id,
-      {this.name = "",
-      this.coverArt = "",
-      this.artist,
-      this.songs,
-      this.combine = false});
+  Album(
+    this.id, {
+    this.name = "",
+    this.coverArt = "",
+    this.artist,
+    this.songs,
+  });
 
   String id;
   String name;
@@ -523,7 +523,6 @@ class Album {
   List<Song>? songs;
   CachedImage? image;
   bool combined = false; //it indicate if a album has already combined
-  bool combine; //if true fetching will combine all song under same album name
 
   Future<bool> fetchCover({ImageSize size = ImageSize.grid}) async {
     final connection = MediaPlayer.instance;
@@ -537,7 +536,11 @@ class Album {
 
   ///fetch all albumInfo from server
   ///return false if failed and true on success
-  Future<bool> fetchInfo({bool combine = false}) async {
+  Future<bool> fetchInfo() async {
+    //get if album enabled
+    final storage = await SharedPreferences.getInstance();
+    final combine = storage.getBool("albumCombine") ?? false;
+
     final connection = MediaPlayer.instance;
     try {
       final result = await connection.fetchAlbumInfo(id);
@@ -550,7 +553,7 @@ class Album {
         name = result.albums[0].name;
         coverArt = result.albums[0].coverArt;
       }
-      if (this.combine || combine) {
+      if (combine) {
         combined = true;
         final others = connection.fetchSearchResult(name);
         while (!(others.album?.finished ?? true)) {
@@ -804,18 +807,18 @@ class AlbumList {
   int _offset = 0;
   List<Album> albums = [];
   bool finished = false;
-  bool combine;
 
   final Future<XMLResult> Function(int offset, int count) _fetch;
 
-  AlbumList(this._fetch, {this.combine = false});
+  AlbumList(this._fetch);
   final mp = MediaPlayer.instance;
 
   ///fetch next count of item to album list and
   ///return count of success fetched albums
   Future<int> fetchNext({int count = 10}) async {
     final result = (await _fetch(_offset, count)).albums;
-
+    final storage = await SharedPreferences.getInstance();
+    final combine = storage.getBool("albumCombine") ?? false;
     if (combine) {
       for (var resultAlbum in result) {
         final index =
@@ -824,8 +827,6 @@ class AlbumList {
           albums[index].songs?.addAll(resultAlbum.songs ?? []);
           //indicate the album has combined other album id
           albums[index].combined = true;
-          //enable album to fetch all song under same name
-          albums[index].combine = true;
         } else {
           albums.add(resultAlbum);
         }

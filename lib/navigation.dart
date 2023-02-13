@@ -1,6 +1,5 @@
 import 'package:airsonic/airsonic_connection.dart';
 import 'package:airsonic/main.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class NavDrawer extends StatelessWidget {
@@ -68,42 +67,19 @@ class NavBar extends StatelessWidget {
   }
 }
 
-class NavRail extends StatefulWidget {
+class NavRail extends StatelessWidget {
   final bool extended;
-  final ValueNotifier<int>? index;
-  const NavRail({this.extended = false, super.key, this.index});
-
-  @override
-  State<NavRail> createState() => _NavRailState();
-}
-
-class _NavRailState extends State<NavRail> {
-  late final ValueNotifier<int> _index = widget.index ?? ValueNotifier(0);
-
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    if (widget.index == null) {
-      _index.dispose();
-    }
-    super.dispose();
-  }
+  final ValueNotifier<int> index;
+  const NavRail({this.extended = false, super.key, required this.index});
 
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder(
-        valueListenable: _index,
+        valueListenable: index,
         builder: (context, value, child) {
           return NavigationRail(
               onDestinationSelected: (value) {
-                if (_index.value == value) return;
-                if (widget.index == null) {
-                  _index.value = value;
-                }
+                if (index.value == value) return;
                 switch (value) {
                   case 0:
                     Navi?.currentState
@@ -130,8 +106,8 @@ class _NavRailState extends State<NavRail> {
                 }
               },
               groupAlignment: 0,
-              extended: widget.extended,
-              labelType: widget.extended
+              extended: extended,
+              labelType: extended
                   ? NavigationRailLabelType.none
                   : NavigationRailLabelType.selected,
               destinations: const [
@@ -146,7 +122,7 @@ class _NavRailState extends State<NavRail> {
                 NavigationRailDestination(
                     icon: Icon(Icons.settings), label: Text("Settings")),
               ],
-              selectedIndex: _index.value);
+              selectedIndex: index.value);
         });
   }
 }
