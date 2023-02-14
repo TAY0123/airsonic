@@ -466,7 +466,28 @@ class _AlbumInfoListTileState extends State<AlbumInfoListTile> {
             setState(() {
               selected = true;
             });
-            mp.playPlaylist(widget.songs, index: widget.index);
+            () async {
+              final c = await mp.playlist;
+              final currentQueue = c.value;
+              final indexed = currentQueue.elementAtOrNull(widget.index);
+              if (indexed != null &&
+                  indexed.id == widget.songs[widget.index].id) {
+                if (currentQueue.length == widget.songs.length) {
+                  bool equal = true;
+                  for (var i = 0; i < currentQueue.length; i++) {
+                    if (currentQueue[i].id != widget.songs[i].id) {
+                      equal = false;
+                      break;
+                    }
+                  }
+                  if (equal) {
+                    mp.skipToIndexed(widget.index);
+                    return;
+                  }
+                }
+              }
+              mp.playPlaylist(widget.songs, index: widget.index);
+            }();
           },
           leading: Column(
             mainAxisAlignment: MainAxisAlignment.center,
