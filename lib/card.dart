@@ -11,8 +11,9 @@ import 'airsonic_connection.dart';
 
 class AlbumCard extends StatefulWidget {
   final Album album;
-  final bool pushNamed;
-  const AlbumCard(this.album, {super.key, required this.pushNamed});
+  final VoidCallback? callback;
+  final bool? hero;
+  const AlbumCard(this.album, {super.key, this.callback, this.hero});
 
   @override
   State<AlbumCard> createState() => _AlbumCardState();
@@ -68,18 +69,9 @@ class _AlbumCardState extends State<AlbumCard> {
         */
         //TODO: add dialog to route so it display on url navigate
         //DialogRoute(context: context, builder: builder)
-        showDialog(
-            context: context,
-            builder: (context) => Dialog(
-                  alignment: Alignment.center,
-                  child: FractionallySizedBox(
-                    heightFactor: 0.95,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: AlbumInfo(widget.album),
-                    ),
-                  ),
-                ));
+        if (widget.callback != null) {
+          widget.callback!();
+        }
       },
       child: Column(
         children: [

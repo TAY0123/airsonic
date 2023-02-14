@@ -30,10 +30,16 @@ class _DashboardState extends State<Dashboard>
   final double cardHeight = 125 * 2 + 45;
   final double rowDesktopHeight = 125 * 2 + 105;
   final double rowMobileHeight = 125 * 4 + 45;
-
+  late AirSonicResult recentAlbums;
+  late AirSonicResult newestAlbums;
+  late AirSonicResult randomAlbums;
   @override
   void initState() {
     super.initState();
+    recentAlbums = mp.fetchAlbumList(type: AlbumListType.recent);
+    newestAlbums = mp.fetchAlbumList(type: AlbumListType.newest);
+    randomAlbums = mp.fetchAlbumList(type: AlbumListType.random);
+
     _controller = AnimationController(vsync: this);
   }
 
@@ -47,13 +53,6 @@ class _DashboardState extends State<Dashboard>
   Widget build(BuildContext context) {
     final textStyle = Theme.of(context).textTheme;
     final covercard = DashboardCoverCard();
-    final random =
-        albumTileGrid("Random", mp.fetchAlbumList(type: AlbumListType.random));
-
-    final recentGrid = mp.fetchAlbumList(type: AlbumListType.recent);
-
-    final newestGrid =
-        albumCardGrid("Newest", mp.fetchAlbumList(type: AlbumListType.newest));
 
     return ResponsiveLayout(
       tablet: (constraints) {
@@ -89,18 +88,22 @@ class _DashboardState extends State<Dashboard>
                           child: covercard,
                         ),
                         Padding(padding: EdgeInsets.only(left: 16)),
-                        Flexible(child: SizedBox.expand(child: random))
+                        Flexible(
+                          child: SizedBox.expand(
+                            child: albumTileGrid("Random", randomAlbums),
+                          ),
+                        )
                       ],
                     ),
                   ),
                 ),
                 Padding(
                   padding: const EdgeInsets.only(top: 16.0, bottom: 16),
-                  child: newestGrid,
+                  child: albumCardGrid("Newest", newestAlbums),
                 ),
                 Padding(
                   padding: const EdgeInsets.only(top: 16.0, bottom: 16),
-                  child: albumCardGrid("Recent", recentGrid),
+                  child: albumCardGrid("Recent", recentAlbums),
                 ),
               ]))
             ]))
@@ -134,17 +137,19 @@ class _DashboardState extends State<Dashboard>
                         height: cardHeight,
                         child: covercard,
                       ),
-                      SizedBox(height: height, child: random),
+                      SizedBox(
+                          height: height,
+                          child: albumTileGrid("Random", randomAlbums)),
                     ],
                   ),
                 ),
                 Padding(
                   padding: const EdgeInsets.only(top: 16.0, bottom: 16),
-                  child: newestGrid,
+                  child: albumCardGrid("Newest", newestAlbums),
                 ),
                 Padding(
                   padding: const EdgeInsets.only(top: 16.0, bottom: 16),
-                  child: albumCardGrid("Recent", recentGrid),
+                  child: albumCardGrid("Recent", recentAlbums),
                 ),
               ]))
             ]))
@@ -180,7 +185,7 @@ class _DashboardState extends State<Dashboard>
             ),
           ),
           Flexible(
-            child: albumsController.album?.albums.isNotEmpty ?? false
+            child: (albumsController.album?.albums.isNotEmpty ?? false)
                 ? cardGridLayoutBuilder(albumsController)
                 : FutureBuilder(
                     future: albumsController.album!.fetchNext(count: 30),
@@ -233,7 +238,7 @@ class _DashboardState extends State<Dashboard>
                   aspectRatio: 0.75,
                   child: AlbumCard(
                     currentAlbum,
-                    pushNamed: false,
+                    callback: () => callback(currentAlbum),
                   ),
                 ),
               ),
@@ -275,54 +280,60 @@ class _DashboardState extends State<Dashboard>
           ),
         ),
         Flexible(
-          child: FutureBuilder(
-              future: albumsController.album!.fetchNext(),
-              builder: (context, snapshot) {
-                if (albumsController.album != null &&
-                    albumsController.album!.albums.isNotEmpty) {
-                  return LayoutBuilder(
-                    builder: (context, constraints) {
-                      int row = (constraints.maxWidth / (450 + 4))
-                          .floor(); //max width should be 750 + padding
-                      if (row <= 0) {
-                        row = 1;
-                      }
-                      int col = (constraints.maxHeight / (120 + 4)).floor();
-                      if (col <= 0) {
-                        col = 1;
-                      }
-                      List<Widget> child = [];
-                      for (var i = 0; i < col; i++) {
-                        List<Widget> currentRowChild = [];
-                        for (var x = 0; x < row; x++) {
-                          final currentAlbum = albumsController.album?.albums
-                              .elementAtOrNull(i * row + x);
-                          if (currentAlbum == null) {
-                            break;
-                          }
-                          currentRowChild.add(tiles(currentAlbum));
-                        }
-                        child.add(Flexible(
-                          child: Row(
-                            children: currentRowChild,
-                          ),
-                        ));
-                      }
-                      return Column(
-                        children: child,
+          child: (albumsController.album?.albums.isNotEmpty ?? false)
+              ? cardTileLayoutBuilder(albumsController)
+              : FutureBuilder(
+                  future: albumsController.album!.fetchNext(),
+                  builder: (context, snapshot) {
+                    if (albumsController.album != null &&
+                        albumsController.album!.albums.isNotEmpty) {
+                      return cardTileLayoutBuilder(albumsController);
+                    } else {
+                      return Container(
+                        child: Center(
+                          child: CircularProgressIndicator(),
+                        ),
                       );
-                    },
-                  );
-                } else {
-                  return Container(
-                    child: Center(
-                      child: CircularProgressIndicator(),
-                    ),
-                  );
-                }
-              }),
+                    }
+                  }),
         ),
       ],
+    );
+  }
+
+  Widget cardTileLayoutBuilder(AirSonicResult albumsController) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        int row = (constraints.maxWidth / (450 + 4))
+            .floor(); //max width should be 750 + padding
+        if (row <= 0) {
+          row = 1;
+        }
+        int col = (constraints.maxHeight / (120 + 4)).floor();
+        if (col <= 0) {
+          col = 1;
+        }
+        List<Widget> child = [];
+        for (var i = 0; i < col; i++) {
+          List<Widget> currentRowChild = [];
+          for (var x = 0; x < row; x++) {
+            final currentAlbum =
+                albumsController.album?.albums.elementAtOrNull(i * row + x);
+            if (currentAlbum == null) {
+              break;
+            }
+            currentRowChild.add(tiles(currentAlbum));
+          }
+          child.add(Flexible(
+            child: Row(
+              children: currentRowChild,
+            ),
+          ));
+        }
+        return Column(
+          children: child,
+        );
+      },
     );
   }
 
@@ -332,6 +343,7 @@ class _DashboardState extends State<Dashboard>
         currentAlbum,
         selectable: false,
         onTap: (album) {
+          callback(album);
           /*
           context.pushTransparentRoute(Dialog(
             alignment: Alignment.center,
@@ -344,39 +356,41 @@ class _DashboardState extends State<Dashboard>
             ),
           ));
           */
-          if (MediaQuery.of(context).size.width > breakpointM) {
-            showDialog(
-                context: context,
-                builder: (context) => Dialog(
-                      alignment: Alignment.center,
-                      child: FractionallySizedBox(
-                        heightFactor: 0.95,
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: AlbumInfo(album),
-                        ),
-                      ),
-                    ));
-          } else {
-            Navigator.push(
-                context,
-                PageRouteBuilder(
-                  transitionDuration: const Duration(milliseconds: 250),
-                  pageBuilder: (context, animation, secondaryAnimation) =>
-                      Scaffold(
-                    body: AlbumInfo(album),
-                  ),
-                  transitionsBuilder:
-                      (context, animation, secondaryAnimation, child) {
-                    return FadeTransition(
-                      opacity: animation,
-                      child: child,
-                    );
-                  },
-                ));
-          }
         },
       ),
     );
+  }
+
+  void callback(Album album) {
+    if (context.isMobile()) {
+      Navigator.push(
+          context,
+          PageRouteBuilder(
+            transitionDuration: const Duration(milliseconds: 250),
+            pageBuilder: (context, animation, secondaryAnimation) => Scaffold(
+              body: AlbumInfo(album),
+            ),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+              return FadeTransition(
+                opacity: animation,
+                child: child,
+              );
+            },
+          ));
+    } else {
+      showDialog(
+          context: context,
+          builder: (context) => Dialog(
+                alignment: Alignment.center,
+                child: FractionallySizedBox(
+                  heightFactor: 0.95,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: AlbumInfo(album),
+                  ),
+                ),
+              ));
+    }
   }
 }

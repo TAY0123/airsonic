@@ -11,9 +11,8 @@ class ResponsiveLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (context, constraints) {
-      print(constraints.maxWidth);
-      print("MediaQuery: ${MediaQuery.of(context).size.width}");
-      if (constraints.maxWidth > breakpointMScale) {
+      //if (constraints.maxWidth > breakpointMScale) {
+      if (!context.isMobile()) {
         return tablet(constraints);
       } else {
         final m = mobile(constraints);
@@ -29,5 +28,11 @@ class ResponsiveLayout extends StatelessWidget {
         }
       }
     });
+  }
+}
+
+extension CheckMobile on BuildContext {
+  bool isMobile() {
+    return MediaQuery.of(this).size.width - 80 <= breakpointMScale;
   }
 }

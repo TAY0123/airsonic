@@ -229,109 +229,113 @@ class _AlbumViewListState extends State<AlbumViewList>
     );
     return ResponsiveLayout(
       tablet: (constraints) {
-        return Row(
-          children: [
-            Expanded(
-              child: NotificationListener<SizeChangedLayoutNotification>(
-                onNotification: (notification) {
-                  fetchUntilScrollable();
+        return Padding(
+          padding: const EdgeInsets.only(top: 8.0),
+          child: Row(
+            children: [
+              Expanded(
+                child: NotificationListener<SizeChangedLayoutNotification>(
+                  onNotification: (notification) {
+                    fetchUntilScrollable();
 
-                  return true;
-                },
-                child: SizeChangedLayoutNotifier(
-                  child: LayoutBuilder(builder: (context, constraints) {
-                    return Padding(
-                        padding: const EdgeInsets.only(
-                            top: 8, left: 8.0, right: 8.0),
-                        child: albumsList);
-                  }),
+                    return true;
+                  },
+                  child: SizeChangedLayoutNotifier(
+                    child: LayoutBuilder(builder: (context, constraints) {
+                      return Padding(
+                          padding: const EdgeInsets.only(left: 8.0, right: 8.0),
+                          child: albumsList);
+                    }),
+                  ),
                 ),
               ),
-            ),
-            Expanded(
-              flex: 2,
-              child: Navigator(
-                key: localNavigator,
-                initialRoute: widget.display == null
-                    ? "/"
-                    : "/album/${widget.display?.id ?? ""}",
-                onGenerateRoute: (settings) {
-                  print(settings.name);
-                  Widget page = LayoutBuilder(builder: (context, constraints) {
-                    return Column(
-                      children: [
-                        Spacer(),
-                        Stack(
-                          alignment: Alignment.bottomCenter,
-                          children: [
-                            AnimatedWave(
-                              height: constraints.maxHeight / 4,
-                              speed: 0.3,
-                              color: Theme.of(context).primaryColor,
-                            ),
-                            AnimatedWave(
+              Expanded(
+                flex: 2,
+                child: Navigator(
+                  key: localNavigator,
+                  initialRoute: widget.display == null
+                      ? "/"
+                      : "/album/${widget.display?.id ?? ""}",
+                  onGenerateRoute: (settings) {
+                    print(settings.name);
+                    Widget page =
+                        LayoutBuilder(builder: (context, constraints) {
+                      return Column(
+                        children: [
+                          Spacer(),
+                          Stack(
+                            alignment: Alignment.bottomCenter,
+                            children: [
+                              AnimatedWave(
                                 height: constraints.maxHeight / 4,
-                                speed: 0.2,
-                                color: Theme.of(context).colorScheme.surface),
-                            AnimatedWave(
-                                height: constraints.maxHeight / 4,
-                                speed: 0.4,
-                                color: Theme.of(context).primaryColorLight),
-                          ],
-                        ),
-                      ],
-                    );
-                  });
-                  Object? err;
-                  Uri? uri;
-                  try {
-                    uri = Uri.parse(settings.name ?? "");
-                  } catch (e) {
-                    err = e;
-                  }
-                  if (err == null && (uri?.pathSegments.isNotEmpty ?? false)) {
-                    switch (uri?.pathSegments.first) {
-                      case "album":
-                        if (uri?.pathSegments.length == 2) {
-                          var id = uri?.pathSegments[1];
-                          if (settings.arguments != null) {
-                            final album = settings.arguments as Album;
-                            page = AlbumInfo(album);
-                          } else {
-                            page = AlbumInfo(Album(id!));
-                          }
-                        }
-                        break;
-                      default:
-                    }
-                  }
-                  // Handle '/album/:id'
-                  /*
-              if (uri.pathSegments.length == 2 &&
-                  uri.pathSegments.first == 'album') {
-               
-              }
-              */
-
-                  return PageRouteBuilder(
-                    transitionDuration: Duration(milliseconds: 250),
-                    settings: settings,
-                    pageBuilder: (context, animation, secondaryAnimation) =>
-                        Scaffold(
-                      body: Card(child: page),
-                    ),
-                    transitionsBuilder:
-                        (context, animation, secondaryAnimation, child) {
-                      return FadeTransition(
-                        opacity: animation,
-                        child: child,
+                                speed: 0.3,
+                                color: Theme.of(context).primaryColor,
+                              ),
+                              AnimatedWave(
+                                  height: constraints.maxHeight / 4,
+                                  speed: 0.2,
+                                  color: Theme.of(context).colorScheme.surface),
+                              AnimatedWave(
+                                  height: constraints.maxHeight / 4,
+                                  speed: 0.4,
+                                  color: Theme.of(context).primaryColorLight),
+                            ],
+                          ),
+                        ],
                       );
-                    },
-                  );
-                },
-              ),
-            )
-          ],
+                    });
+                    Object? err;
+                    Uri? uri;
+                    try {
+                      uri = Uri.parse(settings.name ?? "");
+                    } catch (e) {
+                      err = e;
+                    }
+                    if (err == null &&
+                        (uri?.pathSegments.isNotEmpty ?? false)) {
+                      switch (uri?.pathSegments.first) {
+                        case "album":
+                          if (uri?.pathSegments.length == 2) {
+                            var id = uri?.pathSegments[1];
+                            if (settings.arguments != null) {
+                              final album = settings.arguments as Album;
+                              page = AlbumInfo(album);
+                            } else {
+                              page = AlbumInfo(Album(id!));
+                            }
+                          }
+                          break;
+                        default:
+                      }
+                    }
+                    // Handle '/album/:id'
+                    /*
+                if (uri.pathSegments.length == 2 &&
+                    uri.pathSegments.first == 'album') {
+                 
+                }
+                */
+
+                    return PageRouteBuilder(
+                      transitionDuration: Duration(milliseconds: 250),
+                      settings: settings,
+                      pageBuilder: (context, animation, secondaryAnimation) =>
+                          Scaffold(
+                        body: Card(child: page),
+                      ),
+                      transitionsBuilder:
+                          (context, animation, secondaryAnimation, child) {
+                        return FadeTransition(
+                          opacity: animation,
+                          child: child,
+                        );
+                      },
+                    );
+                  },
+                ),
+              )
+            ],
+          ),
         );
       },
       mobile: (constraints) {

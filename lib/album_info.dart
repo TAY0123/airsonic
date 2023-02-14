@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:airsonic/airsonic_connection.dart';
 import 'package:airsonic/card.dart';
+import 'package:airsonic/layout.dart';
 import 'package:airsonic/main.dart';
 import 'package:airsonic/route.dart';
 import 'package:audio_service/audio_service.dart';
@@ -183,220 +184,221 @@ class _AlbumInfoState extends State<AlbumInfo>
         Navigator.pop(context);
         return true;
       },
-      child: LayoutBuilder(builder: (context, constraints) {
-        if (constraints.maxWidth > breakpointM) {
+      child: ResponsiveLayout(
+        tablet: (constraints) {
           return Padding(
-            padding: const EdgeInsets.only(left: 16.0, right: 16.0),
-            child: Scaffold(
-              backgroundColor: Colors.transparent,
-              appBar: AppBar(
+            padding: const EdgeInsets.only(
+              left: 16.0,
+              right: 16.0,
+            ),
+            child: ScaffoldMessenger(
+              child: Scaffold(
                 backgroundColor: Colors.transparent,
-                actions: [
-                  IconButton(onPressed: () {}, icon: const Icon(Icons.add)),
-                  Tooltip(
-                    message: "combine same Album with different artist",
-                    child: Row(children: [
-                      const Icon(Icons.collections),
-                      SizedBox(
-                          width: 50,
-                          height: 34,
-                          child: FittedBox(
-                            fit: BoxFit.fill,
-                            child: Switch(
-                              value: true,
-                              onChanged: (value) {},
-                            ),
-                          ))
-                    ]),
-                  )
-                ],
-                surfaceTintColor: Colors.transparent,
-              ),
-              body: Column(
-                children: [
-                  const Padding(padding: EdgeInsets.only(bottom: 8)),
-                  Expanded(
-                    flex: 7,
-                    child: Row(
-                      children: [
-                        albumCover,
-                        const Padding(
-                          padding: EdgeInsets.only(left: 16),
-                        ),
-                        Expanded(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Spacer(),
-                              albumTitle,
-                              artistButton,
-                              const Padding(
-                                  padding: EdgeInsets.only(bottom: 8)),
-                              FutureBuilder(
-                                future: albumFetchStatus,
-                                builder: (context, snapshot) {
-                                  if (snapshot.hasData) {
-                                    if (!snapshot.requireData) {
-                                      return const Text("No album found");
-                                    } else {
-                                      final currentAlbum = widget.album;
-                                      var total = Duration.zero;
-                                      for (final i in currentAlbum.songs ??
-                                          List<Song>.empty()) {
-                                        total += Duration(seconds: i.duration);
-                                      }
-                                      return FilledButton(
-                                          onPressed: null,
-                                          child: Text(
-                                              "${currentAlbum.songs?.length ?? 0} Songs · Total: ${printDuration(total)}"));
-                                    }
-                                  } else {
-                                    return const Text("Loading Album...");
-                                  }
-                                },
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.only(top: 32.0),
-                                child: Row(
-                                  children: [
-                                    Padding(
-                                      padding:
-                                          const EdgeInsets.only(right: 4.0),
-                                      child: FilledButton.icon(
-                                        icon: const Icon(Icons.play_arrow),
-                                        onPressed: () {
-                                          mp.playPlaylist(
-                                              widget.album.songs ?? []);
-                                        },
-                                        label: const Text("Play All"),
-                                      ),
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.only(
-                                          left: 4.0, right: 4.0),
-                                      child: IconButton(
-                                          onPressed: () {},
-                                          icon: const Icon(Icons.favorite)),
-                                    )
-                                  ],
-                                ),
-                              )
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Spacer(),
-                  const Align(
-                      alignment: Alignment.centerLeft, child: Text("Songs")),
-                  const Divider(),
-                  Expanded(
-                    flex: 7,
-                    child: FutureBuilder(
-                      future: albumFetchStatus,
-                      builder: (context, snapshot) {
-                        if (snapshot.hasData) {
-                          final currentAlbum = widget.album;
-                          int count = currentAlbum.songs?.length ?? 0;
-
-                          List<Song> songs = [];
-                          songs.addAll(currentAlbum.songs ?? []);
-                          return ListView.separated(
-                            itemCount: count,
-                            separatorBuilder: (context, index) {
-                              return const Divider();
-                            },
-                            itemBuilder: (context, index) {
-                              return AlbumInfoListTile(
-                                index,
-                                songs,
-                                artistName: currentAlbum.artist?.name,
-                              );
-                            },
-                          );
-                        } else {
-                          return loadingPlaceholder;
-                        }
-                      },
-                    ),
-                  )
-                ],
-              ),
-            ),
-          );
-        } else {
-          return Scaffold(
-            backgroundColor: Colors.transparent,
-            appBar: AppBar(
-              backgroundColor: Colors.transparent,
-              surfaceTintColor: Theme.of(context).colorScheme.background,
-            ),
-            body: Center(
-              child: FractionallySizedBox(
-                widthFactor: 0.9,
-                child: ListView(
-                  padding: const EdgeInsets.all(10),
+                appBar: AppBar(
+                  backgroundColor: Colors.transparent,
+                  actions: [
+                    IconButton(onPressed: () {}, icon: const Icon(Icons.add)),
+                  ],
+                  surfaceTintColor: Colors.transparent,
+                ),
+                body: Column(
                   children: [
-                    if (widget.close != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8.0, bottom: 8),
-                        child: Row(
-                          children: [
-                            FloatingActionButton(
-                              child: const Icon(Icons.close),
-                              onPressed: () => Navigator.pop(context),
-                            )
-                          ],
-                        ),
+                    const Padding(padding: EdgeInsets.only(bottom: 8)),
+                    Expanded(
+                      flex: 7,
+                      child: Row(
+                        children: [
+                          albumCover,
+                          const Padding(
+                            padding: EdgeInsets.only(left: 16),
+                          ),
+                          Expanded(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Spacer(),
+                                albumTitle,
+                                artistButton,
+                                const Padding(
+                                    padding: EdgeInsets.only(bottom: 8)),
+                                FutureBuilder(
+                                  future: albumFetchStatus,
+                                  builder: (context, snapshot) {
+                                    if (snapshot.hasData) {
+                                      if (!snapshot.requireData) {
+                                        return const Text("No album found");
+                                      } else {
+                                        final currentAlbum = widget.album;
+                                        var total = Duration.zero;
+                                        for (final i in currentAlbum.songs ??
+                                            List<Song>.empty()) {
+                                          total +=
+                                              Duration(seconds: i.duration);
+                                        }
+                                        return FilledButton(
+                                            onPressed: null,
+                                            child: Text(
+                                                "${currentAlbum.songs?.length ?? 0} Songs · Total: ${printDuration(total)}"));
+                                      }
+                                    } else {
+                                      return const Text("Loading Album...");
+                                    }
+                                  },
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 32.0),
+                                  child: Row(
+                                    children: [
+                                      Padding(
+                                        padding:
+                                            const EdgeInsets.only(right: 4.0),
+                                        child: FilledButton.icon(
+                                          icon: const Icon(Icons.play_arrow),
+                                          onPressed: () {
+                                            mp.playPlaylist(
+                                                widget.album.songs ?? []);
+                                          },
+                                          label: const Text("Play All"),
+                                        ),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.only(
+                                            left: 4.0, right: 4.0),
+                                        child: IconButton(
+                                            onPressed: () {},
+                                            icon: const Icon(Icons.favorite)),
+                                      )
+                                    ],
+                                  ),
+                                )
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                    albumCover,
-                    const Padding(
-                      padding: EdgeInsets.only(top: 8),
                     ),
-                    Align(alignment: Alignment.centerLeft, child: albumTitle),
-                    const Padding(padding: EdgeInsets.only(top: 10)),
-                    Align(alignment: Alignment.centerLeft, child: artistButton),
-                    const Padding(padding: EdgeInsets.only(top: 10)),
+                    const Spacer(),
                     const Align(
                         alignment: Alignment.centerLeft, child: Text("Songs")),
-                    FutureBuilder(
-                      future: albumFetchStatus,
-                      builder: (context, snapshot) {
-                        if (snapshot.hasData) {
-                          final currentAlbum = widget.album;
+                    const Divider(),
+                    Expanded(
+                      flex: 7,
+                      child: FutureBuilder(
+                        future: albumFetchStatus,
+                        builder: (context, snapshot) {
+                          if (snapshot.hasData) {
+                            final currentAlbum = widget.album;
+                            int count = currentAlbum.songs?.length ?? 0;
 
-                          List<Song> songs = [];
-                          songs.addAll(currentAlbum.songs ?? []);
-                          return Column(
-                            children: songs
-                                .mapIndexed(((i, song) {
-                                  return AlbumInfoListTile(
-                                    i,
-                                    songs,
-                                    artistName: currentAlbum.artist?.name,
-                                  );
-                                }))
-                                .expand<Widget>((e) sync* {
-                                  yield e;
-                                  yield const Divider();
-                                })
-                                .take(songs.length * 2 - 1)
-                                .toList(),
-                          );
-                        } else {
-                          return loadingPlaceholder;
-                        }
-                      },
+                            List<Song> songs = [];
+                            songs.addAll(currentAlbum.songs ?? []);
+                            return ListView.separated(
+                              itemCount: count,
+                              separatorBuilder: (context, index) {
+                                return const Divider();
+                              },
+                              itemBuilder: (context, index) {
+                                return AlbumInfoListTile(
+                                  index,
+                                  songs,
+                                  artistName: currentAlbum.artist?.name,
+                                );
+                              },
+                            );
+                          } else {
+                            return loadingPlaceholder;
+                          }
+                        },
+                      ),
                     )
                   ],
                 ),
               ),
             ),
           );
-        }
-      }),
+        },
+        mobile: (constraints) {
+          return Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Scaffold(
+              backgroundColor: Colors.transparent,
+              appBar: AppBar(
+                backgroundColor: Colors.transparent,
+                surfaceTintColor: Theme.of(context).colorScheme.background,
+              ),
+              body: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Center(
+                  child: FractionallySizedBox(
+                    widthFactor: 0.9,
+                    child: ListView(
+                      padding: const EdgeInsets.all(10),
+                      children: [
+                        if (widget.close != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8.0, bottom: 8),
+                            child: Row(
+                              children: [
+                                FloatingActionButton(
+                                  child: const Icon(Icons.close),
+                                  onPressed: () => Navigator.pop(context),
+                                )
+                              ],
+                            ),
+                          ),
+                        albumCover,
+                        const Padding(
+                          padding: EdgeInsets.only(top: 8),
+                        ),
+                        Align(
+                            alignment: Alignment.centerLeft, child: albumTitle),
+                        const Padding(padding: EdgeInsets.only(top: 10)),
+                        Align(
+                            alignment: Alignment.centerLeft,
+                            child: artistButton),
+                        const Padding(padding: EdgeInsets.only(top: 10)),
+                        const Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text("Songs")),
+                        FutureBuilder(
+                          future: albumFetchStatus,
+                          builder: (context, snapshot) {
+                            if (snapshot.hasData) {
+                              final currentAlbum = widget.album;
+
+                              List<Song> songs = [];
+                              songs.addAll(currentAlbum.songs ?? []);
+                              return Column(
+                                children: songs
+                                    .mapIndexed(((i, song) {
+                                      return AlbumInfoListTile(
+                                        i,
+                                        songs,
+                                        artistName: currentAlbum.artist?.name,
+                                      );
+                                    }))
+                                    .expand<Widget>((e) sync* {
+                                      yield e;
+                                      yield const Divider();
+                                    })
+                                    .take(songs.length * 2 - 1)
+                                    .toList(),
+                              );
+                            } else {
+                              return loadingPlaceholder;
+                            }
+                          },
+                        )
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 }
@@ -427,8 +429,8 @@ class _AlbumInfoListTileState extends State<AlbumInfoListTile> {
   bool selected = false;
   MediaPlayer mp = MediaPlayer.instance;
   ValueStream<MediaItem?>? current;
-  late Future<Null> task;
-  late StreamSubscription<MediaItem?>? subscribe;
+  late Future<void> task;
+  StreamSubscription<MediaItem?>? subscribe;
 
   @override
   void initState() {
@@ -437,9 +439,11 @@ class _AlbumInfoListTileState extends State<AlbumInfoListTile> {
       current = await mp.currentItem;
       selected = widget.songs[widget.index].id == current?.value?.id;
       subscribe = current?.listen((event) {
-        setState(() {
-          selected = widget.songs[widget.index].id == event?.id;
-        });
+        if (mounted) {
+          setState(() {
+            selected = widget.songs[widget.index].id == event?.id;
+          });
+        }
       });
     }();
   }

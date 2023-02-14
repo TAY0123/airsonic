@@ -557,12 +557,12 @@ class Album {
         combined = true;
         final others = connection.fetchSearchResult(name);
         while (!(others.album?.finished ?? true)) {
-          await others.album?.fetchNext(count: 10);
-
+          await others.album?._fetchUncombinedNext(count: 30);
           if (others.album?.albums.last.name != name) {
             break;
           }
         }
+
         List<Future<void>> results = [];
         for (var a in others.album?.albums ?? List<Album>.empty()) {
           if (a.name == name) {
@@ -572,7 +572,7 @@ class Album {
                   .then((value) => songs?.addAll(value.albums[0].songs ?? [])));
             }
           } else {
-            break;
+            continue;
           }
         }
         await Future.wait(results);
@@ -786,6 +786,10 @@ class Playlist {
       //created
     );
   }
+
+  Future<bool> getInfo() async {
+    return true;
+  }
 }
 
 enum AlbumListType {
@@ -812,6 +816,18 @@ class AlbumList {
 
   AlbumList(this._fetch);
   final mp = MediaPlayer.instance;
+
+  Future<int> _fetchUncombinedNext({int count = 10}) async {
+    final result = (await _fetch(_offset, count)).albums;
+    albums.addAll(result);
+
+    _offset += result.length;
+
+    if (result.isEmpty || result.length != count) {
+      finished = true;
+    }
+    return result.length;
+  }
 
   ///fetch next count of item to album list and
   ///return count of success fetched albums

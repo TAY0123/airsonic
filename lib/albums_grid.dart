@@ -1,9 +1,11 @@
 import 'dart:async';
 
 import 'package:airsonic/airsonic_connection.dart';
+import 'package:airsonic/layout.dart';
 import 'package:airsonic/search.dart';
 import 'package:flutter/material.dart';
 
+import 'album_info.dart';
 import 'albums_list.dart';
 import 'card.dart';
 
@@ -84,15 +86,17 @@ class _AlbumViewGridState extends State<AlbumViewGrid>
   }
 
   void fetchUntilScrollable() async {
-    completer = Completer();
+    final localCompleter = Completer();
+    completer = localCompleter;
     await fetchAlbums();
     while ((!_scrollController.hasClients ||
             _scrollController.position.maxScrollExtent == 0.0) &&
         error == null &&
-        !(_listController.value.album?.finished ?? true)) {
+        !(_listController.value.album?.finished ?? true) &&
+        mounted) {
       await fetchAlbums();
     }
-    completer.complete();
+    localCompleter.complete();
   }
 
   @override
@@ -195,8 +199,29 @@ class _AlbumViewGridState extends State<AlbumViewGrid>
                             mainAxisSpacing: 16),
                     itemBuilder: ((context, index) {
                       final album = a.albums[index];
-                      return AlbumCard(album,
-                          pushNamed: widget.pushNamedNavigation);
+                      return AlbumCard(
+                        album,
+                        callback: () {
+                          if (context.isMobile()) {
+                            Navigator.of(context).pushNamed(
+                                "/album/${album.id}",
+                                arguments: album);
+                          } else {
+                            showDialog(
+                                context: context,
+                                builder: (context) => Dialog(
+                                      alignment: Alignment.center,
+                                      child: FractionallySizedBox(
+                                        heightFactor: 0.95,
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(16.0),
+                                          child: AlbumInfo(album),
+                                        ),
+                                      ),
+                                    ));
+                          }
+                        },
+                      );
                     })),
                 SliverFixedExtentList(
                     delegate: SliverChildListDelegate([

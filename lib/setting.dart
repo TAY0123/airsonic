@@ -11,18 +11,19 @@ class SettingPage extends StatefulWidget {
 }
 
 class _SettingPageState extends State<SettingPage> {
-  final instance = SharedPreferences.getInstance();
+  late Future<SharedPreferences> instance;
 
-  bool albumconbine = false;
+  bool albumcombine = false;
   bool albumStyle = false;
 
   @override
   void initState() {
     super.initState();
-    () async {
-      final storage = await instance;
-      albumconbine = storage.getBool("albumCombine") ?? false;
+    instance = () async {
+      final storage = await SharedPreferences.getInstance();
+      albumcombine = storage.getBool("albumCombine") ?? false;
       albumStyle = storage.getBool("albumStyle") ?? false;
+      return storage;
     }();
   }
 
@@ -105,11 +106,11 @@ class _SettingPageState extends State<SettingPage> {
                       children: [
                         const Text("combine Album with same name: "),
                         Switch(
-                          value: albumconbine,
+                          value: albumcombine,
                           onChanged: (value) {
                             storage.setBool("albumCombine", value);
                             setState(() {
-                              albumconbine = !albumconbine;
+                              albumcombine = !albumcombine;
                             });
                           },
                         )

@@ -182,7 +182,7 @@ class AppNavigator extends StatelessWidget {
               break;
             case "artist":
               index.value = 2;
-              Artist? parm = null;
+              Artist? parm;
               if (uri?.pathSegments.length == 2) {
                 parm = Artist(uri?.pathSegments[1] ?? "", "");
               }
@@ -194,7 +194,6 @@ class AppNavigator extends StatelessWidget {
               index.value = 1;
               if (uri?.pathSegments.length == 2) {
                 ///push albuminfo directly on top if screen is mobile size
-                print("UI: $uiSize");
                 if (uiSize <= breakpointMScale) {
                   page = AlbumInfo(Album(uri?.pathSegments[1] ?? ""));
                 } else {
@@ -233,7 +232,6 @@ class AppNavigator extends StatelessWidget {
           index.value = 0;
           page = const Dashboard();
         }
-
         return PageRouteBuilder(
           transitionDuration: const Duration(milliseconds: 250),
           settings: settings,
