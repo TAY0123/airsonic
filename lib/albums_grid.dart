@@ -200,7 +200,7 @@ class _AlbumViewGridState extends State<AlbumViewGrid>
                     itemBuilder: ((context, index) {
                       final album = a.albums[index];
                       return AlbumCard(
-                        album,
+                        album: album,
                         onTap: (e) {
                           if (context.isMobile()) {
                             Navigator.of(context)

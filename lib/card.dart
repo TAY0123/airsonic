@@ -9,42 +9,26 @@ import 'package:transparent_image/transparent_image.dart';
 
 import 'airsonic_connection.dart';
 
-class AlbumCard extends StatefulWidget {
+class AlbumCard extends StatelessWidget {
   final Album album;
   final void Function(Album album)? onTap;
   final bool? hero;
-  const AlbumCard(this.album, {super.key, this.onTap, this.hero});
-
-  @override
-  State<AlbumCard> createState() => _AlbumCardState();
-}
-
-class _AlbumCardState extends State<AlbumCard> {
-  final timer = Future.delayed(const Duration(milliseconds: 250));
-
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    timer.ignore();
-    super.dispose();
-  }
+  final Duration? delay;
+  const AlbumCard(
+      {super.key, required this.album, this.onTap, this.hero, this.delay});
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
 
     var albumTitle = Text(
-      widget.album.name,
+      album.name,
       maxLines: 1,
       style: Theme.of(context).textTheme.titleMedium,
       overflow: TextOverflow.ellipsis,
     );
     var albumArtist = Text(
-      widget.album.artist?.name ?? "N.A",
+      album.artist?.name ?? "N.A",
       style: Theme.of(context).textTheme.bodySmall,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
@@ -52,11 +36,11 @@ class _AlbumCardState extends State<AlbumCard> {
     var albumCover = Stack(
       children: [
         FutureBuilder(
-            future: timer,
+            future: Future.delayed(delay ?? const Duration(milliseconds: 250)),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.done) {
                 return CoverImage.fromAlbum(
-                  widget.album,
+                  album,
                   size: ImageSize.grid,
                   cache: true,
                 );
@@ -74,7 +58,7 @@ class _AlbumCardState extends State<AlbumCard> {
                 );
               }
             }),
-        if (widget.album.combined)
+        if (album.combined)
           Positioned(
               right: 8,
               top: 8,
@@ -96,15 +80,15 @@ class _AlbumCardState extends State<AlbumCard> {
       onTap: () async {
         //TODO: add dialog to route so it display on url navigate
         //DialogRoute(context: context, builder: builder)
-        if (widget.onTap != null) {
-          widget.onTap!(widget.album);
+        if (onTap != null) {
+          onTap!(album);
         }
       },
       child: Column(
         children: [
-          widget.hero != false
+          hero != false
               ? Hero(
-                  tag: "${widget.album.id}-Cover}",
+                  tag: "${album.id}-Cover}",
                   child: albumCover,
                 )
               : albumCover,
@@ -116,18 +100,18 @@ class _AlbumCardState extends State<AlbumCard> {
                   children: [
                     Align(
                       alignment: Alignment.centerLeft,
-                      child: widget.hero != false
+                      child: hero != false
                           ? Hero(
-                              tag: "${widget.album.id}-Title}",
+                              tag: "${album.id}-Title}",
                               child: albumTitle,
                             )
                           : albumTitle,
                     ),
                     Align(
                       alignment: Alignment.centerLeft,
-                      child: widget.hero != false
+                      child: hero != false
                           ? Hero(
-                              tag: "${widget.album.id}-Artist}",
+                              tag: "${album.id}-Artist}",
                               child: albumArtist,
                             )
                           : albumArtist,
