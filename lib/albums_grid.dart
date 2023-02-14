@@ -201,11 +201,10 @@ class _AlbumViewGridState extends State<AlbumViewGrid>
                       final album = a.albums[index];
                       return AlbumCard(
                         album,
-                        callback: () {
+                        onTap: (e) {
                           if (context.isMobile()) {
-                            Navigator.of(context).pushNamed(
-                                "/album/${album.id}",
-                                arguments: album);
+                            Navigator.of(context)
+                                .pushNamed("/album/${e.id}", arguments: album);
                           } else {
                             showDialog(
                                 context: context,
@@ -215,7 +214,7 @@ class _AlbumViewGridState extends State<AlbumViewGrid>
                                         heightFactor: 0.95,
                                         child: Padding(
                                           padding: const EdgeInsets.all(16.0),
-                                          child: AlbumInfo(album),
+                                          child: AlbumInfo(e),
                                         ),
                                       ),
                                     ));

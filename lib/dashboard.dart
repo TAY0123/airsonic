@@ -238,7 +238,8 @@ class _DashboardState extends State<Dashboard>
                   aspectRatio: 0.75,
                   child: AlbumCard(
                     currentAlbum,
-                    callback: () => callback(currentAlbum),
+                    hero: false,
+                    onTap: (e) => callback(e),
                   ),
                 ),
               ),

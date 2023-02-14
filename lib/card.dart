@@ -11,16 +11,15 @@ import 'airsonic_connection.dart';
 
 class AlbumCard extends StatefulWidget {
   final Album album;
-  final VoidCallback? callback;
+  final void Function(Album album)? onTap;
   final bool? hero;
-  const AlbumCard(this.album, {super.key, this.callback, this.hero});
+  const AlbumCard(this.album, {super.key, this.onTap, this.hero});
 
   @override
   State<AlbumCard> createState() => _AlbumCardState();
 }
 
 class _AlbumCardState extends State<AlbumCard> {
-  bool full = false;
   final timer = Future.delayed(const Duration(milliseconds: 250));
 
   @override
@@ -38,92 +37,77 @@ class _AlbumCardState extends State<AlbumCard> {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
 
+    var albumTitle = Text(
+      widget.album.name,
+      maxLines: 1,
+      style: Theme.of(context).textTheme.titleMedium,
+      overflow: TextOverflow.ellipsis,
+    );
+    var albumArtist = Text(
+      widget.album.artist?.name ?? "N.A",
+      style: Theme.of(context).textTheme.bodySmall,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    );
+    var albumCover = Stack(
+      children: [
+        FutureBuilder(
+            future: timer,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.done) {
+                return CoverImage.fromAlbum(
+                  widget.album,
+                  size: ImageSize.grid,
+                  cache: true,
+                );
+              } else {
+                return AspectRatio(
+                  aspectRatio: 1,
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.all(Radius.circular(12)),
+                    child: Container(
+                        color: Theme.of(context).colorScheme.primaryContainer,
+                        child: const Center(
+                          child: Icon(Icons.music_note),
+                        )),
+                  ),
+                );
+              }
+            }),
+        if (widget.album.combined)
+          Positioned(
+              right: 8,
+              top: 8,
+              child: IconButton(
+                  style: IconButton.styleFrom(
+                    foregroundColor: colors.onPrimary,
+                    backgroundColor: colors.primary,
+                    disabledBackgroundColor: colors.primary,
+                    disabledForegroundColor: colors.onPrimary,
+                    hoverColor: colors.onPrimary.withOpacity(0.08),
+                    focusColor: colors.onPrimary.withOpacity(0.12),
+                    highlightColor: colors.onPrimary.withOpacity(0.12),
+                  ),
+                  onPressed: null,
+                  icon: const Icon(Icons.library_music)))
+      ],
+    );
     return GestureDetector(
       onTap: () async {
-        /* context.pushTransparentRoute(AlbumInfo(
-          widget.album,
-          img: await img,
-        )); */
-        /*
-        if (widget.pushNamed) {
-          Navigator.pushNamed(context, "/album/${widget.album.id}",
-              arguments: widget.album);
-        } else {
-          Navigator.push(
-              context,
-              PageRouteBuilder(
-                transitionDuration: Duration(milliseconds: 250),
-                pageBuilder: (context, animation, secondaryAnimation) =>
-                    Scaffold(
-                  body: AlbumInfo(widget.album),
-                ),
-                transitionsBuilder:
-                    (context, animation, secondaryAnimation, child) {
-                  return FadeTransition(
-                    opacity: animation,
-                    child: child,
-                  );
-                },
-              ));
-        }
-        */
         //TODO: add dialog to route so it display on url navigate
         //DialogRoute(context: context, builder: builder)
-        if (widget.callback != null) {
-          widget.callback!();
+        if (widget.onTap != null) {
+          widget.onTap!(widget.album);
         }
       },
       child: Column(
         children: [
-          Hero(
-            tag: "${widget.album.id}-Cover}",
-            child: Stack(
-              children: [
-                FutureBuilder(
-                    future: timer,
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.done) {
-                        return CoverImage.fromAlbum(
-                          widget.album,
-                          size: ImageSize.grid,
-                          cache: true,
-                        );
-                      } else {
-                        return AspectRatio(
-                          aspectRatio: 1,
-                          child: ClipRRect(
-                            borderRadius:
-                                const BorderRadius.all(Radius.circular(12)),
-                            child: Container(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .primaryContainer,
-                                child: const Center(
-                                  child: Icon(Icons.music_note),
-                                )),
-                          ),
-                        );
-                      }
-                    }),
-                if (widget.album.combined)
-                  Positioned(
-                      right: 8,
-                      top: 8,
-                      child: IconButton(
-                          style: IconButton.styleFrom(
-                            foregroundColor: colors.onPrimary,
-                            backgroundColor: colors.primary,
-                            disabledBackgroundColor: colors.primary,
-                            disabledForegroundColor: colors.onPrimary,
-                            hoverColor: colors.onPrimary.withOpacity(0.08),
-                            focusColor: colors.onPrimary.withOpacity(0.12),
-                            highlightColor: colors.onPrimary.withOpacity(0.12),
-                          ),
-                          onPressed: null,
-                          icon: const Icon(Icons.library_music)))
-              ],
-            ),
-          ),
+          widget.hero != false
+              ? Hero(
+                  tag: "${widget.album.id}-Cover}",
+                  child: albumCover,
+                )
+              : albumCover,
           Expanded(
               flex: 6,
               child: Padding(
@@ -132,27 +116,21 @@ class _AlbumCardState extends State<AlbumCard> {
                   children: [
                     Align(
                       alignment: Alignment.centerLeft,
-                      child: Hero(
-                        tag: "${widget.album.id}-Title}",
-                        child: Text(
-                          widget.album.name,
-                          maxLines: 1,
-                          style: Theme.of(context).textTheme.titleMedium,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
+                      child: widget.hero != false
+                          ? Hero(
+                              tag: "${widget.album.id}-Title}",
+                              child: albumTitle,
+                            )
+                          : albumTitle,
                     ),
                     Align(
                       alignment: Alignment.centerLeft,
-                      child: Hero(
-                        tag: "${widget.album.id}-Artist}",
-                        child: Text(
-                          widget.album.artist?.name ?? "N.A",
-                          style: Theme.of(context).textTheme.bodySmall,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
+                      child: widget.hero != false
+                          ? Hero(
+                              tag: "${widget.album.id}-Artist}",
+                              child: albumArtist,
+                            )
+                          : albumArtist,
                     ),
                   ],
                 ),
