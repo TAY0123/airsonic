@@ -1,3 +1,4 @@
+import 'package:airsonic/airsonic_connection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/src/widgets/framework.dart';
 import 'package:flutter/src/widgets/placeholder.dart';
@@ -15,6 +16,7 @@ class _SettingPageState extends State<SettingPage> {
 
   bool albumcombine = false;
   bool albumStyle = false;
+  bool hideDuplicate = false;
 
   @override
   void initState() {
@@ -23,6 +25,7 @@ class _SettingPageState extends State<SettingPage> {
       final storage = await SharedPreferences.getInstance();
       albumcombine = storage.getBool("albumCombine") ?? false;
       albumStyle = storage.getBool("albumStyle") ?? false;
+      hideDuplicate = storage.getBool("hideDuplicate") ?? false;
       return storage;
     }();
   }
@@ -39,6 +42,15 @@ class _SettingPageState extends State<SettingPage> {
                 Section(
                   title: "Server",
                   children: [
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 24.0),
+                      child: FilledButton.icon(
+                          onPressed: () {
+                            MediaPlayer.instance.startScan();
+                          },
+                          icon: const Icon(Icons.search),
+                          label: const Text("Start Scan")),
+                    ),
                     Padding(
                       padding: const EdgeInsets.only(bottom: 8.0),
                       child: ConstrainedBox(
@@ -130,6 +142,21 @@ class _SettingPageState extends State<SettingPage> {
                           },
                         )
                       ],
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text("Hide duplicate song from album"),
+                        Switch(
+                          value: hideDuplicate,
+                          onChanged: (value) {
+                            storage.setBool("hideDuplicate", value);
+                            setState(() {
+                              hideDuplicate = !hideDuplicate;
+                            });
+                          },
+                        )
+                      ],
                     )
                   ],
                 )
@@ -180,10 +207,15 @@ class Section extends StatelessWidget {
         maxWidth != null
             ? ConstrainedBox(
                 constraints: BoxConstraints(maxWidth: maxWidth!),
-                child:
-                    Column(mainAxisSize: MainAxisSize.min, children: children),
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: children),
               )
-            : Column(mainAxisSize: MainAxisSize.min, children: children)
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: children)
       ],
     );
   }

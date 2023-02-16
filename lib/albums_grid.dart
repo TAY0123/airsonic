@@ -36,7 +36,7 @@ class _AlbumViewGridState extends State<AlbumViewGrid>
   bool ended = false;
 
   late AirSonicResult _defaultController =
-      widget.controller ?? MediaPlayer.instance.fetchAlbumList();
+      widget.controller ?? MediaPlayer.instance.getAlbumList2();
 
   late Completer completer = Completer();
 
@@ -181,7 +181,7 @@ class _AlbumViewGridState extends State<AlbumViewGrid>
                                 setState(() {
                                   _currentType = value;
                                   _defaultController =
-                                      mp.fetchAlbumList(type: value);
+                                      mp.getAlbumList2(type: value);
                                 });
                                 _listController.value = _defaultController;
                               }),

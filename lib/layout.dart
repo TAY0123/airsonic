@@ -5,17 +5,19 @@ import 'const.dart';
 class ResponsiveLayout extends StatelessWidget {
   const ResponsiveLayout(
       {super.key, required this.tablet, required this.mobile});
-  final Widget Function(BoxConstraints constraints) tablet;
-  final Widget Function(BoxConstraints constraints) mobile;
+  final Widget Function(BuildContext context, BoxConstraints constraints)
+      tablet;
+  final Widget Function(BuildContext context, BoxConstraints constraints)
+      mobile;
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (context, constraints) {
       //if (constraints.maxWidth > breakpointMScale) {
       if (!context.isMobile()) {
-        return tablet(constraints);
+        return tablet(context, constraints);
       } else {
-        final m = mobile(constraints);
+        final m = mobile(context, constraints);
         if (constraints.maxWidth > breakpointM) {
           return Center(
             child: FractionallySizedBox(

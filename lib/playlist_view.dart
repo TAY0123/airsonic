@@ -5,10 +5,6 @@ import 'package:airsonic/layout.dart';
 import 'package:airsonic/playlist_info.dart';
 import 'package:airsonic/search.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/src/animation/animation_controller.dart';
-import 'package:flutter/src/widgets/framework.dart';
-import 'package:flutter/src/widgets/placeholder.dart';
-import 'package:flutter/src/widgets/ticker_provider.dart';
 
 import 'card.dart';
 
@@ -34,7 +30,7 @@ class _PlayListViewState extends State<PlayListView>
   @override
   void initState() {
     super.initState();
-    playlists = mp.fetchPlaylists();
+    playlists = mp.getPlaylists();
     _controller = AnimationController(vsync: this);
   }
 
@@ -49,7 +45,7 @@ class _PlayListViewState extends State<PlayListView>
     return Padding(
         padding: const EdgeInsets.all(8.0),
         child: ResponsiveLayout(
-          tablet: (constraints) {
+          tablet: (context, constraints) {
             return FutureBuilder(
                 future: playlists,
                 builder: (context, snapshot) {
@@ -78,6 +74,23 @@ class _PlayListViewState extends State<PlayListView>
                               final playlist =
                                   snapshot.requireData.playlists[index];
                               return CardSwipeAction(
+                                  onTap: () {
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) {
+                                        return Padding(
+                                          padding: const EdgeInsets.all(16.0),
+                                          child: Dialog(
+                                            child: Dialog(
+                                              child: PlayListInfo(
+                                                playlist: playlist,
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    );
+                                  },
                                   child: PlayListCard(playlist: playlist));
                             }
                           },
@@ -89,7 +102,7 @@ class _PlayListViewState extends State<PlayListView>
                   }
                 });
           },
-          mobile: (constraints) {
+          mobile: (context, constraints) {
             return FutureBuilder(
                 future: playlists,
                 builder: (context, snapshot) {
@@ -116,25 +129,23 @@ class _PlayListViewState extends State<PlayListView>
                             } else {
                               final playlist =
                                   snapshot.requireData.playlists[index];
-                              return GestureDetector(
-                                onTap: () {
-                                  showDialog(
-                                    context: context,
-                                    builder: (context) {
-                                      return Padding(
-                                        padding: const EdgeInsets.all(16.0),
-                                        child: Dialog(
-                                          child: PlayListInfo(
-                                            playlist: playlist,
+                              return CardSwipeAction(
+                                  onTap: () {
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) {
+                                        return Padding(
+                                          padding: const EdgeInsets.all(16.0),
+                                          child: Dialog(
+                                            child: PlayListInfo(
+                                              playlist: playlist,
+                                            ),
                                           ),
-                                        ),
-                                      );
-                                    },
-                                  );
-                                },
-                                child: CardSwipeAction(
-                                    child: PlayListCard(playlist: playlist)),
-                              );
+                                        );
+                                      },
+                                    );
+                                  },
+                                  child: PlayListCard(playlist: playlist));
                             }
                           },
                         )

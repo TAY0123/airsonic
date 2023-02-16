@@ -27,7 +27,7 @@ class _AlbumViewListState extends State<AlbumViewList>
 
   bool ended = false;
 
-  var _defaultController = MediaPlayer.instance.fetchAlbumList();
+  var _defaultController = MediaPlayer.instance.getAlbumList2();
 
   late Completer completer = Completer();
 
@@ -174,7 +174,7 @@ class _AlbumViewListState extends State<AlbumViewList>
           if (_currentType == value) return;
           setState(() {
             _currentType = value;
-            _defaultController = mp.fetchAlbumList(type: value);
+            _defaultController = mp.getAlbumList2(type: value);
           });
           _listController.value = _defaultController;
         });
@@ -228,7 +228,7 @@ class _AlbumViewListState extends State<AlbumViewList>
       ],
     );
     return ResponsiveLayout(
-      tablet: (constraints) {
+      tablet: (context, constraints) {
         return Padding(
           padding: const EdgeInsets.only(top: 8.0),
           child: Row(
@@ -338,7 +338,7 @@ class _AlbumViewListState extends State<AlbumViewList>
           ),
         );
       },
-      mobile: (constraints) {
+      mobile: (context, constraints) {
         return Padding(
           padding: const EdgeInsets.all(8.0),
           child: albumsList,

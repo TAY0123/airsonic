@@ -24,7 +24,7 @@ class _ArtistViewListState extends State<ArtistViewList>
 
   bool ended = false;
 
-  var _defaultController = MediaPlayer.instance.fetchArtistList();
+  var _defaultController = MediaPlayer.instance.getArtists();
 
   late Completer completer = Completer();
 
@@ -188,7 +188,7 @@ class _ArtistViewListState extends State<ArtistViewList>
                                                   setState(() {
                                                     _currentType = value;
                                                     _defaultController =
-                                                        mp.fetchAlbumList(
+                                                        mp.getAlbumList2(
                                                             type: value);
                                                   });
                                                   _listController.value =

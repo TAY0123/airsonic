@@ -27,7 +27,7 @@ String generateMd5(String input) {
 
 class MediaPlayer {
   late Future<ValueStream<MediaItem?>> currentItem;
-  late Future<ValueStream<List<MediaItem>>> playlist;
+  late Future<ValueStream<List<MediaItem>>> queue;
   late Future<Stream<Duration>> currentPosition;
   late Future<ValueStream<PlaybackState>> playerStatus;
   final preferenceStorage = SharedPreferences.getInstance();
@@ -99,7 +99,7 @@ class MediaPlayer {
   }
 
   void _listenToChangesInPlaylist() {
-    playlist = () async {
+    queue = () async {
       final player = await futurePlayer;
       player.queue.listen((playlist) async {
         if (!playlist.isEmpty) {
@@ -301,7 +301,7 @@ class MediaPlayer {
     return result;
   }
 
-  AirSonicResult fetchAlbumList({
+  AirSonicResult getAlbumList2({
     AlbumListType type = AlbumListType.recent,
     String folderId = "",
   }) {
@@ -325,7 +325,7 @@ class MediaPlayer {
     return res;
   }
 
-  AirSonicResult fetchArtistList() {
+  AirSonicResult getArtists() {
     final res = AirSonicResult();
     res.artist = ArtistList((offset, count) async {
       await _inited;
@@ -335,11 +335,11 @@ class MediaPlayer {
     return res;
   }
 
-  Future<XMLResult> fetchAlbumInfo(String albumId) async {
+  Future<XMLResult> getAlbum(String albumId) async {
     return await _xmlEndpoint("getAlbum", query: {"id": albumId});
   }
 
-  Future<XMLResult> fetchSong(String songId) async {
+  Future<XMLResult> getSong(String songId) async {
     return await _xmlEndpoint("getSong", query: {"id": songId});
   }
 
@@ -347,12 +347,12 @@ class MediaPlayer {
     var albumlist = await _xmlEndpoint("getAlbum", query: {"id": folderId});
     XMLResult result = XMLResult();
     for (final album in albumlist.albums) {
-      result.albums.addAll((await fetchAlbumInfo(album.id)).albums);
+      result.albums.addAll((await getAlbum(album.id)).albums);
     }
     return result;
   }
 
-  AirSonicResult fetchSearchResult(String keyword) {
+  AirSonicResult search3(String keyword) {
     final result = AirSonicResult();
     result.keywords = keyword;
     result.album = AlbumList((offset, count) async {
@@ -387,7 +387,7 @@ class MediaPlayer {
     }
   }
 
-  Future<ImageProvider?> fetchCover(String id,
+  Future<ImageProvider?> getCoverArt(String id,
       {ImageSize size = ImageSize.grid}) async {
     if (id.isEmpty) return null;
     if (kIsWeb) {
@@ -423,7 +423,12 @@ class MediaPlayer {
     }
   }
 
-  Future<XMLResult> fetchPlaylists() async {
+  Future<bool> startScan() async {
+    await _xmlEndpoint("startScan");
+    return true;
+  }
+
+  Future<XMLResult> getPlaylists() async {
     return _xmlEndpoint("getPlaylists");
   }
 
@@ -481,6 +486,10 @@ class MediaPlayer {
           */
   }
 
+  Future<XMLResult> getPlaylist(String id) async {
+    return await _xmlEndpoint("getPlaylist", query: {"id": id});
+  }
+
   Future<XMLResult> fetchArtist(String id) async {
     return await _xmlEndpoint("getArtist", query: {"id": id});
   }
@@ -527,7 +536,7 @@ class Album {
   Future<bool> fetchCover({ImageSize size = ImageSize.grid}) async {
     final connection = MediaPlayer.instance;
     try {
-      image = CachedImage(await connection.fetchCover(coverArt), size);
+      image = CachedImage(await connection.getCoverArt(coverArt), size);
     } catch (e) {
       return false;
     }
@@ -543,7 +552,7 @@ class Album {
 
     final connection = MediaPlayer.instance;
     try {
-      final result = await connection.fetchAlbumInfo(id);
+      final result = await connection.getAlbum(id);
       if (result.albums.isEmpty) {
         return false;
       } else {
@@ -554,21 +563,20 @@ class Album {
         coverArt = result.albums[0].coverArt;
       }
       if (combine) {
-        combined = true;
-        final others = connection.fetchSearchResult(name);
+        final others = connection.search3(name);
         while (!(others.album?.finished ?? true)) {
           await others.album?._fetchUncombinedNext(count: 30);
           if (others.album?.albums.last.name != name) {
             break;
           }
         }
-
         List<Future<void>> results = [];
         for (var a in others.album?.albums ?? List<Album>.empty()) {
           if (a.name == name) {
             if (a.id != id) {
+              combined = true;
               results.add(connection
-                  .fetchAlbumInfo(a.id)
+                  .getAlbum(a.id)
                   .then((value) => songs?.addAll(value.albums[0].songs ?? [])));
             }
           } else {
@@ -580,7 +588,22 @@ class Album {
     } catch (e) {
       return false;
     }
-    songs?.sort((a, b) => a.track - b.track);
+
+    //remove duplicate entries having same name
+    if (storage.getBool("hideDuplicate") ?? false) {
+      songs?.retainWhere((element) =>
+          songs!.lastWhere((last) => ((last.title == element.title ||
+                  (last.track == element.track &&
+                      last.duration == element.duration)) &&
+              last.artist?.name == element.artist?.name)) ==
+          element);
+
+      ///hide album from list if name equal
+      ///or index equal + duration equal
+      ///and artist equal if above any condition meet
+    }
+    //TODO: classify album  to separarte disc 1,2 maybe by coverArt?
+    songs?.sort((a, b) => (a.track - b.track));
     return true;
   }
 
@@ -632,7 +655,7 @@ class Song {
 
   Future<bool> getInfo() async {
     final mp = MediaPlayer.instance;
-    final result = await mp.fetchSong(id);
+    final result = await mp.getSong(id);
     if (result.songs.isEmpty) {
       return false;
     }
@@ -691,7 +714,7 @@ class Artist {
   Future<bool> fetchCover() async {
     final connection = MediaPlayer.instance;
     try {
-      img = await connection.fetchCover(coverID);
+      img = await connection.getCoverArt(coverID);
     } catch (e) {
       return false;
     }
@@ -761,6 +784,7 @@ class Playlist {
   Duration? duration;
   DateTime? created;
   String? coverArt;
+  List<Song>? entries;
 
   Playlist(this.id,
       {this.name,
@@ -770,24 +794,51 @@ class Playlist {
       this.public,
       this.duration,
       this.created,
-      this.coverArt});
+      this.coverArt,
+      this.entries});
 
   factory Playlist.fromElement(XmlElement element) {
+    var id = element.getAttribute("id");
+    var name = element.getAttribute("name");
+    var comment = element.getAttribute("comment");
+    var songCount = int.tryParse(element.getAttribute("songCount") ?? "");
+    var owner = element.getAttribute("owner");
+    var duration = Duration(
+        seconds: int.tryParse(element.getAttribute("duration") ?? "") ?? 0);
+    var coverArt = element.getAttribute("coverArt");
+    List<Song>? entries = null;
+    if (element.childElements.isNotEmpty) {
+      entries = [];
+      for (var entry in element.childElements) {
+        entries.add(Song.fromElement(entry));
+      }
+    }
     return Playlist(
-      element.getAttribute("id") ?? "",
-      name: element.getAttribute("name"),
-      comment: element.getAttribute("comment") ?? "",
-      songCount: int.tryParse(element.getAttribute("songCount") ?? "") ?? 0,
-      owner: element.getAttribute("owner") ?? "",
-      duration: Duration(
-          seconds: int.tryParse(element.getAttribute("duration") ?? "") ?? 0),
-      coverArt: element.getAttribute("coverArt") ?? "",
+      id ?? "",
+      name: name,
+      comment: comment ?? "",
+      songCount: songCount ?? 0,
+      owner: owner ?? "",
+      duration: duration,
+      coverArt: coverArt ?? "",
+      entries: entries,
       //public
       //created
     );
   }
 
   Future<bool> getInfo() async {
+    final res = await MediaPlayer.instance.getPlaylist(id);
+    if (res.playlists.isNotEmpty) {
+      final detailedPlaylist = res.playlists[0];
+      name = detailedPlaylist.name;
+      coverArt = detailedPlaylist.coverArt;
+      songCount = detailedPlaylist.songCount;
+      owner = detailedPlaylist.owner;
+      duration = detailedPlaylist.duration;
+      comment = detailedPlaylist.comment;
+      entries = detailedPlaylist.entries;
+    }
     return true;
   }
 }
@@ -840,7 +891,11 @@ class AlbumList {
         final index =
             albums.indexWhere((element) => element.name == resultAlbum.name);
         if (index != -1) {
-          albums[index].songs?.addAll(resultAlbum.songs ?? []);
+          albums[index].songs?.addAll(resultAlbum.songs?.where((e) =>
+                  albums[index]
+                      .songs!
+                      .every((element) => !(e.title == element.title))) ??
+              []);
           //indicate the album has combined other album id
           albums[index].combined = true;
         } else {

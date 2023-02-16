@@ -185,7 +185,7 @@ class _AlbumInfoState extends State<AlbumInfo>
         return true;
       },
       child: ResponsiveLayout(
-        tablet: (constraints) {
+        tablet: (context, constraints) {
           return Padding(
             padding: const EdgeInsets.only(
               left: 16.0,
@@ -318,7 +318,7 @@ class _AlbumInfoState extends State<AlbumInfo>
             ),
           );
         },
-        mobile: (constraints) {
+        mobile: (context, constraints) {
           return Padding(
             padding: const EdgeInsets.all(8.0),
             child: Scaffold(
@@ -418,8 +418,7 @@ class AlbumInfoListTile extends StatefulWidget {
   final int index;
   final List<Song> songs;
   final String? artistName;
-  const AlbumInfoListTile(int this.index, this.songs,
-      {super.key, this.artistName});
+  const AlbumInfoListTile(this.index, this.songs, {super.key, this.artistName});
 
   @override
   State<AlbumInfoListTile> createState() => _AlbumInfoListTileState();
@@ -467,7 +466,7 @@ class _AlbumInfoListTileState extends State<AlbumInfoListTile> {
               selected = true;
             });
             () async {
-              final c = await mp.playlist;
+              final c = await mp.queue;
               final currentQueue = c.value;
               final indexed = currentQueue.elementAtOrNull(widget.index);
               if (indexed != null &&

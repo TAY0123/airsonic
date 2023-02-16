@@ -6,7 +6,6 @@ import 'package:airsonic/const.dart';
 import 'package:airsonic/search.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 
 import 'airsonic_connection.dart';
 import 'album_info.dart';
@@ -36,9 +35,9 @@ class _DashboardState extends State<Dashboard>
   @override
   void initState() {
     super.initState();
-    recentAlbums = mp.fetchAlbumList(type: AlbumListType.recent);
-    newestAlbums = mp.fetchAlbumList(type: AlbumListType.newest);
-    randomAlbums = mp.fetchAlbumList(type: AlbumListType.random);
+    recentAlbums = mp.getAlbumList2(type: AlbumListType.recent);
+    newestAlbums = mp.getAlbumList2(type: AlbumListType.newest);
+    randomAlbums = mp.getAlbumList2(type: AlbumListType.random);
 
     _controller = AnimationController(vsync: this);
   }
@@ -53,12 +52,13 @@ class _DashboardState extends State<Dashboard>
   Widget build(BuildContext context) {
     final textStyle = Theme.of(context).textTheme;
     final covercard = DashboardCoverCard();
+    final c = albumCardGrid("Newest", newestAlbums);
 
     return ResponsiveLayout(
-      tablet: (constraints) {
+      tablet: (context, constraints) {
         double height = rowMobileHeight;
 
-        if (constraints.maxWidth > breakpointM) {
+        if (!context.isMobile()) {
           height = rowDesktopHeight;
         }
         return Padding(
@@ -99,7 +99,7 @@ class _DashboardState extends State<Dashboard>
                 ),
                 Padding(
                   padding: const EdgeInsets.only(top: 16.0, bottom: 16),
-                  child: albumCardGrid("Newest", newestAlbums),
+                  child: c,
                 ),
                 Padding(
                   padding: const EdgeInsets.only(top: 16.0, bottom: 16),
@@ -110,7 +110,7 @@ class _DashboardState extends State<Dashboard>
           ]),
         );
       },
-      mobile: (constraints) {
+      mobile: (context, constraints) {
         double height = rowMobileHeight;
 
         if (constraints.maxWidth > breakpointM) {
@@ -205,22 +205,38 @@ class _DashboardState extends State<Dashboard>
         ]);
   }
 
-  LayoutBuilder cardGridLayoutBuilder(AirSonicResult albumsController) {
-    int row = 4;
-    int col = 1;
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        if (constraints.maxWidth > breakpointM) {
-          col = 1;
-          row = (constraints.maxWidth / (250 + 4))
-              .floor(); //max width should be 750 + padding
-          if (row <= 0) {
-            row = 1;
-          }
-        } else {
-          row = 2;
-          col = 2;
-        }
+  Widget cardGridLayoutBuilder(AirSonicResult albumsController) {
+    return ResponsiveLayout(
+      tablet: (context, constraints) {
+        return SizedBox(
+          height: min(constraints.maxWidth * 0.25, 450),
+          child: ListView(
+            cacheExtent: double.maxFinite,
+            shrinkWrap: false,
+            scrollDirection: Axis.horizontal,
+            children: albumsController.album?.albums
+                    .map(
+                      (currentAlbum) => Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: AspectRatio(
+                          aspectRatio: 0.75,
+                          child: AlbumCard(
+                            album: currentAlbum,
+                            delay: Duration.zero,
+                            hero: false,
+                            onTap: (e) => callback(e),
+                          ),
+                        ),
+                      ),
+                    )
+                    .toList() ??
+                [],
+          ),
+        );
+      },
+      mobile: (context, constraints) {
+        final row = 2;
+        final col = 2;
 
         List<Widget> child = [];
         for (var i = 0; i < col; i++) {
