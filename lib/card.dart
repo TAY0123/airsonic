@@ -312,6 +312,11 @@ class CoverImage extends StatefulWidget {
 
   final BoxFit fit;
   final ImageSize size;
+  final Duration? fadeInDuration;
+  final double topLeft;
+  final double topRight;
+  final double bottomLeft;
+  final double bottomRight;
 
   CoverImage(
     String coverId, {
@@ -319,23 +324,32 @@ class CoverImage extends StatefulWidget {
     this.fit = BoxFit.cover,
     Future<ImageProvider?>? provider,
     this.size = ImageSize.grid,
+    this.fadeInDuration,
+    this.topLeft = 12,
+    this.topRight = 12,
+    this.bottomLeft = 12,
+    this.bottomRight = 12,
   }) {
-    data = provider ?? mp.fetchCover(coverId, size: size);
+    data = provider ?? mp.getCoverArt(coverId, size: size);
   }
 
   factory CoverImage.fromAlbum(
     Album album, {
     BoxFit fit = BoxFit.cover,
     ImageSize size = ImageSize.grid,
+    Duration? fadeInDuration,
     bool cache = false,
   }) {
     if (album.image != null && album.image?.size == size) {
       return CoverImage("",
-          fit: fit, provider: Future.value(album.image!.image));
+          fadeInDuration: fadeInDuration,
+          fit: fit,
+          provider: Future.value(album.image!.image));
     } else {
       if (cache) {
         return CoverImage(
           "",
+          fadeInDuration: fadeInDuration,
           fit: fit,
           size: size,
           provider: () async {
@@ -346,6 +360,7 @@ class CoverImage extends StatefulWidget {
       } else {
         return CoverImage(
           album.coverArt,
+          fadeInDuration: fadeInDuration,
           fit: fit,
           size: size,
         );
@@ -357,12 +372,14 @@ class CoverImage extends StatefulWidget {
     Uri? uri, {
     BoxFit fit = BoxFit.cover,
     ImageSize size = ImageSize.grid,
+    Duration? fadeInDuration,
   }) {
     if (uri == null) {
       return CoverImage("");
     }
     return CoverImage(
       "",
+      fadeInDuration: fadeInDuration,
       provider: Future.value(uri.isScheme("file")
           ? FileImage(File.fromUri(uri))
           : NetworkImage(uri.toString()) as ImageProvider),
@@ -404,7 +421,12 @@ class _CoverImageState extends State<CoverImage> {
   @override
   Widget build(BuildContext context) {
     final content = ClipRRect(
-      borderRadius: const BorderRadius.all(Radius.circular(12)),
+      borderRadius: BorderRadius.only(
+        topLeft: Radius.circular(widget.topLeft),
+        topRight: Radius.circular(widget.topRight),
+        bottomLeft: Radius.circular(widget.bottomLeft),
+        bottomRight: Radius.circular(widget.bottomRight),
+      ),
       child: AnimatedCrossFade(
           firstCurve: Curves.easeInCubic,
           layoutBuilder: (topChild, topChildKey, bottomChild, bottomChildKey) {
@@ -447,7 +469,7 @@ class _CoverImageState extends State<CoverImage> {
             },
           ),
           crossFadeState: status,
-          duration: const Duration(milliseconds: 250)),
+          duration: widget.fadeInDuration ?? const Duration(milliseconds: 250)),
     );
 
     return AspectRatio(aspectRatio: 1, child: content);
@@ -932,44 +954,43 @@ class PlayListCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Flexible(
-              child: Row(
-                children: [
-                  CoverImage(playlist.coverArt ?? ""),
-                  Flexible(
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 8.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            playlist.name ?? "",
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                          Text("Songs: ${playlist.songCount}")
-                        ],
-                      ),
+      child: Column(
+        children: [
+          Flexible(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CoverImage(playlist.coverArt ?? ""),
+                Flexible(
+                  flex: 1,
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 8.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          playlist.name ?? "",
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        Text("Songs: ${playlist.songCount}")
+                      ],
                     ),
                   ),
-                ],
-              ),
-            ),
-            const Divider(),
-            ButtonBar(
-              children: [
-                FilledButton.icon(
-                    onPressed: () async {},
-                    //label: Text("Continue"),
-                    icon: Container(),
-                    label: const Icon(Icons.play_arrow))
+                ),
               ],
-            )
-          ],
-        ),
+            ),
+          ),
+          Flexible(
+              child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text("comment:"),
+              ],
+            ),
+          ))
+        ],
       ),
     );
   }
@@ -977,7 +998,8 @@ class PlayListCard extends StatelessWidget {
 
 class CardSwipeAction extends StatefulWidget {
   final Widget child;
-  const CardSwipeAction({super.key, required this.child});
+  final VoidCallback? onTap;
+  const CardSwipeAction({super.key, required this.child, this.onTap});
 
   @override
   State<CardSwipeAction> createState() => _CardSwipeActionState();
@@ -1005,62 +1027,68 @@ class _CardSwipeActionState extends State<CardSwipeAction>
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(onSecondaryTap: () {
-      if (animation.value > 20) {
-        _controller.reverse();
-      } else {
-        _controller.forward();
-      }
-    }, onHorizontalDragUpdate: (details) {
-      // Note: Sensitivity is integer used when you don't want to mess up vertical drag
-      int sensitivity = 8;
-      if (details.delta.dx > sensitivity) {
-        _controller.play();
-      } else if (details.delta.dx < -sensitivity) {
-        _controller.reverse();
-      }
-    }, child: LayoutBuilder(
-      builder: (context, constraints) {
-        return Stack(
-          children: [
-            SizedBox(
-              width: 90,
-              child: Card(
-                elevation: 0,
-                color: Theme.of(context).colorScheme.surfaceVariant,
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
-                  child: Container(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        IconButton(
-                            onPressed: () {}, icon: const Icon(Icons.add)),
-                        IconButton(
-                            onPressed: () {}, icon: const Icon(Icons.favorite)),
-                        IconButton(
-                            onPressed: () {}, icon: const Icon(Icons.delete)),
-                      ],
+    return GestureDetector(
+        onTap: widget.onTap,
+        onSecondaryTap: () {
+          if (animation.value > 20) {
+            _controller.reverse();
+          } else {
+            _controller.forward();
+          }
+        },
+        onHorizontalDragUpdate: (details) {
+          // Note: Sensitivity is integer used when you don't want to mess up vertical drag
+          int sensitivity = 8;
+          if (details.delta.dx > sensitivity) {
+            _controller.play();
+          } else if (details.delta.dx < -sensitivity) {
+            _controller.reverse();
+          }
+        },
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return Stack(
+              children: [
+                SizedBox(
+                  width: 90,
+                  child: Card(
+                    elevation: 0,
+                    color: Theme.of(context).colorScheme.surfaceVariant,
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: Container(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            IconButton(
+                                onPressed: () {}, icon: const Icon(Icons.add)),
+                            IconButton(
+                                onPressed: () {},
+                                icon: const Icon(Icons.favorite)),
+                            IconButton(
+                                onPressed: () {},
+                                icon: const Icon(Icons.delete)),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ),
-            AnimatedBuilder(
-              animation: animation,
-              builder: (context, child) {
-                return Positioned(
-                  width: constraints.maxWidth - animation.value,
-                  height: constraints.maxHeight,
-                  left: animation.value,
-                  child: child!,
-                );
-              },
-              child: widget.child,
-            )
-          ],
-        );
-      },
-    ));
+                AnimatedBuilder(
+                  animation: animation,
+                  builder: (context, child) {
+                    return Positioned(
+                      width: constraints.maxWidth - animation.value,
+                      height: constraints.maxHeight,
+                      left: animation.value,
+                      child: child!,
+                    );
+                  },
+                  child: widget.child,
+                )
+              ],
+            );
+          },
+        ));
   }
 }
