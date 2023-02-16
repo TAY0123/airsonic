@@ -313,10 +313,10 @@ class CoverImage extends StatefulWidget {
   final BoxFit fit;
   final ImageSize size;
   final Duration? fadeInDuration;
-  final double topLeft;
-  final double topRight;
-  final double bottomLeft;
-  final double bottomRight;
+  Radius? topLeft;
+  Radius? topRight;
+  Radius? bottomLeft;
+  Radius? bottomRight;
 
   CoverImage(
     String coverId, {
@@ -325,10 +325,10 @@ class CoverImage extends StatefulWidget {
     Future<ImageProvider?>? provider,
     this.size = ImageSize.grid,
     this.fadeInDuration,
-    this.topLeft = 12,
-    this.topRight = 12,
-    this.bottomLeft = 12,
-    this.bottomRight = 12,
+    this.topLeft,
+    this.topRight,
+    this.bottomLeft,
+    this.bottomRight,
   }) {
     data = provider ?? mp.getCoverArt(coverId, size: size);
   }
@@ -422,10 +422,10 @@ class _CoverImageState extends State<CoverImage> {
   Widget build(BuildContext context) {
     final content = ClipRRect(
       borderRadius: BorderRadius.only(
-        topLeft: Radius.circular(widget.topLeft),
-        topRight: Radius.circular(widget.topRight),
-        bottomLeft: Radius.circular(widget.bottomLeft),
-        bottomRight: Radius.circular(widget.bottomRight),
+        topLeft: widget.topLeft ?? Radius.circular(12),
+        topRight: widget.topRight ?? Radius.circular(12),
+        bottomLeft: widget.bottomLeft ?? Radius.circular(12),
+        bottomRight: widget.bottomRight ?? Radius.circular(12),
       ),
       child: AnimatedCrossFade(
           firstCurve: Curves.easeInCubic,
@@ -955,22 +955,27 @@ class PlayListCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Flexible(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CoverImage(playlist.coverArt ?? ""),
+                CoverImage(
+                  playlist.coverArt ?? "",
+                  bottomLeft: Radius.zero,
+                  topRight: Radius.zero,
+                ),
                 Flexible(
-                  flex: 1,
+                  flex: 1
                   child: Padding(
-                    padding: const EdgeInsets.only(left: 8.0),
+                    padding: const EdgeInsets.only(left: 8.0, right: 16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           playlist.name ?? "",
-                          style: Theme.of(context).textTheme.titleMedium,
+                          style: Theme.of(context).textTheme.titleLarge,
                         ),
                         Text("Songs: ${playlist.songCount}")
                       ],
@@ -982,7 +987,7 @@ class PlayListCard extends StatelessWidget {
           ),
           Flexible(
               child: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(8.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
