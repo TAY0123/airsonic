@@ -157,7 +157,7 @@ class _PlayBackControlState extends State<PlayBackControl>
         Ink(
           decoration: ShapeDecoration(
             color: Theme.of(context).colorScheme.primary,
-            shape: CircleBorder(),
+            shape: const CircleBorder(),
           ),
           child: IconButton(
               onPressed: () async {
@@ -442,7 +442,7 @@ class _PlayBackControlState extends State<PlayBackControl>
                                           ],
                                         ),
                                       ),
-                                      Spacer(
+                                      const Spacer(
                                         flex: 1,
                                       ),
                                       AspectRatio(
@@ -464,7 +464,7 @@ class _PlayBackControlState extends State<PlayBackControl>
                                                 _getRect(value);
                                           },
                                           child: text.child!),
-                                      Spacer(
+                                      const Spacer(
                                         flex: 4,
                                       ),
                                       playbackControlButton,
@@ -474,7 +474,7 @@ class _PlayBackControlState extends State<PlayBackControl>
                                                 _getRect(value);
                                           },
                                           child: progressBar.child!),
-                                      Spacer(),
+                                      const Spacer(),
                                     ]),
                         ),
                       ),
@@ -734,7 +734,7 @@ class _PlayBackControlState extends State<PlayBackControl>
   }
 
   void close() {
-    Navigator.of(Navi!.currentContext!).pop();
+    Navigator.of(rootNavigatorKey!.currentContext!).pop();
     _controller.stop();
     setState(() {
       animationEnded = false;

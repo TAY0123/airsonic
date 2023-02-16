@@ -1,11 +1,9 @@
 import 'package:airsonic/airsonic_connection.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/src/widgets/framework.dart';
-import 'package:flutter/src/widgets/placeholder.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingPage extends StatefulWidget {
-  SettingPage({super.key});
+  const SettingPage({super.key});
 
   @override
   State<SettingPage> createState() => _SettingPageState();
@@ -185,9 +183,12 @@ class _SettingPageState extends State<SettingPage> {
 
 class Section extends StatelessWidget {
   const Section(
-      {super.key, this.title, required this.children, this.maxWidth = 500});
+      {super.key,
+      this.title = "",
+      required this.children,
+      this.maxWidth = 500});
 
-  final title;
+  final String title;
   final List<Widget> children;
   final double? maxWidth;
 

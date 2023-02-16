@@ -1,8 +1,6 @@
 import 'package:airsonic/airsonic_connection.dart';
 import 'package:airsonic/albums_grid.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/src/widgets/framework.dart';
-import 'package:flutter/src/widgets/placeholder.dart';
 import 'package:transparent_image/transparent_image.dart';
 
 class ArtistInfo extends StatefulWidget {
@@ -52,23 +50,24 @@ class _ArtistInfoState extends State<ArtistInfo> {
                                       MemoryImage(kTransparentImage)),
                             ),
                           ),
-                          Padding(padding: EdgeInsets.only(left: 8)),
+                          const Padding(padding: EdgeInsets.only(left: 8)),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Spacer(),
+                                const Spacer(),
                                 Text(
                                   widget.artist.name,
                                   style: Theme.of(context).textTheme.titleLarge,
                                 ),
-                                Spacer()
+                                const Spacer()
                               ],
                             ),
                           ),
                           //monitor scroll controller to fade btn with icon
                           IconButton(
-                              onPressed: () {}, icon: Icon(Icons.play_arrow))
+                              onPressed: () {},
+                              icon: const Icon(Icons.play_arrow))
                         ],
                       ),
                     )),
@@ -76,11 +75,11 @@ class _ArtistInfoState extends State<ArtistInfo> {
             },
             body: Column(
               children: [
-                Padding(padding: EdgeInsets.only(top: 60)),
+                const Padding(padding: EdgeInsets.only(top: 60)),
                 Row(
-                  children: [Text("Albums")],
+                  children: const [Text("Albums")],
                 ),
-                Divider(),
+                const Divider(),
                 Expanded(
                   child: AlbumViewGrid(
                     controller: widget.artist.getAlbumController(),
@@ -93,7 +92,7 @@ class _ArtistInfoState extends State<ArtistInfo> {
             ),
           );
         } else {
-          return Center(
+          return const Center(
             child: CircularProgressIndicator(),
           );
         }

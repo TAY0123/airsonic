@@ -65,33 +65,36 @@ class _PlayListViewState extends State<PlayListView>
                           itemCount: snapshot.requireData.playlists.length + 1,
                           gridDelegate:
                               const SliverGridDelegateWithMaxCrossAxisExtent(
-                                  maxCrossAxisExtent: 480,
-                                  childAspectRatio: 1.5),
+                                  maxCrossAxisExtent: 280,
+                                  childAspectRatio: 0.75),
                           itemBuilder: (context, index) {
                             if (index == currentPlaylist.length) {
                               return createNewPlayList();
                             } else {
                               final playlist =
                                   snapshot.requireData.playlists[index];
-                              return CardSwipeAction(
-                                  onTap: () {
-                                    showDialog(
-                                      context: context,
-                                      builder: (context) {
-                                        return Padding(
-                                          padding: const EdgeInsets.all(16.0),
-                                          child: Dialog(
+                              return Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: GestureDetector(
+                                    onTap: () {
+                                      showDialog(
+                                        context: context,
+                                        builder: (context) {
+                                          return Padding(
+                                            padding: const EdgeInsets.all(16.0),
                                             child: Dialog(
-                                              child: PlayListInfo(
-                                                playlist: playlist,
+                                              child: Dialog(
+                                                child: PlayListInfo(
+                                                  playlist: playlist,
+                                                ),
                                               ),
                                             ),
-                                          ),
-                                        );
-                                      },
-                                    );
-                                  },
-                                  child: PlayListCard(playlist: playlist));
+                                          );
+                                        },
+                                      );
+                                    },
+                                    child: PlayListCard(playlist: playlist)),
+                              );
                             }
                           },
                         )
@@ -197,7 +200,7 @@ class _PlayListViewState extends State<PlayListView>
             ),
             secondChild: Card(
                 child: Padding(
-              padding: EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
                   Flexible(
@@ -209,9 +212,9 @@ class _PlayListViewState extends State<PlayListView>
                           child: Padding(
                             padding: const EdgeInsets.only(left: 8.0),
                             child: Column(
-                              children: [
+                              children: const [
                                 TextField(
-                                  decoration: const InputDecoration(
+                                  decoration: InputDecoration(
                                     border: InputBorder.none,
                                     isDense: true,
                                     contentPadding: EdgeInsets.zero,
@@ -225,7 +228,7 @@ class _PlayListViewState extends State<PlayListView>
                       ],
                     ),
                   ),
-                  Divider(),
+                  const Divider(),
                   ButtonBar(
                     children: [
                       FilledButton.icon(
@@ -239,7 +242,6 @@ class _PlayListViewState extends State<PlayListView>
               ),
             )),
             crossFadeState: addcard,
-            duration: Duration(milliseconds: 250)));
-    ;
+            duration: const Duration(milliseconds: 250)));
   }
 }

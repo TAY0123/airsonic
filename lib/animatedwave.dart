@@ -18,7 +18,7 @@ class AnimatedWave extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (context, constraints) {
-      return Container(
+      return SizedBox(
         height: height,
         width: constraints.biggest.width,
         child: LoopAnimationBuilder(

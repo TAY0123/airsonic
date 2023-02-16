@@ -9,7 +9,6 @@ import 'package:flutter/material.dart';
 import 'album_info.dart';
 import 'animatedwave.dart';
 import 'card.dart';
-import 'const.dart';
 
 class AlbumViewList extends StatefulWidget {
   const AlbumViewList({super.key, this.display});
@@ -91,7 +90,6 @@ class _AlbumViewListState extends State<AlbumViewList>
               "/album/${_index.value}", (route) => false,
               arguments: _listController.value.album?.albums
                   .firstWhere((element) => element.id == _index.value));
-          ;
         } else {
           Navigator.of(context).pushNamed("/album/${_index.value}",
               arguments: _listController.value.album?.albums
@@ -160,15 +158,15 @@ class _AlbumViewListState extends State<AlbumViewList>
         onPressed: () {
           Navigator.of(context).pushReplacement(PageRouteBuilder(
             pageBuilder: (context, animation, secondaryAnimation) {
-              return AlbumViewGrid();
+              return const AlbumViewGrid();
             },
           ));
         },
-        icon: Icon(Icons.list));
+        icon: const Icon(Icons.list));
     final sortingMenu = PopupMenuButton(
         tooltip: "sorting",
         initialValue: _currentType,
-        icon: Icon(Icons.filter_list),
+        icon: const Icon(Icons.filter_list),
         itemBuilder: (context) => b,
         onSelected: (value) {
           if (_currentType == value) return;
@@ -181,7 +179,7 @@ class _AlbumViewListState extends State<AlbumViewList>
     final albumsList = Column(
       children: [
         SearchingBar(result),
-        Padding(padding: EdgeInsets.only(bottom: 8)),
+        const Padding(padding: EdgeInsets.only(bottom: 8)),
         Expanded(
           child: ClipRRect(
             borderRadius: BorderRadius.circular(12),
@@ -192,7 +190,7 @@ class _AlbumViewListState extends State<AlbumViewList>
                     delegate: SliverChildListDelegate([
                   Row(
                     children: [
-                      Spacer(),
+                      const Spacer(),
                       changemodeBtn,
                       sortingMenu,
                     ],
@@ -218,7 +216,7 @@ class _AlbumViewListState extends State<AlbumViewList>
                                   "Total Album: ${a.albums.length}",
                                   style: Theme.of(context).textTheme.bodyLarge,
                                 )
-                              : CircularProgressIndicator())
+                              : const CircularProgressIndicator())
                     ]),
                     itemExtent: 80),
               ],
@@ -262,7 +260,7 @@ class _AlbumViewListState extends State<AlbumViewList>
                         LayoutBuilder(builder: (context, constraints) {
                       return Column(
                         children: [
-                          Spacer(),
+                          const Spacer(),
                           Stack(
                             alignment: Alignment.bottomCenter,
                             children: [
@@ -317,7 +315,7 @@ class _AlbumViewListState extends State<AlbumViewList>
                 */
 
                     return PageRouteBuilder(
-                      transitionDuration: Duration(milliseconds: 250),
+                      transitionDuration: const Duration(milliseconds: 250),
                       settings: settings,
                       pageBuilder: (context, animation, secondaryAnimation) =>
                           Scaffold(

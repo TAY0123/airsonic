@@ -1,5 +1,5 @@
 ///default route
-const routeHome = '$routeRootAlbum';
+const routeHome = routeRootAlbum;
 
 ///root route
 const routeSettings = '/Settings';

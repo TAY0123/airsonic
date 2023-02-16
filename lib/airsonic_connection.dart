@@ -74,35 +74,13 @@ class MediaPlayer {
       final player = await futurePlayer;
       return player.mediaItem;
     }();
-    /*
-    final player = await futurePlayer;
-    current = player.mediaItem;
-    player.mediaItem.listen((mediaItem) {
-      print(mediaItem?.duration?.inSeconds);
-      currentItem.value = mediaItem ?? const MediaItem(id: "", title: "");
-      _updateSkipButtons();
-    });
-    */
-  }
-
-  void _updateSkipButtons() async {
-    final player = await futurePlayer;
-    final mediaItem = player.mediaItem.value;
-    final playlist = player.queue.value;
-    if (playlist.length < 2 || mediaItem == null) {
-      //isFirstSongNotifier.value = true;
-      //isLastSongNotifier.value = true;
-    } else {
-      //isFirstSongNotifier.value = playlist.first == mediaItem;
-      //isLastSongNotifier.value = playlist.last == mediaItem;
-    }
   }
 
   void _listenToChangesInPlaylist() {
     queue = () async {
       final player = await futurePlayer;
       player.queue.listen((playlist) async {
-        if (!playlist.isEmpty) {
+        if (playlist.isNotEmpty) {
           final storage = await preferenceStorage;
           storage.setString(
               "queue", jsonEncode(playlist.map((e) => e.toJson()).toList()));
@@ -110,13 +88,6 @@ class MediaPlayer {
       });
       return player.queue;
     }();
-    /*
-    final player = await futurePlayer;
-    player.queue.listen((playlist) {
-      if (playlist.isEmpty) return;
-      final newList = playlist.map((item) => item.title).toList();
-    });
-    */
   }
 
   void _listenToCurrentPosition() {
@@ -124,12 +95,6 @@ class MediaPlayer {
       await futurePlayer;
       return AudioService.position;
     }();
-    /*
-    await futurePlayer;
-    AudioService.position.listen((position) {
-      currentPos.value = position;
-    });
-    */
   }
 
   void _listenToPlayerStatus() {
@@ -137,13 +102,6 @@ class MediaPlayer {
       final player = await futurePlayer;
       return player.playbackState;
     }();
-
-    /*
-    await futurePlayer;
-    AudioService.position.listen((position) {
-      currentPos.value = position;
-    });
-    */
   }
 
   ValueNotifier<Duration> currentPos = ValueNotifier(Duration.zero);
@@ -473,17 +431,6 @@ class MediaPlayer {
     await fplayer.updateQueue(res);
     await fplayer.skipToQueueItem(index);
     fplayer.play();
-
-    /*
-    waitForPlayerReady = (await playerStatus).listen((event) {
-      if (event.processingState == AudioProcessingState.ready) {
-        waitForPlayerReady?.cancel();
-        () async {}();
-      }
-    });
-      player.playFromUri(_apiEndpointUrl("stream",
-          query: {"id": playlist[i].id, "format": "mp3"}));
-          */
   }
 
   Future<XMLResult> getPlaylist(String id) async {
@@ -620,7 +567,7 @@ class Album {
         name: element.getAttribute("name") ?? "",
         coverArt: element.getAttribute("coverArt") ?? "",
         artist: element.getAttribute("artistId") != null
-            ? Artist.FromAlbum(element)
+            ? Artist.fromAlbum(element)
             : null);
 
     if (element.childElements.isNotEmpty) {
@@ -680,7 +627,7 @@ class Song {
         album: album);
     final a = element.getAttribute("artistId");
     if (a != null) {
-      re.artist = Artist.FromSong(element);
+      re.artist = Artist.fromSong(element);
     }
     return re;
   }
@@ -763,12 +710,12 @@ class Artist {
     return res;
   }
 
-  factory Artist.FromAlbum(XmlElement element) {
+  factory Artist.fromAlbum(XmlElement element) {
     return Artist(element.getAttribute("artistId") ?? "",
         element.getAttribute("artist") ?? "");
   }
 
-  factory Artist.FromSong(XmlElement element) {
+  factory Artist.fromSong(XmlElement element) {
     return Artist(element.getAttribute("artistId") ?? "",
         element.getAttribute("artist") ?? "");
   }
@@ -806,7 +753,7 @@ class Playlist {
     var duration = Duration(
         seconds: int.tryParse(element.getAttribute("duration") ?? "") ?? 0);
     var coverArt = element.getAttribute("coverArt");
-    List<Song>? entries = null;
+    List<Song>? entries;
     if (element.childElements.isNotEmpty) {
       entries = [];
       for (var entry in element.childElements) {

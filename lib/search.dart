@@ -1,13 +1,7 @@
 import 'dart:async';
 
 import 'package:airsonic/airsonic_connection.dart';
-import 'package:dismissible_page/dismissible_page.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/src/widgets/framework.dart';
-import 'package:flutter/src/widgets/placeholder.dart';
-import 'package:rxdart/streams.dart';
-
-import 'card.dart';
 
 class SearchingBar extends StatefulWidget {
   SearchingBar(this.result, {super.key});
@@ -72,7 +66,8 @@ class _SearchingBarState extends State<SearchingBar> {
                       clearBtn = true;
                     });
                   }
-                  Future.delayed(Duration(milliseconds: 500)).then((value) {
+                  Future.delayed(const Duration(milliseconds: 500))
+                      .then((value) {
                     local.complete();
                     if (status.isCompleted) {
                       () async {
@@ -86,7 +81,7 @@ class _SearchingBarState extends State<SearchingBar> {
                 //sdtextAlign: TextAlign.center,
                 textAlignVertical: TextAlignVertical.center,
                 decoration: InputDecoration(
-                  icon: Icon(
+                  icon: const Icon(
                     Icons.search,
                   ),
                   suffixIcon: clearBtn
@@ -95,12 +90,12 @@ class _SearchingBarState extends State<SearchingBar> {
                             fieldText.clear();
                             widget.result.add(null);
                           },
-                          icon: Icon(Icons.close))
+                          icon: const Icon(Icons.close))
                       : null,
                   hintText: "Search",
                   isCollapsed: true,
                   border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(vertical: 10),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 10),
                 ),
               ),
             ),

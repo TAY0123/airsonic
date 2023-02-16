@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/src/widgets/framework.dart';
-import 'package:flutter/src/widgets/placeholder.dart';
 
 class CategoriesView extends StatelessWidget {
   const CategoriesView({super.key});
@@ -11,27 +9,27 @@ class CategoriesView extends StatelessWidget {
       children: [
         Card(
           child: Row(
-            children: [Placeholder(), Text("Album")],
+            children: const [Placeholder(), Text("Album")],
           ),
         ),
         Card(
           child: Row(
-            children: [Placeholder(), Text("Artist")],
+            children: const [Placeholder(), Text("Artist")],
           ),
         ),
         Card(
           child: Row(
-            children: [Placeholder(), Text("Folders")],
+            children: const [Placeholder(), Text("Folders")],
           ),
         ),
         Card(
           child: Row(
-            children: [Placeholder(), Text("Playlists")],
+            children: const [Placeholder(), Text("Playlists")],
           ),
         ),
         Card(
           child: Row(
-            children: [Placeholder(), Text("Starred")],
+            children: const [Placeholder(), Text("Starred")],
           ),
         )
       ],

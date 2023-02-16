@@ -82,23 +82,23 @@ class NavRail extends StatelessWidget {
                 if (index.value == value) return;
                 switch (value) {
                   case 0:
-                    Navi?.currentState
+                    rootNavigatorKey?.currentState
                         ?.pushNamedAndRemoveUntil("/", (route) => false);
                     break;
                   case 1:
-                    Navi?.currentState
+                    rootNavigatorKey?.currentState
                         ?.pushNamedAndRemoveUntil("/album", (route) => false);
                     break;
                   case 2:
-                    Navi?.currentState
+                    rootNavigatorKey?.currentState
                         ?.pushNamedAndRemoveUntil("/artist", (route) => false);
                     break;
                   case 3:
-                    Navi?.currentState?.pushNamedAndRemoveUntil(
+                    rootNavigatorKey?.currentState?.pushNamedAndRemoveUntil(
                         "/playlist", (route) => false);
                     break;
                   case 4:
-                    Navi?.currentState
+                    rootNavigatorKey?.currentState
                         ?.pushNamedAndRemoveUntil("/setting", (route) => false);
                     break;
 

@@ -1,9 +1,6 @@
 import 'package:airsonic/airsonic_connection.dart';
 import 'package:airsonic/animatedwave.dart';
-import 'package:airsonic/route.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/src/widgets/framework.dart';
-import 'package:flutter/src/widgets/placeholder.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'const.dart';
@@ -85,7 +82,7 @@ class _LoginPageState extends State<LoginPage> {
                 constraints: const BoxConstraints(maxWidth: 400),
                 child: Column(
                   children: [
-                    Spacer(),
+                    const Spacer(),
                     Form(
                       key: formkey,
                       child: Column(
@@ -159,7 +156,7 @@ class _LoginPageState extends State<LoginPage> {
                                   icon: Icon(passwordo
                                       ? Icons.visibility
                                       : Icons.visibility_off)),
-                              border: OutlineInputBorder(),
+                              border: const OutlineInputBorder(),
                               labelText: 'Password',
                             ),
                             validator: (value) {
@@ -191,13 +188,13 @@ class _LoginPageState extends State<LoginPage> {
                           )
                         ].map((e) {
                           return Padding(
-                            padding: EdgeInsets.only(bottom: 10),
+                            padding: const EdgeInsets.only(bottom: 10),
                             child: e,
                           );
                         }).toList(),
                       ),
                     ),
-                    Spacer()
+                    const Spacer()
                   ],
                 ),
               ),

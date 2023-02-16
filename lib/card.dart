@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:airsonic/after_layout.dart';
-import 'package:airsonic/album_info.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:simple_animations/simple_animations.dart';
@@ -422,10 +421,10 @@ class _CoverImageState extends State<CoverImage> {
   Widget build(BuildContext context) {
     final content = ClipRRect(
       borderRadius: BorderRadius.only(
-        topLeft: widget.topLeft ?? Radius.circular(12),
-        topRight: widget.topRight ?? Radius.circular(12),
-        bottomLeft: widget.bottomLeft ?? Radius.circular(12),
-        bottomRight: widget.bottomRight ?? Radius.circular(12),
+        topLeft: widget.topLeft ?? const Radius.circular(12),
+        topRight: widget.topRight ?? const Radius.circular(12),
+        bottomLeft: widget.bottomLeft ?? const Radius.circular(12),
+        bottomRight: widget.bottomRight ?? const Radius.circular(12),
       ),
       child: AnimatedCrossFade(
           firstCurve: Curves.easeInCubic,
@@ -545,9 +544,9 @@ class _StackedAlbumImageState extends State<StackedAlbumImage> {
 }
 
 class ArtistList extends StatelessWidget {
-  List<Artist> artistList;
+  final List<Artist> artistList;
 
-  ArtistList(this.artistList, {super.key});
+  const ArtistList(this.artistList, {super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -953,48 +952,28 @@ class PlayListCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return Center(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Flexible(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                CoverImage(
-                  playlist.coverArt ?? "",
-                  bottomLeft: Radius.zero,
-                  topRight: Radius.zero,
-                ),
-                Flexible(
-                  flex: 1
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 8.0, right: 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          playlist.name ?? "",
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        Text("Songs: ${playlist.songCount}")
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
+          CoverImage(
+            playlist.coverArt ?? "",
+            bottomLeft: Radius.zero,
+            topRight: Radius.zero,
           ),
-          Flexible(
-              child: Padding(
-            padding: const EdgeInsets.all(8.0),
+          Padding(
+            padding: const EdgeInsets.only(left: 8.0, right: 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("comment:"),
+                Text(
+                  playlist.name ?? "",
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                Text("Songs: ${playlist.songCount}")
               ],
             ),
-          ))
+          ),
         ],
       ),
     );
@@ -1061,20 +1040,17 @@ class _CardSwipeActionState extends State<CardSwipeAction>
                     color: Theme.of(context).colorScheme.surfaceVariant,
                     child: Padding(
                       padding: const EdgeInsets.only(top: 8.0),
-                      child: Container(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            IconButton(
-                                onPressed: () {}, icon: const Icon(Icons.add)),
-                            IconButton(
-                                onPressed: () {},
-                                icon: const Icon(Icons.favorite)),
-                            IconButton(
-                                onPressed: () {},
-                                icon: const Icon(Icons.delete)),
-                          ],
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          IconButton(
+                              onPressed: () {}, icon: const Icon(Icons.add)),
+                          IconButton(
+                              onPressed: () {},
+                              icon: const Icon(Icons.favorite)),
+                          IconButton(
+                              onPressed: () {}, icon: const Icon(Icons.delete)),
+                        ],
                       ),
                     ),
                   ),

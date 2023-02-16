@@ -204,6 +204,7 @@ class MyAudioHandler extends BaseAudioHandler {
   }
 
   @override
+  // ignore: avoid_renaming_method_parameters
   Future<void> updateQueue(List<MediaItem> mediaItems) async {
     await inited;
     // manage Just Audio
@@ -238,7 +239,6 @@ class MyAudioHandler extends BaseAudioHandler {
     _player.currentIndexStream.listen((index) {
       final playlist = queue.value;
       if (index == null || playlist.isEmpty) return;
-      print(playlist[index].artUri);
       mediaItem.add(playlist[index]);
     });
   }
@@ -248,11 +248,7 @@ class MyAudioHandler extends BaseAudioHandler {
     if (_player.processingState == ProcessingState.completed) {
       await _player.seek(Duration.zero);
     }
-    try {
-      await _player.play();
-    } catch (e) {
-      print(e);
-    }
+    _player.play();
   }
 
   @override

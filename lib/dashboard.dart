@@ -50,17 +50,11 @@ class _DashboardState extends State<Dashboard>
 
   @override
   Widget build(BuildContext context) {
-    final textStyle = Theme.of(context).textTheme;
     final covercard = DashboardCoverCard();
     final c = albumCardGrid("Newest", newestAlbums);
 
     return ResponsiveLayout(
       tablet: (context, constraints) {
-        double height = rowMobileHeight;
-
-        if (!context.isMobile()) {
-          height = rowDesktopHeight;
-        }
         return Padding(
           padding: const EdgeInsets.all(8.0),
           child: Column(children: [
@@ -72,8 +66,6 @@ class _DashboardState extends State<Dashboard>
                 child: CustomScrollView(slivers: [
               SliverList(
                   delegate: SliverChildListDelegate([
-                /* Text("Dashboard",
-                      style: Theme.of(context).textTheme.headlineLarge), */
                 Center(
                   child: SizedBox(
                     height: cardHeight,
@@ -87,7 +79,7 @@ class _DashboardState extends State<Dashboard>
                           //    minWidth: 400, maxWidth: 550),
                           child: covercard,
                         ),
-                        Padding(padding: EdgeInsets.only(left: 16)),
+                        const Padding(padding: EdgeInsets.only(left: 16)),
                         Flexible(
                           child: SizedBox.expand(
                             child: albumTileGrid("Random", randomAlbums),
@@ -127,8 +119,6 @@ class _DashboardState extends State<Dashboard>
                 child: CustomScrollView(slivers: [
               SliverList(
                   delegate: SliverChildListDelegate([
-                /* Text("Dashboard",
-                      style: Theme.of(context).textTheme.headlineLarge), */
                 Center(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -179,8 +169,8 @@ class _DashboardState extends State<Dashboard>
                   ),
                 TextButton.icon(
                     onPressed: () {},
-                    icon: Icon(Icons.arrow_forward),
-                    label: Text("more"))
+                    icon: const Icon(Icons.arrow_forward),
+                    label: const Text("more"))
               ],
             ),
           ),
@@ -194,10 +184,8 @@ class _DashboardState extends State<Dashboard>
                           albumsController.album!.albums.isNotEmpty) {
                         return cardGridLayoutBuilder(albumsController);
                       } else {
-                        return Container(
-                          child: Center(
-                            child: CircularProgressIndicator(),
-                          ),
+                        return const Center(
+                          child: CircularProgressIndicator(),
                         );
                       }
                     }),
@@ -235,8 +223,8 @@ class _DashboardState extends State<Dashboard>
         );
       },
       mobile: (context, constraints) {
-        final row = 2;
-        final col = 2;
+        const row = 2;
+        const col = 2;
 
         List<Widget> child = [];
         for (var i = 0; i < col; i++) {
@@ -292,8 +280,8 @@ class _DashboardState extends State<Dashboard>
                 ),
               TextButton.icon(
                   onPressed: () {},
-                  icon: Icon(Icons.arrow_forward),
-                  label: Text("more"))
+                  icon: const Icon(Icons.arrow_forward),
+                  label: const Text("more"))
             ],
           ),
         ),
@@ -308,7 +296,7 @@ class _DashboardState extends State<Dashboard>
                       return cardTileLayoutBuilder(albumsController);
                     } else {
                       return Container(
-                        child: Center(
+                        child: const Center(
                           child: CircularProgressIndicator(),
                         ),
                       );

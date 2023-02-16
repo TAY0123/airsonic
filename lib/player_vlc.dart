@@ -35,7 +35,7 @@ class VlcAudioHandler extends BaseAudioHandler {
     id: 69420,
     commandlineArguments: ['--no-video'],
   );
-  var _playlist = vlc.Playlist(medias: []);
+  var _playlist = const vlc.Playlist(medias: []);
 
   //private
   Uri _base = Uri();
@@ -218,8 +218,7 @@ class VlcAudioHandler extends BaseAudioHandler {
   void _listenForCurrentSongIndexChanges() {
     _player.currentStream.listen((index) {
       final playlist = queue.value;
-      if (index == null || playlist.isEmpty) return;
-      print(playlist[index.index ?? 0].artUri);
+      if (playlist.isEmpty) return;
       mediaItem.add(playlist[index.index ?? 0]);
     });
   }

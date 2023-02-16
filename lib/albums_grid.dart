@@ -119,6 +119,7 @@ class _AlbumViewGridState extends State<AlbumViewGrid>
 
   @override
   void didChangeDependencies() {
+    super.didChangeDependencies();
     _scrollController = widget.listenOnly
         ? PrimaryScrollController.of(context)
         : ScrollController();
@@ -155,10 +156,10 @@ class _AlbumViewGridState extends State<AlbumViewGrid>
                   SliverList(
                     delegate: SliverChildListDelegate([
                       SearchingBar(result),
-                      Padding(padding: EdgeInsets.only(bottom: 8)),
+                      const Padding(padding: EdgeInsets.only(bottom: 8)),
                       Row(
                         children: [
-                          Spacer(),
+                          const Spacer(),
                           IconButton(
                               tooltip: "change mode",
                               onPressed: () {
@@ -166,15 +167,15 @@ class _AlbumViewGridState extends State<AlbumViewGrid>
                                     .pushReplacement(PageRouteBuilder(
                                   pageBuilder:
                                       (context, animation, secondaryAnimation) {
-                                    return AlbumViewList();
+                                    return const AlbumViewList();
                                   },
                                 ));
                               },
-                              icon: Icon(Icons.list)),
+                              icon: const Icon(Icons.list)),
                           PopupMenuButton(
                               tooltip: "sorting",
                               initialValue: _currentType,
-                              icon: Icon(Icons.filter_list),
+                              icon: const Icon(Icons.filter_list),
                               itemBuilder: (context) => b,
                               onSelected: (value) {
                                 if (_currentType == value) return;
@@ -230,7 +231,7 @@ class _AlbumViewGridState extends State<AlbumViewGrid>
                                   "Total Album: ${a.albums.length}",
                                   style: Theme.of(context).textTheme.bodyLarge,
                                 )
-                              : CircularProgressIndicator())
+                              : const CircularProgressIndicator())
                     ]),
                     itemExtent: 100),
               ],

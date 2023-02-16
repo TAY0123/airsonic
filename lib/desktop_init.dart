@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
 
-Future<void> DesktopInit() async {
+Future<void> desktopWindowManagerInit() async {
   if (Platform.isLinux || Platform.isMacOS || Platform.isWindows && !kIsWeb) {
     await windowManager.ensureInitialized();
 

@@ -1,33 +1,17 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:math';
 
-import 'package:airsonic/album_info.dart';
-import 'package:airsonic/albums_list.dart';
-import 'package:airsonic/artist_list.dart';
-import 'package:airsonic/const.dart';
-import 'package:airsonic/dashboard.dart';
-import 'package:airsonic/airsonic_connection.dart';
-import 'package:airsonic/login.dart';
 import 'package:airsonic/desktop_init.dart';
-import 'package:airsonic/playerControl.dart';
-import 'package:airsonic/playlist_view.dart';
-import 'package:airsonic/route.dart';
-import 'package:airsonic/search.dart';
-import 'package:airsonic/setting.dart';
 import 'package:airsonic/splitview.dart';
-import 'package:dismissible_page/dismissible_page.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-import 'albums_grid.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // Must add this line.
   if (!kIsWeb && (Platform.isLinux || Platform.isMacOS || Platform.isWindows)) {
-    await DesktopInit();
+    await desktopWindowManagerInit();
   }
   runApp(const MyApp());
 }
@@ -76,7 +60,7 @@ class _MyAppState extends State<MyApp> {
   }
 }
 
-GlobalKey<NavigatorState>? Navi = GlobalKey();
+GlobalKey<NavigatorState>? rootNavigatorKey = GlobalKey();
 
 class InitPage extends StatelessWidget {
   const InitPage({super.key});

@@ -38,7 +38,7 @@ class _ArtistViewListState extends State<ArtistViewList>
 
   var _currentType = AlbumListType.recent;
 
-  ValueNotifier<String> _index = ValueNotifier("-1");
+  final ValueNotifier<String> _index = ValueNotifier("-1");
 
   @override
   void initState() {
@@ -90,8 +90,8 @@ class _ArtistViewListState extends State<ArtistViewList>
   }
 
   void fetchUntilScrollable() async {
-    final local_completer = Completer();
-    completer = local_completer;
+    final localCompleter = Completer();
+    completer = localCompleter;
     await fetchAlbums();
     while ((!_scrollController.hasClients ||
             _scrollController.position.maxScrollExtent == 0.0) &&
@@ -99,7 +99,7 @@ class _ArtistViewListState extends State<ArtistViewList>
         !(_listController.value.artist?.finished ?? true)) {
       await fetchAlbums();
     }
-    local_completer.complete();
+    localCompleter.complete();
   }
 
   @override
@@ -165,7 +165,8 @@ class _ArtistViewListState extends State<ArtistViewList>
                           child: Column(
                             children: [
                               SearchingBar(result),
-                              Padding(padding: EdgeInsets.only(bottom: 8)),
+                              const Padding(
+                                  padding: EdgeInsets.only(bottom: 8)),
                               Expanded(
                                 child: ClipRRect(
                                   borderRadius: BorderRadius.circular(12),
@@ -176,15 +177,17 @@ class _ArtistViewListState extends State<ArtistViewList>
                                           delegate: SliverChildListDelegate([
                                         Row(
                                           children: [
-                                            Spacer(),
+                                            const Spacer(),
                                             PopupMenuButton(
                                                 tooltip: "sorting",
                                                 initialValue: _currentType,
-                                                icon: Icon(Icons.filter_list),
+                                                icon: const Icon(
+                                                    Icons.filter_list),
                                                 itemBuilder: (context) => b,
                                                 onSelected: (value) {
-                                                  if (_currentType == value)
+                                                  if (_currentType == value) {
                                                     return;
+                                                  }
                                                   setState(() {
                                                     _currentType = value;
                                                     _defaultController =
@@ -196,7 +199,7 @@ class _ArtistViewListState extends State<ArtistViewList>
                                                 }),
                                           ],
                                         ),
-                                        Padding(
+                                        const Padding(
                                             padding:
                                                 EdgeInsets.only(bottom: 30))
                                       ])),
@@ -224,7 +227,7 @@ class _ArtistViewListState extends State<ArtistViewList>
                                                             .textTheme
                                                             .bodyLarge,
                                                       )
-                                                    : CircularProgressIndicator())
+                                                    : const CircularProgressIndicator())
                                           ]),
                                           itemExtent: 80),
                                     ],
@@ -251,7 +254,7 @@ class _ArtistViewListState extends State<ArtistViewList>
                           LayoutBuilder(builder: (context, constraints) {
                         return Column(
                           children: [
-                            Spacer(),
+                            const Spacer(),
                             Stack(
                               alignment: Alignment.bottomCenter,
                               children: [
@@ -311,7 +314,7 @@ class _ArtistViewListState extends State<ArtistViewList>
                       }
 
                       return PageRouteBuilder(
-                        transitionDuration: Duration(milliseconds: 250),
+                        transitionDuration: const Duration(milliseconds: 250),
                         settings: settings,
                         pageBuilder: (context, animation, secondaryAnimation) =>
                             Card(child: page),

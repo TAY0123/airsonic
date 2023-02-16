@@ -1,12 +1,14 @@
 import 'package:airsonic/airsonic_connection.dart';
 import 'package:airsonic/album_info.dart';
 import 'package:airsonic/card.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 
 class PlayListInfo extends StatelessWidget {
-  const PlayListInfo({super.key, required this.playlist});
+  PlayListInfo({super.key, required this.playlist});
 
   final Playlist playlist;
+  final mp = MediaPlayer.instance;
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +31,14 @@ class PlayListInfo extends StatelessWidget {
             ),
             Flexible(
               child: Row(
-                children: [CoverImage(playlist.coverArt ?? ""), Spacer()],
+                children: [
+                  CoverImage(
+                    playlist.coverArt ?? "",
+                    topRight: Radius.zero,
+                    bottomLeft: Radius.zero,
+                  ),
+                  const Spacer()
+                ],
               ),
             ),
             Flexible(
@@ -41,15 +50,20 @@ class PlayListInfo extends StatelessWidget {
                         if (snapshot.hasData) {
                           return Column(
                             children: [
-                              ListTile(
+                              const ListTile(
                                 title: Text("Song"),
                                 trailing: Text("Duration"),
                               ),
                               Flexible(
                                 child: ListView(
                                     children: playlist.entries
-                                            ?.map((e) => ListTile(
+                                            ?.mapIndexed((index, e) => ListTile(
                                                   title: Text(e.title),
+                                                  onTap: () {
+                                                    mp.playPlaylist(
+                                                        playlist.entries!,
+                                                        index: index);
+                                                  },
                                                   trailing: Text(printDuration(
                                                       Duration(
                                                           seconds:
@@ -65,7 +79,7 @@ class PlayListInfo extends StatelessWidget {
                         } else {
                           return Center(
                             child: Column(
-                              children: [CircularProgressIndicator()],
+                              children: const [CircularProgressIndicator()],
                             ),
                           );
                         }

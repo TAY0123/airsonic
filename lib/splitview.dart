@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:airsonic/albums_grid.dart';
 import 'package:airsonic/const.dart';
 import 'package:airsonic/login.dart';
-import 'package:airsonic/playerControl.dart';
+import 'package:airsonic/player_control.dart';
 import 'package:airsonic/playlist_view.dart';
 import 'package:airsonic/setting.dart';
 import 'package:flutter/foundation.dart';
@@ -125,10 +125,7 @@ class SplitView extends StatelessWidget {
         } else {
           return Center(
             child: Column(
-              children: [
-                const CircularProgressIndicator(),
-                const Text("loading...")
-              ],
+              children: const [CircularProgressIndicator(), Text("loading...")],
             ),
           );
         }
@@ -150,7 +147,7 @@ class AppNavigator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Navigator(
-      key: Navi,
+      key: rootNavigatorKey,
       observers: [HeroController()],
       initialRoute: "/",
       reportsRouteUpdateToEngine: true,
@@ -223,7 +220,7 @@ class AppNavigator extends StatelessWidget {
               break;
             case "setting":
               index.value = 4;
-              page = SettingPage();
+              page = const SettingPage();
               break;
             default:
           }
