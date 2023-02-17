@@ -15,6 +15,7 @@ Future<AudioHandler> initAudioService() async {
     await session.configure(const AudioSessionConfiguration.music());
   }
   if (!kIsWeb && (Platform.isWindows || Platform.isLinux)) {
+    DartVLC.initialize();
     return await AudioService.init(
       builder: () => VlcAudioHandler(),
     );

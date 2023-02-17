@@ -4,6 +4,7 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   dart_vlc
+  nsd_windows
   screen_retriever
   window_manager
 )

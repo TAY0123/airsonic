@@ -296,6 +296,62 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.8.0"
+  nested:
+    dependency: transitive
+    description:
+      name: nested
+      sha256: "03bac4c528c64c95c722ec99280375a6f2fc708eec17c7b3f07253b626cd2a20"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.0"
+  nsd:
+    dependency: "direct main"
+    description:
+      name: nsd
+      sha256: "55b1f27a75e427ef3ba20d445b341a1c3666209f8a71559b43233877b8d3af08"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.3.0"
+  nsd_android:
+    dependency: transitive
+    description:
+      name: nsd_android
+      sha256: "7a38d0b2d21f1e578cd3020940b95b22d5260413dc0c8cf30a987a4e410b166d"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.2.2"
+  nsd_ios:
+    dependency: transitive
+    description:
+      name: nsd_ios
+      sha256: "7034134dd89595362d5e464030081b0d542120a558ab7fe6227df44365df3e8a"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.3"
+  nsd_macos:
+    dependency: transitive
+    description:
+      name: nsd_macos
+      sha256: "2403b8d599f50fc9179db1420a0ffc25bfa8bbeb814aa31ca0a71f804fc938da"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.3"
+  nsd_platform_interface:
+    dependency: transitive
+    description:
+      name: nsd_platform_interface
+      sha256: "2f4033fa13cc45375253bf348abdb9712004e656462205543ec9506b43c67bb2"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.6.0"
+  nsd_windows:
+    dependency: transitive
+    description:
+      name: nsd_windows
+      sha256: "06601efdd3268cbce4b90f8e23ae1dab445c97c661fba417821ce118add722e7"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.1"
   path:
     dependency: transitive
     description:
@@ -400,6 +456,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.2.4"
+  provider:
+    dependency: transitive
+    description:
+      name: provider
+      sha256: cdbe7530b12ecd9eb455bdaa2fcb8d4dad22e80b8afb4798b41479d5ce26847f
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.0.5"
   rxdart:
     dependency: "direct main"
     description:
