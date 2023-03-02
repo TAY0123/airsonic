@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:airsonic/desktop_init.dart';
+import 'package:airsonic/login.dart';
 import 'package:airsonic/splitview.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -53,7 +54,25 @@ class _MyAppState extends State<MyApp> {
           ),
           useMaterial3: true),
       home: Scaffold(
-        body: SplitView(),
+        body: FutureBuilder(
+          future: SharedPreferences.getInstance(),
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              return Navigator(
+                pages: [
+                  MaterialPage(
+                      child: snapshot.requireData.getBool("login") ?? false
+                          ? SplitView()
+                          : const LoginPage())
+                ],
+              );
+            } else {
+              return const Center(
+                child: CircularProgressIndicator(),
+              );
+            }
+          },
+        ),
       ),
       themeMode: ThemeMode.system,
     );
@@ -61,19 +80,3 @@ class _MyAppState extends State<MyApp> {
 }
 
 GlobalKey<NavigatorState>? rootNavigatorKey = GlobalKey();
-
-class InitPage extends StatelessWidget {
-  const InitPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    () async {
-      if ((await SharedPreferences.getInstance()).getBool("login") ?? false) {
-        Navigator.of(context).popAndPushNamed("/dashboard");
-      } else {
-        Navigator.of(context).popAndPushNamed("/login");
-      }
-    }();
-    return const Scaffold();
-  }
-}
