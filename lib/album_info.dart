@@ -457,6 +457,14 @@ class _AlbumInfoListTileState extends State<AlbumInfoListTile> {
       builder: (context, snapshot) {
         return ListTile(
           selected: selected,
+          onLongPress: () {
+            Clipboard.setData(ClipboardData(
+                text:
+                    "${widget.songs[widget.index].title} - ${widget.songs[widget.index].artist?.name}"));
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+              content: Text("Copied to Clipboard"),
+            ));
+          },
           onTap: () {
             if (widget.songs[widget.index].id == current?.value?.id) return;
             setState(() {

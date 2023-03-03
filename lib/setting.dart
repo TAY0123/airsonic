@@ -15,6 +15,7 @@ class _SettingPageState extends State<SettingPage> {
   bool albumcombine = false;
   bool albumStyle = false;
   bool hideDuplicate = false;
+  bool localDiscovery = false;
 
   @override
   void initState() {
@@ -24,6 +25,7 @@ class _SettingPageState extends State<SettingPage> {
       albumcombine = storage.getBool("albumCombine") ?? false;
       albumStyle = storage.getBool("albumStyle") ?? false;
       hideDuplicate = storage.getBool("hideDuplicate") ?? false;
+      localDiscovery = storage.getBool("localDiscovery") ?? false;
       return storage;
     }();
   }
@@ -38,7 +40,10 @@ class _SettingPageState extends State<SettingPage> {
               final storage = snapshots.requireData;
               final items = [
                 Section(
-                  title: "Server",
+                  title: Text(
+                    "Server",
+                    style: Theme.of(context).textTheme.headlineMedium,
+                  ),
                   children: [
                     Padding(
                       padding: const EdgeInsets.only(bottom: 24.0),
@@ -109,7 +114,10 @@ class _SettingPageState extends State<SettingPage> {
                   ],
                 ),
                 Section(
-                  title: "Album",
+                  title: Text(
+                    "Album",
+                    style: Theme.of(context).textTheme.headlineMedium,
+                  ),
                   children: [
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -157,11 +165,32 @@ class _SettingPageState extends State<SettingPage> {
                       ],
                     )
                   ],
-                )
+                ),
+                Section(
+                    title: Text(
+                      "Client",
+                      style: Theme.of(context).textTheme.headlineMedium,
+                    ),
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text("Enable local Discovery"),
+                          Switch(
+                            value: localDiscovery,
+                            onChanged: (value) {
+                              storage.setBool("localDiscovery", value);
+                              setState(() {
+                                localDiscovery = !localDiscovery;
+                              });
+                            },
+                          ),
+                        ],
+                      )
+                    ])
               ];
 
-              return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              return ListView(
                   children: items
                       .map((e) => Padding(
                             padding: const EdgeInsets.only(bottom: 40),
@@ -183,12 +212,9 @@ class _SettingPageState extends State<SettingPage> {
 
 class Section extends StatelessWidget {
   const Section(
-      {super.key,
-      this.title = "",
-      required this.children,
-      this.maxWidth = 500});
+      {super.key, this.title, required this.children, this.maxWidth = 500});
 
-  final String title;
+  final Widget? title;
   final List<Widget> children;
   final double? maxWidth;
 
@@ -198,13 +224,7 @@ class Section extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(bottom: 8.0),
-          child: Text(
-            title,
-            style: Theme.of(context).textTheme.headlineMedium,
-          ),
-        ),
+        Padding(padding: const EdgeInsets.only(bottom: 8.0), child: title),
         maxWidth != null
             ? ConstrainedBox(
                 constraints: BoxConstraints(maxWidth: maxWidth!),

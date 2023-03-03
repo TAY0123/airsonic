@@ -13,6 +13,7 @@ void main() async {
   if (!kIsWeb && (Platform.isLinux || Platform.isMacOS || Platform.isWindows)) {
     await desktopWindowManagerInit();
   }
+
   runApp(const MyApp());
 }
 
@@ -30,8 +31,14 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
     () async {
-      login.add(await SharedPreferences.getInstance()
-          .then((value) => value.getBool("login") ?? (false)));
+      final storage = await SharedPreferences.getInstance();
+      login.add(storage.getBool("login") ?? false);
+      /*
+      if (storage.getBool("localDiscovery") ?? false) {
+        final registration = await register(
+            Service(name: "AirSonic-Test", type: '_http._tcp', port: 56000));
+      }
+      */
     }();
   }
 

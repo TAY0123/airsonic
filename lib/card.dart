@@ -305,32 +305,29 @@ class _AlbumTileState extends State<AlbumTile>
 }
 
 class CoverImage extends StatefulWidget {
-  final MediaPlayer mp = MediaPlayer.instance;
-
-  late Future<ImageProvider?> data;
+  final Future<ImageProvider?>? data;
 
   final BoxFit fit;
   final ImageSize size;
   final Duration? fadeInDuration;
-  Radius? topLeft;
-  Radius? topRight;
-  Radius? bottomLeft;
-  Radius? bottomRight;
+  final Radius? topLeft;
+  final Radius? topRight;
+  final Radius? bottomLeft;
+  final Radius? bottomRight;
+  final String coverId;
 
-  CoverImage(
-    String coverId, {
+  const CoverImage(
+    this.coverId, {
     super.key,
     this.fit = BoxFit.cover,
-    Future<ImageProvider?>? provider,
+    this.data,
     this.size = ImageSize.grid,
     this.fadeInDuration,
     this.topLeft,
     this.topRight,
     this.bottomLeft,
     this.bottomRight,
-  }) {
-    data = provider ?? mp.getCoverArt(coverId, size: size);
-  }
+  });
 
   factory CoverImage.fromAlbum(
     Album album, {
@@ -343,7 +340,7 @@ class CoverImage extends StatefulWidget {
       return CoverImage("",
           fadeInDuration: fadeInDuration,
           fit: fit,
-          provider: Future.value(album.image!.image));
+          data: Future.value(album.image!.image));
     } else {
       if (cache) {
         return CoverImage(
@@ -351,7 +348,7 @@ class CoverImage extends StatefulWidget {
           fadeInDuration: fadeInDuration,
           fit: fit,
           size: size,
-          provider: () async {
+          data: () async {
             await album.fetchCover(size: size);
             return album.image?.image;
           }(),
@@ -379,7 +376,7 @@ class CoverImage extends StatefulWidget {
     return CoverImage(
       "",
       fadeInDuration: fadeInDuration,
-      provider: Future.value(uri.isScheme("file")
+      data: Future.value(uri.isScheme("file")
           ? FileImage(File.fromUri(uri))
           : NetworkImage(uri.toString()) as ImageProvider),
       size: size,
@@ -395,19 +392,23 @@ class _CoverImageState extends State<CoverImage> {
   late Widget placeholder;
 
   CrossFadeState status = CrossFadeState.showFirst;
+  final MediaPlayer mp = MediaPlayer.instance;
 
-  late Future<void> task;
+  late Future<ImageProvider<Object>?> task;
 
   @override
   void initState() {
     super.initState();
     task = () async {
-      final result = await widget.data;
+      final result = await (widget.data ??
+          mp.getCoverArt(widget.coverId, size: widget.size));
+
       if (mounted && result != null) {
         setState(() {
           status = CrossFadeState.showSecond;
         });
       }
+      return result;
     }();
   }
 
@@ -442,7 +443,7 @@ class _CoverImageState extends State<CoverImage> {
                 child: Icon(Icons.music_note),
               )),
           secondChild: FutureBuilder(
-            future: widget.data,
+            future: task,
             builder: (context, snapshot) {
               if (snapshot.hasData) {
                 final img = Image(
