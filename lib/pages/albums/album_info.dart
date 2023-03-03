@@ -1,7 +1,8 @@
 import 'dart:async';
 
-import 'package:airsonic/airsonic_connection.dart';
-import 'package:airsonic/card.dart';
+import 'package:airsonic/utils/airsonic_connection.dart';
+import 'package:airsonic/utils/utils.dart';
+import 'package:airsonic/widgets/card.dart';
 import 'package:airsonic/layout.dart';
 import 'package:airsonic/main.dart';
 import 'package:audio_service/audio_service.dart';
@@ -397,17 +398,6 @@ class _AlbumInfoState extends State<AlbumInfo>
         },
       ),
     );
-  }
-}
-
-String printDuration(Duration duration) {
-  String twoDigits(int n) => n.toString().padLeft(2, "0");
-  String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));
-  String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60));
-  if (duration.inHours > 0) {
-    return "${twoDigits(duration.inHours)}:$twoDigitMinutes:$twoDigitSeconds";
-  } else {
-    return "$twoDigitMinutes:$twoDigitSeconds";
   }
 }
 

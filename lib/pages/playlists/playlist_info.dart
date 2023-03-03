@@ -1,6 +1,6 @@
-import 'package:airsonic/airsonic_connection.dart';
-import 'package:airsonic/album_info.dart';
-import 'package:airsonic/card.dart';
+import 'package:airsonic/utils/airsonic_connection.dart';
+import 'package:airsonic/utils/utils.dart';
+import 'package:airsonic/widgets/card.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 

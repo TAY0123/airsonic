@@ -1,7 +1,8 @@
-import 'package:airsonic/airsonic_connection.dart';
-import 'package:airsonic/albums_grid.dart';
+import 'package:airsonic/utils/airsonic_connection.dart';
 import 'package:flutter/material.dart';
 import 'package:transparent_image/transparent_image.dart';
+
+import '../albums/layout/albums_grid.dart';
 
 class ArtistInfo extends StatefulWidget {
   final Artist artist;

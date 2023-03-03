@@ -1,4 +1,4 @@
-import 'package:airsonic/airsonic_connection.dart';
+import 'package:airsonic/utils/airsonic_connection.dart';
 import 'package:airsonic/main.dart';
 import 'package:flutter/material.dart';
 

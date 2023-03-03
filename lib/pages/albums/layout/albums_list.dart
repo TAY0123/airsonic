@@ -1,14 +1,14 @@
 import 'dart:async';
 
-import 'package:airsonic/airsonic_connection.dart';
-import 'package:airsonic/albums_grid.dart';
+import 'package:airsonic/pages/albums/layout/albums_grid.dart';
+import 'package:airsonic/utils/airsonic_connection.dart';
 import 'package:airsonic/layout.dart';
-import 'package:airsonic/search.dart';
+import 'package:airsonic/widgets/animatedwave.dart';
+import 'package:airsonic/widgets/card.dart';
+import 'package:airsonic/widgets/search.dart';
 import 'package:flutter/material.dart';
 
-import 'album_info.dart';
-import 'animatedwave.dart';
-import 'card.dart';
+import '../album_info.dart';
 
 class AlbumViewList extends StatefulWidget {
   const AlbumViewList({super.key, this.display});

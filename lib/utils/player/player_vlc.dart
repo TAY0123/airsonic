@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:airsonic/player.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:dart_vlc/dart_vlc.dart' as vlc;
@@ -8,6 +7,8 @@ import 'package:dart_vlc/dart_vlc.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'player.dart';
 
 Future<AudioHandler> initAudioService() async {
   if (!kIsWeb && (Platform.isIOS || Platform.isMacOS)) {

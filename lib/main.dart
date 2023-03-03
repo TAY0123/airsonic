@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:airsonic/desktop_init.dart';
-import 'package:airsonic/login.dart';
-import 'package:airsonic/splitview.dart';
+import 'package:airsonic/utils/desktop_init.dart';
+import 'package:airsonic/pages/login.dart';
+import 'package:airsonic/pages/splitview.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';

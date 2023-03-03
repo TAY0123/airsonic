@@ -2,7 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
-import 'package:airsonic/shared.dart';
+import 'package:airsonic/utils/player/shared.dart';
+import 'package:airsonic/utils/player/player.dart';
 import 'package:audio_service/audio_service.dart';
 
 import 'package:crypto/crypto.dart';

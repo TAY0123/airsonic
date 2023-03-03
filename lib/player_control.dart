@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:airsonic/airsonic_connection.dart';
+import 'package:airsonic/utils/airsonic_connection.dart';
 import 'package:airsonic/layout.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';

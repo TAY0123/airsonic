@@ -1,23 +1,23 @@
 import 'dart:io';
 
-import 'package:airsonic/albums_grid.dart';
-import 'package:airsonic/const.dart';
-import 'package:airsonic/login.dart';
-import 'package:airsonic/player_control.dart';
-import 'package:airsonic/playlist_view.dart';
-import 'package:airsonic/setting.dart';
+import 'package:airsonic/pages/playlists/playlist_view.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:window_manager/window_manager.dart';
 
-import 'airsonic_connection.dart';
-import 'album_info.dart';
-import 'albums_list.dart';
-import 'artist_list.dart';
+import '../const.dart';
+import '../player_control.dart';
+import '../utils/airsonic_connection.dart';
+import 'albums/album_info.dart';
+import 'albums/layout/albums_grid.dart';
+import 'albums/layout/albums_list.dart';
+import 'artist/artist_list.dart';
 import 'dashboard.dart';
-import 'main.dart';
-import 'navigation.dart';
+import '../main.dart';
+import '../navigation.dart';
+import 'login.dart';
+import 'setting.dart';
 
 class SplitView extends StatelessWidget {
   final bool _mac = !kIsWeb && Platform.isMacOS;

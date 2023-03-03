@@ -1,15 +1,15 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:airsonic/card.dart';
+import 'package:airsonic/widgets/card.dart';
 import 'package:airsonic/const.dart';
-import 'package:airsonic/search.dart';
+import 'package:airsonic/widgets/search.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 
-import 'airsonic_connection.dart';
-import 'album_info.dart';
-import 'layout.dart';
+import '../utils/airsonic_connection.dart';
+import '../layout.dart';
+import 'albums/album_info.dart';
 
 class Dashboard extends StatefulWidget {
   const Dashboard({super.key});

@@ -1,12 +1,11 @@
 import 'dart:async';
 
-import 'package:airsonic/airsonic_connection.dart';
+import 'package:airsonic/pages/playlists/playlist_info.dart';
+import 'package:airsonic/utils/airsonic_connection.dart';
 import 'package:airsonic/layout.dart';
-import 'package:airsonic/playlist_info.dart';
-import 'package:airsonic/search.dart';
+import 'package:airsonic/widgets/card.dart';
+import 'package:airsonic/widgets/search.dart';
 import 'package:flutter/material.dart';
-
-import 'card.dart';
 
 class PlayListView extends StatefulWidget {
   const PlayListView({super.key});

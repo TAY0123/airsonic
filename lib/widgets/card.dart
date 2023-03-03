@@ -1,12 +1,12 @@
 import 'dart:io';
 
-import 'package:airsonic/after_layout.dart';
+import 'package:airsonic/utils/after_layout.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:simple_animations/simple_animations.dart';
 import 'package:transparent_image/transparent_image.dart';
 
-import 'airsonic_connection.dart';
+import '../utils/airsonic_connection.dart';
 
 class AlbumCard extends StatelessWidget {
   final Album album;

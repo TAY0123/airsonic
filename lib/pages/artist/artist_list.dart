@@ -1,13 +1,13 @@
 import 'dart:async';
 
-import 'package:airsonic/airsonic_connection.dart';
-import 'package:airsonic/animatedwave.dart';
-import 'package:airsonic/artist_info.dart';
-import 'package:airsonic/search.dart';
+import 'package:airsonic/utils/airsonic_connection.dart';
+import 'package:airsonic/widgets/animatedwave.dart';
+import 'package:airsonic/widgets/search.dart';
 import 'package:flutter/material.dart';
 
-import 'albums_list.dart';
-import 'card.dart';
+import '../../widgets/card.dart';
+import '../albums/layout/albums_list.dart';
+import 'artist_info.dart';
 
 class ArtistViewList extends StatefulWidget {
   const ArtistViewList({super.key, this.artist});

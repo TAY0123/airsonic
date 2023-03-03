@@ -1,6 +1,7 @@
-import 'package:airsonic/airsonic_connection.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../utils/airsonic_connection.dart';
 
 class SettingPage extends StatefulWidget {
   const SettingPage({super.key});
