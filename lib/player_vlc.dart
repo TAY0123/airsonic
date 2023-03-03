@@ -93,9 +93,7 @@ class VlcAudioHandler extends BaseAudioHandler {
     final token = prefs.getString("token") ?? "";
     final salt = prefs.getString("salt") ?? "";
 
-    if (domain.isEmpty || token.isEmpty || username.isEmpty) {
-      throw ("login credentials error");
-    }
+    if (domain.isEmpty || token.isEmpty || username.isEmpty) {}
 
     _base = Uri.parse(domain);
     _segments = _base.pathSegments.toList();

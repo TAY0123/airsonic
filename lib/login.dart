@@ -1,5 +1,6 @@
 import 'package:airsonic/airsonic_connection.dart';
 import 'package:airsonic/animatedwave.dart';
+import 'package:airsonic/splitview.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -57,7 +58,9 @@ class _LoginPageState extends State<LoginPage> {
 
     if (success) {
       (await SharedPreferences.getInstance()).setBool("login", true);
-      Navigator.of(context).popAndPushNamed("/album");
+      Navigator.of(context).pushReplacement(PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => SplitView(),
+      ));
       //login failed
     } else {
       setState(() {
