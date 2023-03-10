@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:ffi';
+import 'dart:math';
 
 import 'package:airsonic/pages/splitview.dart';
 import 'package:airsonic/utils/airsonic_connection.dart';
 import 'package:airsonic/layout.dart';
+import 'package:airsonic/utils/utils.dart';
 import 'package:airsonic/widgets/card.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
@@ -32,15 +34,17 @@ class _PlayBackControlState extends State<PlayBackControl>
   Stream<Duration>? currentItemPosition;
   late StreamSubscription<PlaybackState> currentStatusSubscriber;
 
+  final speed = const Duration(milliseconds: 250);
+
   late Animation _animation;
   late AnimationController _barController;
   bool _animating = false;
 
-  final speed = const Duration(milliseconds: 250);
-
   late Animation<double> _playBtn;
-
   late Animation<double> _playbackBar;
+  bool _dragging = false;
+
+  Duration seekTo = Duration.zero;
 
   @override
   void initState() {
@@ -72,19 +76,24 @@ class _PlayBackControlState extends State<PlayBackControl>
     });
   }
 
+  void updateProgressBar() async {
+    if (_dragging) {
+      return;
+    }
+    final current = await currentItemPosition?.first;
+    if (current != null && _barController.duration != null) {
+      final progress =
+          current.inMilliseconds / _barController.duration!.inMilliseconds;
+      _barController.forward(from: progress);
+    }
+  }
+
   Future<void> init() async {
     currentItemSubscriber = (await mp.currentItem);
     currentItemSubscriber?.listen((event) {
       if (event?.duration != null && event?.duration?.inMilliseconds != 0) {
         _barController.duration = event?.duration!;
-        () async {
-          final current = await currentItemPosition?.first;
-          if (current != null) {
-            final progress =
-                current.inMilliseconds / event!.duration!.inMilliseconds;
-            _barController.forward(from: progress);
-          }
-        }();
+        updateProgressBar();
       }
     });
     currentItemPosition = (await mp.currentPosition);
@@ -96,14 +105,7 @@ class _PlayBackControlState extends State<PlayBackControl>
       if (event.playing) {
         _controller.reverse();
         //start animation
-        () async {
-          final current = await currentItemPosition?.first;
-          if (current != null && _barController.duration != null) {
-            final progress = current.inMilliseconds /
-                _barController.duration!.inMilliseconds;
-            _barController.forward(from: progress);
-          }
-        }();
+        updateProgressBar();
       } else {
         _controller.forward();
         _barController.stop();
@@ -199,13 +201,60 @@ class _PlayBackControlState extends State<PlayBackControl>
             },
           ),
         ),
+        if (_dragging)
+          Center(
+              child: FilledButton(
+            onPressed: null,
+            child: Text(printDuration(seekTo)),
+          ))
       ],
     );
 
     return FutureBuilder(
-      future: init(),
-      builder: (context, snapshot) =>
-          SizedBox(height: bottomHeight, child: bar),
-    );
+        future: init(),
+        builder: (context, snapshot) => SizedBox(
+            height: bottomHeight,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return GestureDetector(
+                    behavior: HitTestBehavior.translucent,
+                    onHorizontalDragStart: (details) {
+                      _barController.stop();
+                      setState(() {
+                        _dragging = true;
+                      });
+                    },
+                    onHorizontalDragCancel: () {
+                      _dragging = false;
+                      updateProgressBar();
+                    },
+                    onHorizontalDragUpdate: (details) {
+                      final ratio = max<double>(
+                          0,
+                          min<double>(1,
+                              details.localPosition.dx / constraints.maxWidth));
+                      if (_barController.duration != null) {
+                        setState(() {
+                          seekTo = Duration(
+                              milliseconds:
+                                  (_barController.duration!.inMilliseconds *
+                                          ratio)
+                                      .round());
+                        });
+                      }
+
+                      _barController.animateTo(ratio, duration: Duration.zero);
+                    },
+                    onHorizontalDragEnd: (details) async {
+                      setState(() {
+                        _dragging = false;
+                      });
+                      final p = await mp.futurePlayer;
+                      p.seek(seekTo);
+                      updateProgressBar();
+                    },
+                    child: bar);
+              },
+            )));
   }
 }

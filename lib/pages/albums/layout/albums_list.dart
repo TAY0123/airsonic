@@ -227,28 +227,27 @@ class _AlbumViewListState extends State<AlbumViewList>
     );
     return ResponsiveLayout(
       tablet: (context, constraints) {
-        return Padding(
-          padding: const EdgeInsets.only(top: 8.0),
-          child: Row(
-            children: [
-              Expanded(
-                child: NotificationListener<SizeChangedLayoutNotification>(
-                  onNotification: (notification) {
-                    fetchUntilScrollable();
+        return Row(
+          children: [
+            Expanded(
+              child: NotificationListener<SizeChangedLayoutNotification>(
+                onNotification: (notification) {
+                  fetchUntilScrollable();
 
-                    return true;
-                  },
-                  child: SizeChangedLayoutNotifier(
-                    child: LayoutBuilder(builder: (context, constraints) {
-                      return Padding(
-                          padding: const EdgeInsets.only(left: 8.0, right: 8.0),
-                          child: albumsList);
-                    }),
-                  ),
+                  return true;
+                },
+                child: SizeChangedLayoutNotifier(
+                  child: LayoutBuilder(builder: (context, constraints) {
+                    return Padding(
+                        padding: const EdgeInsets.only(left: 8.0, right: 8.0),
+                        child: albumsList);
+                  }),
                 ),
               ),
-              Expanded(
-                flex: 2,
+            ),
+            Expanded(
+              flex: 2,
+              child: Card(
                 child: Navigator(
                   key: localNavigator,
                   initialRoute: widget.display == null
@@ -318,9 +317,7 @@ class _AlbumViewListState extends State<AlbumViewList>
                       transitionDuration: const Duration(milliseconds: 250),
                       settings: settings,
                       pageBuilder: (context, animation, secondaryAnimation) =>
-                          Scaffold(
-                        body: Card(child: page),
-                      ),
+                          page,
                       transitionsBuilder:
                           (context, animation, secondaryAnimation, child) {
                         return FadeTransition(
@@ -331,16 +328,13 @@ class _AlbumViewListState extends State<AlbumViewList>
                     );
                   },
                 ),
-              )
-            ],
-          ),
+              ),
+            )
+          ],
         );
       },
       mobile: (context, constraints) {
-        return Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: albumsList,
-        );
+        return albumsList;
       },
     );
   }
