@@ -308,7 +308,7 @@ class _AlbumTileState extends State<AlbumTile>
   }
 }
 
-class CoverImage extends StatefulWidget {
+class CoverImage extends StatelessWidget {
   final Future<ImageProvider?>? data;
 
   final BoxFit fit;
@@ -319,30 +319,36 @@ class CoverImage extends StatefulWidget {
   final Radius? bottomLeft;
   final Radius? bottomRight;
   final String coverId;
+  final ImageProvider? placeholder;
 
-  const CoverImage(
+  final MediaPlayer mp = MediaPlayer.instance;
+
+  CoverImage(
     this.coverId, {
     super.key,
     this.fit = BoxFit.cover,
     this.data,
     this.size = ImageSize.grid,
-    this.fadeInDuration,
+    this.fadeInDuration = const Duration(milliseconds: 250),
     this.topLeft,
     this.topRight,
     this.bottomLeft,
     this.bottomRight,
+    this.placeholder,
   });
 
   factory CoverImage.fromAlbum(
     Album album, {
     BoxFit fit = BoxFit.cover,
     ImageSize size = ImageSize.grid,
-    Duration? fadeInDuration,
     bool cache = false,
+    Duration? fadeInDuration = const Duration(milliseconds: 250),
+    ImageProvider? placeholder,
   }) {
     if (album.image != null && album.image?.size == size) {
       return CoverImage("",
           fadeInDuration: fadeInDuration,
+          placeholder: placeholder,
           fit: fit,
           data: Future.value(album.image!.image));
     } else {
@@ -372,13 +378,15 @@ class CoverImage extends StatefulWidget {
     Uri? uri, {
     BoxFit fit = BoxFit.cover,
     ImageSize size = ImageSize.grid,
-    Duration? fadeInDuration,
+    Duration? fadeInDuration = const Duration(milliseconds: 250),
+    ImageProvider? placeholder,
   }) {
     if (uri == null) {
       return CoverImage("");
     }
     return CoverImage(
       "",
+      placeholder: placeholder,
       fadeInDuration: fadeInDuration,
       data: Future.value(uri.isScheme("file")
           ? FileImage(File.fromUri(uri))
@@ -389,9 +397,77 @@ class CoverImage extends StatefulWidget {
   }
 
   @override
-  State<CoverImage> createState() => _CoverImageState();
+  Widget build(BuildContext context) {
+    assert((placeholder == null && fadeInDuration != null) ||
+        (placeholder != null && fadeInDuration == null));
+    final ph = Container(
+        color: Theme.of(context).colorScheme.primaryContainer,
+        child: const Center(
+          child: Icon(Icons.music_note),
+        ));
+
+    fadeInEffect(context, child, frame, wasSynchronouslyLoaded) {
+      return AnimatedCrossFade(
+        duration: fadeInDuration!,
+        firstCurve: Curves.easeInCubic,
+        layoutBuilder: (topChild, topChildKey, bottomChild, bottomChildKey) {
+          return Stack(
+            children: [
+              Positioned.fill(child: topChild),
+              Positioned.fill(child: bottomChild)
+            ],
+          );
+        },
+        firstChild: ph,
+        secondChild: child,
+        crossFadeState: frame == null
+            ? CrossFadeState.showFirst
+            : CrossFadeState.showSecond,
+      );
+    }
+
+    final content = ClipRRect(
+        borderRadius: BorderRadius.only(
+          topLeft: topLeft ?? const Radius.circular(12),
+          topRight: topRight ?? const Radius.circular(12),
+          bottomLeft: bottomLeft ?? const Radius.circular(12),
+          bottomRight: bottomRight ?? const Radius.circular(12),
+        ),
+        child: FutureBuilder(
+          future: () async {
+            final result = await (data ?? mp.getCoverArt(coverId, size: size));
+            return result;
+          }(),
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              final img = Image(
+                frameBuilder: fadeInDuration == null ? null : fadeInEffect,
+                image: snapshot.requireData!,
+                fit: fit,
+                filterQuality: fit == ImageSize.grid
+                    ? FilterQuality.high
+                    : FilterQuality.low,
+              );
+              if (fit != BoxFit.cover) {
+                return Center(
+                  child: ClipRRect(
+                      borderRadius: const BorderRadius.all(Radius.circular(12)),
+                      child: img),
+                );
+              } else {
+                return img;
+              }
+            } else {
+              return ph;
+            }
+          },
+        ));
+
+    return AspectRatio(aspectRatio: 1, child: content);
+  }
 }
 
+/*
 class _CoverImageState extends State<CoverImage> {
   late Widget placeholder;
 
@@ -491,6 +567,7 @@ class _CoverImageState extends State<CoverImage> {
     );
   }
 }
+*/
 
 class StackedAlbumImage extends StatefulWidget {
   final Widget child;

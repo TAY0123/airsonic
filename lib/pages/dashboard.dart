@@ -55,52 +55,49 @@ class _DashboardState extends State<Dashboard>
 
     return ResponsiveLayout(
       tablet: (context, constraints) {
-        return Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Column(children: [
-            Padding(
-              padding: const EdgeInsets.only(bottom: 16.0),
-              child: SearchingBar(search),
-            ),
-            Flexible(
-                child: CustomScrollView(slivers: [
-              SliverList(
-                  delegate: SliverChildListDelegate([
-                Center(
-                  child: SizedBox(
-                    height: cardHeight,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        SizedBox(
-                          width: min(max(450, constraints.maxWidth / 3), 550),
-                          //constraints: BoxConstraints(
-                          //    minWidth: 400, maxWidth: 550),
-                          child: covercard,
+        return Column(children: [
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16.0),
+            child: SearchingBar(search),
+          ),
+          Flexible(
+              child: CustomScrollView(slivers: [
+            SliverList(
+                delegate: SliverChildListDelegate([
+              Center(
+                child: SizedBox(
+                  height: cardHeight,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      SizedBox(
+                        width: min(max(450, constraints.maxWidth / 3), 550),
+                        //constraints: BoxConstraints(
+                        //    minWidth: 400, maxWidth: 550),
+                        child: covercard,
+                      ),
+                      const Padding(padding: EdgeInsets.only(left: 16)),
+                      Flexible(
+                        child: SizedBox.expand(
+                          child: albumTileGrid("Random", randomAlbums),
                         ),
-                        const Padding(padding: EdgeInsets.only(left: 16)),
-                        Flexible(
-                          child: SizedBox.expand(
-                            child: albumTileGrid("Random", randomAlbums),
-                          ),
-                        )
-                      ],
-                    ),
+                      )
+                    ],
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 16.0, bottom: 16),
-                  child: c,
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 16.0, bottom: 16),
-                  child: albumCardGrid("Recent", recentAlbums),
-                ),
-              ]))
+              ),
+              Padding(
+                padding: const EdgeInsets.only(top: 16.0, bottom: 16),
+                child: c,
+              ),
+              Padding(
+                padding: const EdgeInsets.only(top: 16.0, bottom: 16),
+                child: albumCardGrid("Recent", recentAlbums),
+              ),
             ]))
-          ]),
-        );
+          ]))
+        ]);
       },
       mobile: (context, constraints) {
         double height = rowMobileHeight;
@@ -108,43 +105,40 @@ class _DashboardState extends State<Dashboard>
         if (constraints.maxWidth > breakpointM) {
           height = rowDesktopHeight;
         }
-        return Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Column(children: [
-            Padding(
-              padding: const EdgeInsets.only(bottom: 16.0),
-              child: SearchingBar(search),
-            ),
-            Flexible(
-                child: CustomScrollView(slivers: [
-              SliverList(
-                  delegate: SliverChildListDelegate([
-                Center(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        height: cardHeight,
-                        child: covercard,
-                      ),
-                      SizedBox(
-                          height: height,
-                          child: albumTileGrid("Random", randomAlbums)),
-                    ],
-                  ),
+        return Column(children: [
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16.0),
+            child: SearchingBar(search),
+          ),
+          Flexible(
+              child: CustomScrollView(slivers: [
+            SliverList(
+                delegate: SliverChildListDelegate([
+              Center(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      height: cardHeight,
+                      child: covercard,
+                    ),
+                    SizedBox(
+                        height: height,
+                        child: albumTileGrid("Random", randomAlbums)),
+                  ],
                 ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 16.0, bottom: 16),
-                  child: albumCardGrid("Newest", newestAlbums),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 16.0, bottom: 16),
-                  child: albumCardGrid("Recent", recentAlbums),
-                ),
-              ]))
+              ),
+              Padding(
+                padding: const EdgeInsets.only(top: 16.0, bottom: 16),
+                child: albumCardGrid("Newest", newestAlbums),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(top: 16.0, bottom: 16),
+                child: albumCardGrid("Recent", recentAlbums),
+              ),
             ]))
-          ]),
-        );
+          ]))
+        ]);
       },
     );
   }

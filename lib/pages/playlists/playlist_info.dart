@@ -77,9 +77,9 @@ class PlayListInfo extends StatelessWidget {
                             ],
                           );
                         } else {
-                          return Center(
+                          return const Center(
                             child: Column(
-                              children: const [CircularProgressIndicator()],
+                              children: [CircularProgressIndicator()],
                             ),
                           );
                         }

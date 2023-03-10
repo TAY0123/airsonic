@@ -91,13 +91,16 @@ class SplitView extends StatelessWidget {
                               // vertical black line as separator
                               // use Expanded to take up the remaining horizontal space
                               Expanded(
-                                  child: Scaffold(
-                                bottomSheet: const PlayBackControl(),
-                                body: Padding(
-                                  padding: const EdgeInsets.only(bottom: 60.0),
+                                  child: Stack(children: [
+                                Align(
+                                    alignment: Alignment.bottomCenter,
+                                    child: PlayBackControl()),
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                      bottom: bottomHeight),
                                   child: nav,
                                 ),
-                              ))
+                              ]))
                             ],
                           ),
                         )
@@ -111,8 +114,8 @@ class SplitView extends StatelessWidget {
                 body: Padding(
                   padding:
                       Platform.isMacOS || Platform.isLinux || Platform.isWindows
-                          ? const EdgeInsets.only(top: 30, bottom: 60)
-                          : const EdgeInsets.only(bottom: 60),
+                          ? const EdgeInsets.only(top: 30, bottom: bottomHeight)
+                          : const EdgeInsets.only(bottom: bottomHeight),
                   child: Center(
                     child: nav,
                   ),
@@ -146,103 +149,109 @@ class AppNavigator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Navigator(
-      key: rootNavigatorKey,
-      observers: [HeroController()],
-      initialRoute: "/",
-      reportsRouteUpdateToEngine: true,
-      onGenerateRoute: (settings) {
-        print(settings.name);
+    return Padding(
+      padding: const EdgeInsets.only(left: 8.0, right: 8.0, top: 8.0),
+      child: Navigator(
+        key: rootNavigatorKey,
+        observers: [HeroController()],
+        initialRoute: "/",
+        reportsRouteUpdateToEngine: true,
+        onGenerateRoute: (settings) {
+          print(settings.name);
 
-        double uiSize = MediaQuery.of(context).size.width;
-        if (kIsWeb || !(Platform.isAndroid || Platform.isIOS)) {
-          uiSize -= 80; //navrail width
-        }
-        Widget page = Container();
-        //parse uri
-        Object? err;
-        Uri? uri;
-        try {
-          uri = Uri.parse(settings.name ?? "");
-        } catch (e) {
-          err = e;
-        }
-        if (err == null && (uri?.pathSegments.isNotEmpty ?? false)) {
-          switch (uri?.pathSegments.first) {
-            case "dashboard": //handle
-              index.value = 0;
-              page = const Dashboard();
-              break;
-            case "login":
-              page = const LoginPage();
+          double uiSize = MediaQuery.of(context).size.width;
+          if (kIsWeb || !(Platform.isAndroid || Platform.isIOS)) {
+            uiSize -= 80; //navrail width
+          }
+          Widget page = Container();
+          //parse uri
+          Object? err;
+          Uri? uri;
+          try {
+            uri = Uri.parse(settings.name ?? "");
+          } catch (e) {
+            err = e;
+          }
+          if (err == null && (uri?.pathSegments.isNotEmpty ?? false)) {
+            switch (uri?.pathSegments.first) {
+              case "dashboard": //handle
+                index.value = 0;
+                page = const Dashboard();
+                break;
+              case "login":
+                page = const LoginPage();
 
-              break;
-            case "artist":
-              index.value = 2;
-              Artist? parm;
-              if (uri?.pathSegments.length == 2) {
-                parm = Artist(uri?.pathSegments[1] ?? "", "");
-              }
-              page = ArtistViewList(
-                artist: parm,
-              );
-              break;
-            case "album":
-              index.value = 1;
-              if (uri?.pathSegments.length == 2) {
-                ///push albuminfo directly on top if screen is mobile size
-                if (uiSize <= breakpointMScale) {
-                  page = AlbumInfo(Album(uri?.pathSegments[1] ?? ""));
+                break;
+              case "artist":
+                index.value = 2;
+                Artist? parm;
+                if (uri?.pathSegments.length == 2) {
+                  parm = Artist(uri?.pathSegments[1] ?? "", "");
+                }
+                page = ArtistViewList(
+                  artist: parm,
+                );
+                break;
+              case "album":
+                index.value = 1;
+                if (uri?.pathSegments.length == 2) {
+                  ///push albuminfo directly on top if screen is mobile size
+                  if (uiSize <= breakpointMScale) {
+                    page = AlbumInfo(Album(uri?.pathSegments[1] ?? ""));
+                  } else {
+                    if (storage.getBool("albumStyle") ?? false) {
+                      page = const AlbumViewGrid();
+                      //display: Album(uri?.pathSegments[1] ?? ""),
+                    } else {
+                      page = AlbumViewList(
+                        display: Album(uri?.pathSegments[1] ?? ""),
+                      );
+                    }
+                  }
                 } else {
                   if (storage.getBool("albumStyle") ?? false) {
                     page = const AlbumViewGrid();
-                    //display: Album(uri?.pathSegments[1] ?? ""),
                   } else {
-                    page = AlbumViewList(
-                      display: Album(uri?.pathSegments[1] ?? ""),
-                    );
+                    page = const AlbumViewList();
                   }
                 }
-              } else {
-                if (storage.getBool("albumStyle") ?? false) {
-                  page = const AlbumViewGrid();
-                } else {
-                  page = const AlbumViewList();
-                }
-              }
-              /* if (settings.arguments != null) {
-                page = AlbumInfo(settings.arguments as Album);
-              } */
-              break;
-            case "playlist":
-              index.value = 3;
-              page = const PlayListView();
-              break;
-            case "setting":
-              index.value = 4;
-              page = const SettingPage();
-              break;
-            default:
+                /* if (settings.arguments != null) {
+                  page = AlbumInfo(settings.arguments as Album);
+                } */
+                break;
+              case "playlist":
+                index.value = 3;
+                page = const PlayListView();
+                break;
+              case "setting":
+                index.value = 4;
+                page = const SettingPage();
+                break;
+              default:
+            }
+          } else {
+            //default page for / and undefined
+            index.value = 0;
+            page = const Dashboard();
           }
-        } else {
-          //default page for / and undefined
-          index.value = 0;
-          page = const Dashboard();
-        }
-        return PageRouteBuilder(
-          transitionDuration: const Duration(milliseconds: 250),
-          settings: settings,
-          pageBuilder: (context, animation, secondaryAnimation) => Scaffold(
-            body: page,
-          ),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            return FadeTransition(
-              opacity: animation,
-              child: child,
-            );
-          },
-        );
-      },
+          return PageRouteBuilder(
+            transitionDuration: const Duration(milliseconds: 250),
+            settings: settings,
+            pageBuilder: (context, animation, secondaryAnimation) => Scaffold(
+              body: page,
+            ),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+              return FadeTransition(
+                opacity: animation,
+                child: child,
+              );
+            },
+          );
+        },
+      ),
     );
   }
 }
+
+const bottomHeight = 70.0;

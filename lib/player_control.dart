@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:ffi';
 
+import 'package:airsonic/pages/splitview.dart';
 import 'package:airsonic/utils/airsonic_connection.dart';
 import 'package:airsonic/layout.dart';
 import 'package:airsonic/widgets/card.dart';
@@ -15,13 +17,8 @@ class PlayBackControl extends StatefulWidget {
 }
 
 class _PlayBackControlState extends State<PlayBackControl>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late AnimationController _controller;
-
-  double? _height = 60.0;
-  var _original = 60.0;
-  var _offset = 0.0;
-  var _old = 60.0;
 
   bool opened = false;
   bool playing = false;
@@ -32,13 +29,18 @@ class _PlayBackControlState extends State<PlayBackControl>
   Duration duration = Duration.zero;
 
   ValueStream<MediaItem?>? currentItemSubscriber;
-  late StreamSubscription<Duration> currentItemPosition;
+  Stream<Duration>? currentItemPosition;
   late StreamSubscription<PlaybackState> currentStatusSubscriber;
 
   late Animation _animation;
+  late AnimationController _barController;
   bool _animating = false;
 
   final speed = const Duration(milliseconds: 250);
+
+  late Animation<double> _playBtn;
+
+  late Animation<double> _playbackBar;
 
   @override
   void initState() {
@@ -51,6 +53,10 @@ class _PlayBackControlState extends State<PlayBackControl>
       parent: _controller,
       curve: Curves.easeInOutCubic,
     );
+    _playBtn = _animation.drive(Tween(begin: 1, end: 0));
+
+    _barController = AnimationController(vsync: this);
+    _playbackBar = _barController.drive(Tween(begin: 0, end: 1));
 
     _controller.addListener(() {
       if (_controller.isCompleted || _controller.isDismissed) {
@@ -68,33 +74,52 @@ class _PlayBackControlState extends State<PlayBackControl>
 
   Future<void> init() async {
     currentItemSubscriber = (await mp.currentItem);
+    currentItemSubscriber?.listen((event) {
+      if (event?.duration != null && event?.duration?.inMilliseconds != 0) {
+        _barController.duration = event?.duration!;
+        () async {
+          final current = await currentItemPosition?.first;
+          if (current != null) {
+            final progress =
+                current.inMilliseconds / event!.duration!.inMilliseconds;
+            _barController.forward(from: progress);
+          }
+        }();
+      }
+    });
+    currentItemPosition = (await mp.currentPosition);
   }
 
   void _listenToPlayerStatus() async {
     currentStatusSubscriber = (await mp.playerStatus).listen((event) {
-      setState(() {
-        playing = event.playing;
-      });
+      playing = event.playing;
+      if (event.playing) {
+        _controller.reverse();
+        //start animation
+        () async {
+          final current = await currentItemPosition?.first;
+          if (current != null && _barController.duration != null) {
+            final progress = current.inMilliseconds /
+                _barController.duration!.inMilliseconds;
+            _barController.forward(from: progress);
+          }
+        }();
+      } else {
+        _controller.forward();
+        _barController.stop();
+      }
     });
   }
 
   void _listenToChangesInSong() async {}
 
-  void _listenToChangeInPosition() async {
-    currentItemPosition = (await mp.currentPosition).listen((event) {
-      if (duration.inMilliseconds != 0) {
-        setState(() {
-          pos = event;
-        });
-      }
-    });
-  }
+  void _listenToChangeInPosition() async {}
 
   @override
   void dispose() {
-    currentItemPosition.cancel();
     currentStatusSubscriber.cancel();
     _controller.dispose();
+    _barController.dispose();
     super.dispose();
   }
 
@@ -105,55 +130,82 @@ class _PlayBackControlState extends State<PlayBackControl>
 
   @override
   Widget build(BuildContext context) {
-    final bar = Column(
+    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
+    final bar = Stack(
       children: [
-        Divider(
-          height: 5,
-          thickness: 3,
-        ),
-        Flexible(
-          child: Row(
-            children: [
-              StreamBuilder(
-                stream: currentItemSubscriber,
-                builder: (context, snapshot) {
-                  if (snapshot.hasData && snapshot.requireData != null) {
-                    final current = snapshot.requireData!;
-                    return AnimatedSwitcher(
-                      duration: Duration(milliseconds: 500),
-                      child: CoverImage(
-                        current.extras?["coverArt"] ?? "",
-                        size: ImageSize.avatar,
+        AnimatedBuilder(
+            animation: _playbackBar,
+            builder: (context, child) => FractionallySizedBox(
+                  widthFactor: _playbackBar.value,
+                  child: Container(
+                    color: colorScheme.primaryContainer,
+                  ),
+                )),
+        Padding(
+          padding: const EdgeInsets.all(4.0),
+          child: StreamBuilder(
+            stream: currentItemSubscriber,
+            builder: (context, snapshot) {
+              if (snapshot.hasData && snapshot.requireData != null) {
+                final current = snapshot.requireData!;
+                return Row(
+                  children: [
+                    CoverImage(
+                      current.extras?["coverArt"] ?? "",
+                      size: ImageSize.avatar,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 4.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            current.title,
+                            style: textTheme.bodyMedium,
+                          ),
+                          Text(
+                            current.album ?? "",
+                            style: textTheme.bodySmall?.copyWith(
+                                color: colorScheme.onPrimaryContainer),
+                          ),
+                          Text(
+                            current.artist ?? "",
+                            style: textTheme.bodySmall?.copyWith(
+                                color: colorScheme.onPrimaryContainer),
+                          ),
+                        ],
                       ),
-                    );
-                  } else {
-                    return Container();
-                  }
-                },
-              ),
-              Column(
-                children: [],
-              ),
-              Spacer()
-            ],
+                    ),
+                    Spacer(),
+                    IconButton(
+                        onPressed: () async {
+                          final p = await mp.futurePlayer;
+                          if (playing) {
+                            p.pause();
+                          } else {
+                            p.play();
+                          }
+                        },
+                        icon: AnimatedIcon(
+                            icon: AnimatedIcons.play_pause,
+                            progress: _playBtn)),
+                    Padding(padding: EdgeInsets.all(4)),
+                  ],
+                );
+              } else {
+                return Container();
+              }
+            },
           ),
-        )
+        ),
       ],
     );
 
     return FutureBuilder(
       future: init(),
-      builder: (context, snapshot) => SizedBox(
-        height: 60,
-        child: ResponsiveLayout(
-          tablet: (context, constraints) {
-            return bar;
-          },
-          mobile: (context, constraints) {
-            return bar;
-          },
-        ),
-      ),
+      builder: (context, snapshot) =>
+          SizedBox(height: bottomHeight, child: bar),
     );
   }
 }
