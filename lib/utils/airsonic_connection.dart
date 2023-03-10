@@ -59,7 +59,11 @@ class MediaPlayer {
           artist: element["artist"],
           album: element["album"],
           artUri: Uri.parse(element["artUri"]),
-          duration: Duration(seconds: element["duration"])));
+          duration: Duration(seconds: element["duration"]),
+          extras: {
+            "songId": element["extras.songId"],
+            "coverArt": element["extras.coverArt"]
+          }));
     }
 
     //optional: load previous queue to mediaplayer
@@ -616,14 +620,15 @@ class Song {
     final storage = await SharedPreferences.getInstance();
     final mediaURI = mp._getApiUri("stream",
         query: {"id": id, "format": storage.getString("format") ?? "mp3"});
+    print(coverArt);
     return MediaItem(
-      id: mediaURI.toString(),
-      artUri: await mp._coverUri(coverArt),
-      title: title,
-      duration: Duration(seconds: duration),
-      artist: artist?.name ?? album?.artist?.name ?? "Unknown",
-      album: album?.name ?? "test album",
-    );
+        id: mediaURI.toString(),
+        artUri: await mp._coverUri(coverArt),
+        title: title,
+        duration: Duration(seconds: duration),
+        artist: artist?.name ?? album?.artist?.name ?? "Unknown",
+        album: album?.name ?? "test album",
+        extras: {"songId": id, "coverArt": coverArt});
   }
 
   factory Song.fromAlbum(Album album, XmlElement element) {
@@ -909,6 +914,8 @@ extension ToJSON on MediaItem {
       'album': album,
       'artUri': artUri.toString(),
       'duration': duration?.inSeconds,
+      'extras.songId': extras?["songId"],
+      'extras.coverArt': extras?["coverArt"]
     };
   }
 }

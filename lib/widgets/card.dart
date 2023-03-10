@@ -813,7 +813,7 @@ class DashboardCoverCard extends StatelessWidget {
                   builder: (context, value) {
                     if (value.hasData) {
                       final currentItem = value.data!;
-                      final currentSong = Song(currentItem.id);
+                      final currentSong = Song(currentItem.extras?["songId"]);
                       return GestureDetector(
                           onTap: () async {
                             final fetch = currentSong.getInfo();

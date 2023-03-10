@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:airsonic/utils/airsonic_connection.dart';
 import 'package:airsonic/layout.dart';
+import 'package:airsonic/widgets/card.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
+import 'package:rxdart/rxdart.dart';
 
 //TODO: over 1/4 change to large view
 class PlayBackControl extends StatefulWidget {
@@ -26,11 +28,10 @@ class _PlayBackControlState extends State<PlayBackControl>
 
   final mp = MediaPlayer.instance;
 
-  MediaItem current = const MediaItem(id: "", title: "");
   Duration pos = Duration.zero;
   Duration duration = Duration.zero;
 
-  late StreamSubscription<MediaItem?> currentItemSubscriber;
+  ValueStream<MediaItem?>? currentItemSubscriber;
   late StreamSubscription<Duration> currentItemPosition;
   late StreamSubscription<PlaybackState> currentStatusSubscriber;
 
@@ -65,6 +66,10 @@ class _PlayBackControlState extends State<PlayBackControl>
     });
   }
 
+  Future<void> init() async {
+    currentItemSubscriber = (await mp.currentItem);
+  }
+
   void _listenToPlayerStatus() async {
     currentStatusSubscriber = (await mp.playerStatus).listen((event) {
       setState(() {
@@ -73,16 +78,7 @@ class _PlayBackControlState extends State<PlayBackControl>
     });
   }
 
-  void _listenToChangesInSong() async {
-    currentItemSubscriber = (await mp.currentItem).listen((mediaItem) {
-      setState(() {
-        current = mediaItem ?? const MediaItem(id: "", title: "");
-        if ((mediaItem?.duration?.inMicroseconds ?? 0) != 0) {
-          duration = mediaItem!.duration!;
-        }
-      });
-    });
-  }
+  void _listenToChangesInSong() async {}
 
   void _listenToChangeInPosition() async {
     currentItemPosition = (await mp.currentPosition).listen((event) {
@@ -96,7 +92,6 @@ class _PlayBackControlState extends State<PlayBackControl>
 
   @override
   void dispose() {
-    currentItemSubscriber.cancel();
     currentItemPosition.cancel();
     currentStatusSubscriber.cancel();
     _controller.dispose();
@@ -110,28 +105,55 @@ class _PlayBackControlState extends State<PlayBackControl>
 
   @override
   Widget build(BuildContext context) {
-    final bar = SizedBox(
-      height: 60,
-      child: Column(
-        children: [
-          Divider(
-            height: 5,
-            thickness: 3,
+    final bar = Column(
+      children: [
+        Divider(
+          height: 5,
+          thickness: 3,
+        ),
+        Flexible(
+          child: Row(
+            children: [
+              StreamBuilder(
+                stream: currentItemSubscriber,
+                builder: (context, snapshot) {
+                  if (snapshot.hasData && snapshot.requireData != null) {
+                    final current = snapshot.requireData!;
+                    return AnimatedSwitcher(
+                      duration: Duration(milliseconds: 500),
+                      child: CoverImage(
+                        current.extras?["coverArt"] ?? "",
+                        size: ImageSize.avatar,
+                      ),
+                    );
+                  } else {
+                    return Container();
+                  }
+                },
+              ),
+              Column(
+                children: [],
+              ),
+              Spacer()
+            ],
           ),
-          Row(
-            children: [],
-          )
-        ],
-      ),
+        )
+      ],
     );
 
-    return ResponsiveLayout(
-      tablet: (context, constraints) {
-        return bar;
-      },
-      mobile: (context, constraints) {
-        return bar;
-      },
+    return FutureBuilder(
+      future: init(),
+      builder: (context, snapshot) => SizedBox(
+        height: 60,
+        child: ResponsiveLayout(
+          tablet: (context, constraints) {
+            return bar;
+          },
+          mobile: (context, constraints) {
+            return bar;
+          },
+        ),
+      ),
     );
   }
 }

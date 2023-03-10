@@ -1,3 +1,4 @@
+import 'package:airsonic/utils/airsonic_connection.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -105,8 +106,9 @@ class MyAudioHandler extends BaseAudioHandler {
     _player.durationStream.listen((duration) {
       final index = _player.currentIndex;
       final newQueue = queue.value;
-      if (index == null || newQueue.isEmpty || newQueue.length - 1 < index)
+      if (index == null || newQueue.isEmpty || newQueue.length - 1 < index) {
         return;
+      }
       final oldMediaItem = newQueue[index];
       final newMediaItem = oldMediaItem.copyWith(duration: duration);
       newQueue[index] = newMediaItem;

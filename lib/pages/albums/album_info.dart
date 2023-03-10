@@ -423,11 +423,13 @@ class _AlbumInfoListTileState extends State<AlbumInfoListTile> {
     super.initState();
     task = () async {
       current = await mp.currentItem;
-      selected = widget.songs[widget.index].id == current?.value?.id;
+      selected =
+          widget.songs[widget.index].id == current?.value?.extras?["songId"];
       subscribe = current?.listen((event) {
         if (mounted) {
           setState(() {
-            selected = widget.songs[widget.index].id == event?.id;
+            selected =
+                widget.songs[widget.index].id == event?.extras?["songId"];
           });
         }
       });
@@ -456,7 +458,8 @@ class _AlbumInfoListTileState extends State<AlbumInfoListTile> {
             ));
           },
           onTap: () {
-            if (widget.songs[widget.index].id == current?.value?.id) return;
+            if (widget.songs[widget.index].id ==
+                current?.value?.extras?["songId"]) return;
             setState(() {
               selected = true;
             });
@@ -465,7 +468,7 @@ class _AlbumInfoListTileState extends State<AlbumInfoListTile> {
               final currentQueue = c.value;
               final indexed = currentQueue.elementAtOrNull(widget.index);
               if (indexed != null &&
-                  indexed.id == widget.songs[widget.index].id) {
+                  indexed.extras?["songId"] == widget.songs[widget.index].id) {
                 if (currentQueue.length == widget.songs.length) {
                   bool equal = true;
                   for (var i = 0; i < currentQueue.length; i++) {
