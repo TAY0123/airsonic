@@ -697,11 +697,8 @@ class _ArtistTileState extends State<ArtistTile>
   Widget build(BuildContext context) {
     return SizedBox(
       height: 125,
-      child: Card(
-        elevation: 0,
-        color: Theme.of(context).colorScheme.surfaceVariant,
-        clipBehavior: Clip.antiAlias,
-        //color: Theme.of(context).colorScheme.surfaceVariant,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
         child: GestureDetector(
           behavior: HitTestBehavior.translucent,
           onTap: () {
