@@ -10,7 +10,7 @@ import audio_session
 import flutter_local_notifications
 import just_audio
 import nsd_macos
-import path_provider_macos
+import path_provider_foundation
 import screen_retriever
 import shared_preferences_foundation
 import sqflite

@@ -6,6 +6,7 @@ import 'package:airsonic/pages/login.dart';
 import 'package:airsonic/pages/splitview.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
@@ -31,16 +32,6 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    () async {
-      final storage = await SharedPreferences.getInstance();
-      login.add(storage.getBool("login") ?? false);
-      /*
-      if (storage.getBool("localDiscovery") ?? false) {
-        final registration = await register(
-            Service(name: "AirSonic-Test", type: '_http._tcp', port: 56000));
-      }
-      */
-    }();
   }
 
   @override

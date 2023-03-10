@@ -75,8 +75,10 @@ class AlbumCard extends StatelessWidget {
                   icon: const Icon(Icons.library_music)))
       ],
     );
-    return GestureDetector(
-      onTap: () async {
+    return RawMaterialButton(
+      splashColor: Colors.transparent,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      onPressed: () async {
         //TODO: add dialog to route so it display on url navigate
         //DialogRoute(context: context, builder: builder)
         if (onTap != null) {
@@ -213,9 +215,11 @@ class _AlbumTileState extends State<AlbumTile>
         clipBehavior: Clip.antiAlias,
         //color: Theme.of(context).colorScheme.surfaceVariant,
         color: Colors.transparent,
-        child: GestureDetector(
-          behavior: HitTestBehavior.translucent,
-          onTap: () {
+        child: RawMaterialButton(
+          splashColor: Colors.transparent,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          onPressed: () {
             if (widget.onTap != null) {
               widget.onTap!(widget.album);
             }
