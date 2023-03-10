@@ -19,62 +19,11 @@ class MyAudioHandler extends BaseAudioHandler {
   final _player = AudioPlayer();
   final _playlist = ConcatenatingAudioSource(children: []);
 
-  //private
-  Uri _base = Uri();
-  List<String> _segments = [];
-  Map<String, dynamic> _param = {};
-
-  late Future<bool> inited;
-
-  Future<Uri> _apiEndpointUrl(String ednpoint,
-      {Map<String, String>? query}) async {
-    Map<String, dynamic> p = Map.from(_param);
-    if (query != null) {
-      p.addAll(query);
-    }
-    if (!_base.isAbsolute) {
-      await _init();
-    }
-    final a = _base.replace(
-        pathSegments: _segments.followedBy([ednpoint]), queryParameters: p);
-    print(a.toString());
-    return a;
-  }
-
   MyAudioHandler() {
     _loadEmptyPlaylist();
     _listenForDurationChanges();
     _notifyAudioHandlerAboutPlaybackEvents();
     _listenForCurrentSongIndexChanges();
-
-    //init
-    inited = _init();
-  }
-
-  Future<bool> _init() async {
-    final prefs = await SharedPreferences.getInstance();
-    final domain = prefs.getString("domain") ?? "";
-    final username = prefs.getString("username") ?? "";
-    final token = prefs.getString("token") ?? "";
-    final salt = prefs.getString("salt") ?? "";
-
-    if (domain.isEmpty || token.isEmpty || username.isEmpty) {
-      return false;
-    }
-
-    _base = Uri.parse(domain);
-    _segments = _base.pathSegments.toList();
-    _segments.add("rest");
-    _param = {
-      "u": username,
-      "t": token,
-      "s": salt,
-      "v": "1.15",
-      "c": "flutsonic"
-    };
-    _base = _base.replace(queryParameters: _param);
-
-    return true;
   }
 
   Future<void> _loadEmptyPlaylist() async {
@@ -168,7 +117,6 @@ class MyAudioHandler extends BaseAudioHandler {
 
   @override
   Future<void> addQueueItems(List<MediaItem> mediaItems) async {
-    await inited;
     // manage Just Audio
     List<UriAudioSource> audioSource = [];
     for (final e in mediaItems) {
@@ -189,7 +137,6 @@ class MyAudioHandler extends BaseAudioHandler {
 
   @override
   Future<void> addQueueItem(MediaItem mediaItem) async {
-    await inited;
     // manage Just Audio
     await _playlist.add(await _createAudioSource(mediaItem));
     // notify system
@@ -206,7 +153,6 @@ class MyAudioHandler extends BaseAudioHandler {
   @override
   // ignore: avoid_renaming_method_parameters
   Future<void> updateQueue(List<MediaItem> mediaItems) async {
-    await inited;
     // manage Just Audio
     List<UriAudioSource> audioSource = [];
     for (final e in mediaItems) {
@@ -229,8 +175,7 @@ class MyAudioHandler extends BaseAudioHandler {
 
   Future<UriAudioSource> _createAudioSource(MediaItem mediaItem) async {
     return AudioSource.uri(
-      await _apiEndpointUrl("stream",
-          query: {"id": mediaItem.id, "format": "raw"}),
+      Uri.parse(mediaItem.id),
       tag: mediaItem,
     );
   }

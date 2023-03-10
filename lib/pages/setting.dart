@@ -17,6 +17,7 @@ class _SettingPageState extends State<SettingPage> {
   bool albumStyle = false;
   bool hideDuplicate = false;
   bool localDiscovery = false;
+  String format = "mp3";
 
   @override
   void initState() {
@@ -27,6 +28,7 @@ class _SettingPageState extends State<SettingPage> {
       albumStyle = storage.getBool("albumStyle") ?? false;
       hideDuplicate = storage.getBool("hideDuplicate") ?? false;
       localDiscovery = storage.getBool("localDiscovery") ?? false;
+      format = storage.getString("format") ?? "mp3";
       return storage;
     }();
   }
@@ -173,10 +175,23 @@ class _SettingPageState extends State<SettingPage> {
                       style: Theme.of(context).textTheme.headlineMedium,
                     ),
                     children: [
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 500),
+                        child: TextFormField(
+                          decoration: const InputDecoration(
+                            border: OutlineInputBorder(),
+                            labelText: 'Audio Format',
+                          ),
+                          onChanged: (value) {
+                            storage.setString("format", value);
+                          },
+                          initialValue: storage.getString("format") ?? "mp3",
+                        ),
+                      ),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text("Enable local Discovery"),
+                          const Text("Enable local Discovery"),
                           Switch(
                             value: localDiscovery,
                             onChanged: (value) {
@@ -199,8 +214,8 @@ class _SettingPageState extends State<SettingPage> {
                           ))
                       .toList());
             } else {
-              return Center(
-                child: Column(mainAxisSize: MainAxisSize.min, children: const [
+              return const Center(
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
                   CircularProgressIndicator(),
                   Text("loading settings...")
                 ]),

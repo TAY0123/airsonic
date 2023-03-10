@@ -418,14 +418,7 @@ class MediaPlayer {
     await fplayer.stop();
     List<MediaItem> res = [];
     for (Song song in playlist) {
-      res.add(MediaItem(
-        id: song.id,
-        artUri: await _coverUri(song.coverArt),
-        title: song.title,
-        duration: Duration(seconds: song.duration),
-        artist: song.artist?.name ?? song.album?.artist?.name ?? "Unknown",
-        album: song.album?.name ?? "test album",
-      ));
+      res.add(await song.getMediaItem());
     }
 
     await fplayer.updateQueue(res);
@@ -592,6 +585,8 @@ class Song {
   Artist? artist;
   int track;
 
+  final mp = MediaPlayer.instance;
+
   Song(this.id,
       {this.title = "",
       this.coverArt = "",
@@ -601,7 +596,6 @@ class Song {
       this.artist});
 
   Future<bool> getInfo() async {
-    final mp = MediaPlayer.instance;
     final result = await mp.getSong(id);
     if (result.songs.isEmpty) {
       return false;
@@ -616,6 +610,20 @@ class Song {
     track = currentSong.track;
 
     return true;
+  }
+
+  Future<MediaItem> getMediaItem() async {
+    final storage = await SharedPreferences.getInstance();
+    final mediaURI = mp._getApiUri("stream",
+        query: {"id": id, "format": storage.getString("format") ?? "mp3"});
+    return MediaItem(
+      id: mediaURI.toString(),
+      artUri: await mp._coverUri(coverArt),
+      title: title,
+      duration: Duration(seconds: duration),
+      artist: artist?.name ?? album?.artist?.name ?? "Unknown",
+      album: album?.name ?? "test album",
+    );
   }
 
   factory Song.fromAlbum(Album album, XmlElement element) {
