@@ -1,10 +1,8 @@
 import 'dart:async';
-import 'dart:ffi';
 import 'dart:math';
 
 import 'package:airsonic/pages/splitview.dart';
 import 'package:airsonic/utils/airsonic_connection.dart';
-import 'package:airsonic/layout.dart';
 import 'package:airsonic/utils/utils.dart';
 import 'package:airsonic/widgets/card.dart';
 import 'package:audio_service/audio_service.dart';
@@ -22,13 +20,9 @@ class _PlayBackControlState extends State<PlayBackControl>
     with TickerProviderStateMixin {
   late AnimationController _controller;
 
-  bool opened = false;
   bool playing = false;
 
   final mp = MediaPlayer.instance;
-
-  Duration pos = Duration.zero;
-  Duration duration = Duration.zero;
 
   ValueStream<MediaItem?>? currentItemSubscriber;
   Stream<Duration>? currentItemPosition;
@@ -130,6 +124,9 @@ class _PlayBackControlState extends State<PlayBackControl>
   var dragFinish = true;
   double progress = 0.0;
 
+  //param
+  var startPt = 0.0;
+
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
@@ -145,41 +142,82 @@ class _PlayBackControlState extends State<PlayBackControl>
                   ),
                 )),
         Padding(
-          padding: const EdgeInsets.all(4.0),
+          padding:
+              const EdgeInsets.only(left: 8, right: 8, top: 4.0, bottom: 4),
           child: StreamBuilder(
             stream: currentItemSubscriber,
             builder: (context, snapshot) {
               if (snapshot.hasData && snapshot.requireData != null) {
                 final current = snapshot.requireData!;
+
+                switchlayout(
+                    Widget? currentChild, List<Widget> previousChildren) {
+                  final prev = previousChildren
+                      .map(
+                        (e) => Align(
+                          alignment: Alignment.centerLeft,
+                          child: e,
+                        ),
+                      )
+                      .toList();
+                  prev.add(Align(
+                    alignment: Alignment.centerLeft,
+                    child: currentChild,
+                  ));
+                  return Stack(
+                    children: prev,
+                  );
+                }
+
                 return Row(
                   children: [
                     CoverImage(
                       current.extras?["coverArt"] ?? "",
                       size: ImageSize.avatar,
+                      topLeft: const Radius.circular(5),
+                      topRight: const Radius.circular(5),
+                      bottomLeft: const Radius.circular(5),
+                      bottomRight: const Radius.circular(5),
                     ),
                     Padding(
                       padding: const EdgeInsets.only(left: 4.0),
                       child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            current.title,
-                            style: textTheme.bodyMedium,
+                          AnimatedSwitcher(
+                            layoutBuilder: switchlayout,
+                            duration: const Duration(milliseconds: 250),
+                            child: Text(
+                              current.title,
+                              key: ValueKey<String>(current.title),
+                              style: textTheme.bodyMedium,
+                            ),
                           ),
-                          Text(
-                            current.album ?? "",
-                            style: textTheme.bodySmall?.copyWith(
-                                color: colorScheme.onPrimaryContainer),
+                          AnimatedSwitcher(
+                            layoutBuilder: switchlayout,
+                            duration: const Duration(milliseconds: 250),
+                            child: Text(
+                              current.album ?? "",
+                              style: textTheme.bodySmall?.copyWith(
+                                  color: colorScheme.onPrimaryContainer),
+                              key: ValueKey<String>(current.album ?? ""),
+                            ),
                           ),
-                          Text(
-                            current.artist ?? "",
-                            style: textTheme.bodySmall?.copyWith(
-                                color: colorScheme.onPrimaryContainer),
+                          AnimatedSwitcher(
+                            layoutBuilder: switchlayout,
+                            duration: const Duration(milliseconds: 250),
+                            child: Text(
+                              current.artist ?? "",
+                              style: textTheme.bodySmall?.copyWith(
+                                  color: colorScheme.onPrimaryContainer),
+                              key: ValueKey<String>(current.artist ?? ""),
+                            ),
                           ),
                         ],
                       ),
                     ),
-                    Spacer(),
+                    const Spacer(),
                     IconButton(
                         onPressed: () async {
                           final p = await mp.futurePlayer;
@@ -192,7 +230,7 @@ class _PlayBackControlState extends State<PlayBackControl>
                         icon: AnimatedIcon(
                             icon: AnimatedIcons.play_pause,
                             progress: _playBtn)),
-                    Padding(padding: EdgeInsets.all(4)),
+                    const Padding(padding: EdgeInsets.all(4)),
                   ],
                 );
               } else {
@@ -217,18 +255,26 @@ class _PlayBackControlState extends State<PlayBackControl>
             child: LayoutBuilder(
               builder: (context, constraints) {
                 return GestureDetector(
-                    behavior: HitTestBehavior.translucent,
+                    behavior: HitTestBehavior.opaque,
                     onHorizontalDragStart: (details) {
-                      _barController.stop();
-                      setState(() {
-                        _dragging = true;
-                      });
+                      startPt = details.localPosition.dx;
                     },
                     onHorizontalDragCancel: () {
                       _dragging = false;
                       updateProgressBar();
                     },
                     onHorizontalDragUpdate: (details) {
+                      if (!_dragging) {
+                        if (details.localPosition.dx - startPt > 2 ||
+                            details.localPosition.dx - startPt < -2) {
+                          _barController.stop();
+                          setState(() {
+                            _dragging = true;
+                          });
+                        } else {
+                          return;
+                        }
+                      }
                       final ratio = max<double>(
                           0,
                           min<double>(1,
@@ -246,11 +292,14 @@ class _PlayBackControlState extends State<PlayBackControl>
                       _barController.animateTo(ratio, duration: Duration.zero);
                     },
                     onHorizontalDragEnd: (details) async {
-                      setState(() {
-                        _dragging = false;
-                      });
-                      final p = await mp.futurePlayer;
-                      p.seek(seekTo);
+                      if (_dragging) {
+                        setState(() {
+                          _dragging = false;
+                        });
+                        final p = await mp.futurePlayer;
+                        p.seek(seekTo);
+                      }
+
                       updateProgressBar();
                     },
                     child: bar);
