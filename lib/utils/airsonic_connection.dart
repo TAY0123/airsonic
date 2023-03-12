@@ -418,16 +418,24 @@ class MediaPlayer {
   }
 
   void playPlaylist(List<Song> playlist, {int index = 0}) async {
+    DateTime _now = DateTime.now();
+    print(
+        'timestamp: ${_now.hour}:${_now.minute}:${_now.second}.${_now.millisecond}');
     final fplayer = await futurePlayer;
-    await fplayer.stop();
+    final c = fplayer.stop();
     List<MediaItem> res = [];
     for (Song song in playlist) {
       res.add(await song.getMediaItem());
     }
 
+    await c;
     await fplayer.updateQueue(res);
     await fplayer.skipToQueueItem(index);
     fplayer.play();
+
+    _now = DateTime.now();
+    print(
+        'timestamp: ${_now.hour}:${_now.minute}:${_now.second}.${_now.millisecond}');
   }
 
   Future<XMLResult> getPlaylist(String id) async {
@@ -620,7 +628,6 @@ class Song {
     final storage = await SharedPreferences.getInstance();
     final mediaURI = mp._getApiUri("stream",
         query: {"id": id, "format": storage.getString("format") ?? "mp3"});
-    print(coverArt);
     return MediaItem(
         id: mediaURI.toString(),
         artUri: await mp._coverUri(coverArt),

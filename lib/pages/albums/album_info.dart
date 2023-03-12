@@ -457,7 +457,7 @@ class _AlbumInfoListTileState extends State<AlbumInfoListTile> {
               content: Text("Copied to Clipboard"),
             ));
           },
-          onTap: () {
+          onTap: () async {
             if (widget.songs[widget.index].id ==
                 current?.value?.extras?["songId"]) return;
             setState(() {

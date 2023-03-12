@@ -248,6 +248,7 @@ class _AlbumViewListState extends State<AlbumViewList>
             Expanded(
               flex: 2,
               child: Card(
+                clipBehavior: Clip.antiAlias,
                 child: Navigator(
                   key: localNavigator,
                   initialRoute: widget.display == null

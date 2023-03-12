@@ -11,6 +11,8 @@ fileprivate extension URL {
     
 }
 
+let audioCache = URLCache(memoryCapacity: 40_000_000, diskCapacity: 2_000_000_000, diskPath: "audio")
+
 @objc protocol CachingPlayerItemDelegate {
     
     /// Is called when the media file is fully downloaded.
