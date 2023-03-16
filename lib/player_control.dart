@@ -32,8 +32,7 @@ class _PlayBackControlState extends State<PlayBackControl>
 
   late AnimationController _barController;
 
-  bool _animating = false;
-  bool _dragging = false;
+  final ValueNotifier<bool> _dragging = ValueNotifier(false);
 
   Duration seekTo = Duration.zero;
 
@@ -47,6 +46,7 @@ class _PlayBackControlState extends State<PlayBackControl>
     _listenToChangeInPosition();
     _listenToPlayerStatus();
     _playBtnController = AnimationController(vsync: this, duration: speed);
+    _dragging.value = false;
 
     final playBtnanimation = CurvedAnimation(
       parent: _playBtnController,
@@ -55,25 +55,12 @@ class _PlayBackControlState extends State<PlayBackControl>
 
     _playBtn = playBtnanimation.drive(Tween(begin: 1, end: 0));
 
-    _playBtnController.addListener(() {
-      if (_playBtnController.isCompleted || _playBtnController.isDismissed) {
-        setState(() {
-          animationEnded = true;
-        });
-        if (_animating) {
-          setState(() {
-            _animating = false;
-          });
-        }
-      } else {}
-    });
-
     _barController = AnimationController(vsync: this);
     _playbackBar = _barController.drive(Tween(begin: 0, end: 1));
   }
 
   void updateProgressBar() async {
-    if (_dragging) {
+    if (_dragging.value) {
       return;
     }
     final current = await currentItemPosition?.first;
@@ -134,134 +121,6 @@ class _PlayBackControlState extends State<PlayBackControl>
     final textTheme = Theme.of(context).textTheme;
     final colorScheme = Theme.of(context).colorScheme;
 
-    final bar = Stack(
-      children: [
-        AnimatedBuilder(
-            animation: _playbackBar,
-            builder: (context, child) => FractionallySizedBox(
-                  widthFactor: _playbackBar.value,
-                  child: Container(
-                    color: colorScheme.primaryContainer,
-                  ),
-                )),
-        Padding(
-          padding:
-              const EdgeInsets.only(left: 8, right: 8, top: 4.0, bottom: 4),
-          child: StreamBuilder(
-            stream: currentItemSubscriber,
-            builder: (context, snapshot) {
-              if (snapshot.hasData && snapshot.requireData != null) {
-                final current = snapshot.requireData!;
-                final info1 = current.album ?? "";
-                final info2 = current.extras?["format"] ?? "";
-                final info3 = Text(
-                  current.artist ?? "",
-                  style: textTheme.bodySmall
-                      ?.copyWith(color: colorScheme.onPrimaryContainer),
-                  key: ValueKey<String>(current.artist ?? ""),
-                );
-                final info4 = Text(
-                  "${current.extras?["sampleRate"] ?? ""}",
-                  style: textTheme.bodySmall
-                      ?.copyWith(color: colorScheme.onPrimaryContainer),
-                  key: ValueKey<String>(
-                      "${current.extras?["sampleRate"] ?? ""}"),
-                );
-                String cinfo = info1;
-                var dinfo = info3;
-
-                switchlayout(
-                    Widget? currentChild, List<Widget> previousChildren) {
-                  final prev = previousChildren
-                      .map(
-                        (e) => Align(
-                          alignment: Alignment.centerLeft,
-                          child: e,
-                        ),
-                      )
-                      .toList();
-                  prev.add(Align(
-                    alignment: Alignment.centerLeft,
-                    child: currentChild,
-                  ));
-                  return Stack(
-                    children: prev,
-                  );
-                }
-
-                return Row(
-                  children: [
-                    CoverImage(
-                      current.extras?["coverArt"] ?? "",
-                      size: ImageSize.avatar,
-                      topLeft: const Radius.circular(5),
-                      topRight: const Radius.circular(5),
-                      bottomLeft: const Radius.circular(5),
-                      bottomRight: const Radius.circular(5),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(left: 4.0),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          AnimatedSwitcher(
-                            layoutBuilder: switchlayout,
-                            duration: const Duration(milliseconds: 250),
-                            child: Text(
-                              current.title,
-                              key: ValueKey<String>(current.title),
-                              style: textTheme.bodyMedium,
-                            ),
-                          ),
-                          AnimatedSwitcher(
-                            layoutBuilder: switchlayout,
-                            duration: const Duration(milliseconds: 250),
-                            child: Text(
-                              cinfo,
-                              style: textTheme.bodySmall?.copyWith(
-                                  color: colorScheme.onPrimaryContainer),
-                              key: ValueKey<String>(cinfo),
-                            ),
-                          ),
-                          AnimatedSwitcher(
-                              layoutBuilder: switchlayout,
-                              duration: const Duration(milliseconds: 250),
-                              child: dinfo),
-                        ],
-                      ),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                        onPressed: () async {
-                          final p = await mp.futurePlayer;
-                          if (playing) {
-                            p.pause();
-                          } else {
-                            p.play();
-                          }
-                        },
-                        icon: AnimatedIcon(
-                            icon: AnimatedIcons.play_pause,
-                            progress: _playBtn)),
-                    const Padding(padding: EdgeInsets.all(4)),
-                  ],
-                );
-              } else {
-                return Container();
-              }
-            },
-          ),
-        ),
-        if (_dragging)
-          Center(
-              child: FilledButton(
-            onPressed: null,
-            child: Text(printDuration(seekTo)),
-          ))
-      ],
-    );
-
     return FutureBuilder(
         future: init(),
         builder: (context, snapshot) => SizedBox(
@@ -269,54 +128,196 @@ class _PlayBackControlState extends State<PlayBackControl>
             child: LayoutBuilder(
               builder: (context, constraints) {
                 return GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onHorizontalDragStart: (details) {
-                      startPt = details.localPosition.dx;
-                    },
-                    onHorizontalDragCancel: () {
-                      _dragging = false;
-                      updateProgressBar();
-                    },
-                    onHorizontalDragUpdate: (details) {
-                      if (!_dragging) {
-                        if (details.localPosition.dx - startPt > 2 ||
-                            details.localPosition.dx - startPt < -2) {
-                          _barController.stop();
-                          setState(() {
-                            _dragging = true;
-                          });
-                        } else {
-                          return;
-                        }
+                  behavior: HitTestBehavior.opaque,
+                  onHorizontalDragStart: (details) {
+                    startPt = details.localPosition.dx;
+                  },
+                  onHorizontalDragCancel: () {
+                    _dragging.value = false;
+                    updateProgressBar();
+                  },
+                  onHorizontalDragUpdate: (details) {
+                    if (!_dragging.value) {
+                      if (details.localPosition.dx - startPt > 2 ||
+                          details.localPosition.dx - startPt < -2) {
+                        _barController.stop();
+                        _dragging.value = true;
+                      } else {
+                        return;
                       }
-                      final ratio = max<double>(
-                          0,
-                          min<double>(1,
-                              details.localPosition.dx / constraints.maxWidth));
-                      if (_barController.duration != null) {
-                        setState(() {
-                          seekTo = Duration(
-                              milliseconds:
-                                  (_barController.duration!.inMilliseconds *
-                                          ratio)
-                                      .round());
-                        });
-                      }
+                    }
+                    final ratio = max<double>(
+                        0,
+                        min<double>(1,
+                            details.localPosition.dx / constraints.maxWidth));
+                    if (_barController.duration != null) {
+                      setState(() {
+                        seekTo = Duration(
+                            milliseconds:
+                                (_barController.duration!.inMilliseconds *
+                                        ratio)
+                                    .round());
+                      });
+                    }
 
-                      _barController.animateTo(ratio, duration: Duration.zero);
-                    },
-                    onHorizontalDragEnd: (details) async {
-                      if (_dragging) {
-                        setState(() {
-                          _dragging = false;
-                        });
-                        final p = await mp.futurePlayer;
-                        p.seek(seekTo);
-                      }
+                    _barController.animateTo(ratio, duration: Duration.zero);
+                  },
+                  onHorizontalDragEnd: (details) async {
+                    if (_dragging.value) {
+                      _dragging.value = false;
+                      final p = await mp.futurePlayer;
+                      p.seek(seekTo);
+                    }
 
-                      updateProgressBar();
-                    },
-                    child: bar);
+                    updateProgressBar();
+                  },
+                  child: Stack(
+                    children: [
+                      AnimatedBuilder(
+                        animation: _playbackBar,
+                        builder: (context, child) => FractionallySizedBox(
+                          widthFactor: _playbackBar.value,
+                          child: Container(
+                            color: colorScheme.primaryContainer,
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(
+                            left: 8, right: 8, top: 4.0, bottom: 4),
+                        child: StreamBuilder(
+                          stream: currentItemSubscriber,
+                          builder: (context, snapshot) {
+                            if (snapshot.hasData &&
+                                snapshot.requireData != null) {
+                              final current = snapshot.requireData!;
+                              print(current);
+                              final info1 = current.album ?? "";
+                              final info2 = current.extras?["format"] ?? "";
+                              final info4 =
+                                  "${current.extras?["sampleRate"] ?? ""}";
+                              String cinfo = info1;
+                              var dinfo = current.artist ?? "";
+
+                              switchlayout(Widget? currentChild,
+                                  List<Widget> previousChildren) {
+                                final prev = previousChildren
+                                    .map(
+                                      (e) => Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: e,
+                                      ),
+                                    )
+                                    .toList();
+                                prev.add(Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: currentChild,
+                                ));
+                                return Stack(
+                                  children: prev,
+                                );
+                              }
+
+                              return Row(
+                                children: [
+                                  CoverImage(
+                                    current.extras?["coverArt"] ?? "",
+                                    size: ImageSize.avatar,
+                                    topLeft: const Radius.circular(5),
+                                    topRight: const Radius.circular(5),
+                                    bottomLeft: const Radius.circular(5),
+                                    bottomRight: const Radius.circular(5),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.only(left: 4.0),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        AnimatedSwitcher(
+                                          layoutBuilder: switchlayout,
+                                          duration:
+                                              const Duration(milliseconds: 250),
+                                          child: Text(
+                                            current.title,
+                                            key:
+                                                ValueKey<String>(current.title),
+                                            style: textTheme.bodyMedium,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        AnimatedSwitcher(
+                                          layoutBuilder: switchlayout,
+                                          duration:
+                                              const Duration(milliseconds: 250),
+                                          child: Text(
+                                            cinfo,
+                                            style: textTheme.bodySmall
+                                                ?.copyWith(
+                                                    color: colorScheme
+                                                        .onPrimaryContainer),
+                                            key: ValueKey<String>(cinfo),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        AnimatedSwitcher(
+                                          layoutBuilder: switchlayout,
+                                          duration:
+                                              const Duration(milliseconds: 250),
+                                          child: Text(
+                                            dinfo,
+                                            style: textTheme.bodySmall
+                                                ?.copyWith(
+                                                    color: colorScheme
+                                                        .onPrimaryContainer),
+                                            key: ValueKey<String>(dinfo),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  IconButton(
+                                      onPressed: () async {
+                                        final p = await mp.futurePlayer;
+                                        if (playing) {
+                                          p.pause();
+                                        } else {
+                                          p.play();
+                                        }
+                                      },
+                                      icon: AnimatedIcon(
+                                          icon: AnimatedIcons.play_pause,
+                                          progress: _playBtn)),
+                                  const Padding(padding: EdgeInsets.all(4)),
+                                ],
+                              );
+                            } else {
+                              return Container();
+                            }
+                          },
+                        ),
+                      ),
+                      AnimatedBuilder(
+                        animation: _dragging,
+                        builder: (context, child) {
+                          if (_dragging.value) {
+                            return child!;
+                          } else {
+                            return const Center();
+                          }
+                        },
+                        child: Center(
+                            child: FilledButton(
+                          onPressed: null,
+                          child: Text(printDuration(seekTo)),
+                        )),
+                      ),
+                    ],
+                  ),
+                );
               },
             )));
   }

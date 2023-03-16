@@ -27,6 +27,7 @@
 		33CC10F62044A3C60003C045 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 33CC10F42044A3C60003C045 /* MainMenu.xib */; };
 		33CC11132044BFA00003C045 /* MainFlutterWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33CC11122044BFA00003C045 /* MainFlutterWindow.swift */; };
 		655302D129BE23620021901B /* CachingPlayerItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 655302D029BE23620021901B /* CachingPlayerItem.swift */; };
+		655302D329C2F3B00021901B /* Player.swift in Sources */ = {isa = PBXBuildFile; fileRef = 655302D229BE43510021901B /* Player.swift */; };
 		845FB2D4BAA86DBAEC9EF2D1 /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 830C77DB61FB122B586FE4F2 /* Pods_Runner.framework */; };
 /* End PBXBuildFile section */
 
@@ -345,6 +346,7 @@
 				655302D129BE23620021901B /* CachingPlayerItem.swift in Sources */,
 				33CC11132044BFA00003C045 /* MainFlutterWindow.swift in Sources */,
 				33CC10F12044A3C60003C045 /* AppDelegate.swift in Sources */,
+				655302D329C2F3B00021901B /* Player.swift in Sources */,
 				335BBD1B22A9A15E00E9071D /* GeneratedPluginRegistrant.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

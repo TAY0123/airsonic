@@ -7,159 +7,50 @@
 
 import AudioToolbox
 import AVFoundation
-import Foundation
-import MediaPlayer
-import NotificationCenter
-import UserNotifications
-
-// TODO: deinit? whatever it need to stay in bg anyway =w=
-class Player: NSObject{
-    static let audioPlayer: AVPlayer = .init()
+import CoreAudio
+import FlutterMacOS
+class MediaPlayer: NSObject, FlutterStreamHandler {
     
-    // Current Playing Song
-    @Published var currentIndex = 0
-    @Published var Duration: Int = 0
-    @Published var format: String = "Unknown"
-    @Published var sampleRate: Double = 44100
-    @Published var bitRate: Int = 16
+    // audio player
+    let audioPlayer: AVPlayer = .init()
     
-    // Current status of player
-    @Published var Playing: Bool = false
-    @Published var Stopped: Bool = true
+    var format: String = "Unknown"
+    var sampleRate: Double = 44100
+    var bitDepth: UInt32 = 16
     
-    // Current playlist queue
-    @Published var CurrentPosition: Double = 0.0
+    var Playing: Bool = false
+    var Stopped: Bool = true
     
-    @Published var volume: Binding<Double> = .init(get: { 1.0 }, set: { _ in })
+    var Duration: Double = 0
+    var CurrentPosition: Double = 0.0
     
-    private static var sharedSoundManager: Player = {
-        let manager = Player()
+    var volume: Double = 1.0
+    
+    
+    public func onListen(withArguments arguments: Any?,
+                         eventSink: @escaping FlutterEventSink) -> FlutterError?
+    {
+        self.eventSink = eventSink
         
-        return manager
-    }()
-    
-    class func shared() -> Player { return sharedSoundManager }
-    
-    static var last = Date()
-    
-    // For in-App control
-    func pause() {
-        if Player.audioPlayer.currentTime().seconds.rounded(.awayFromZero) != 0 {
-            Player.audioPlayer.currentTime().seconds
-        }
-        
-        Player.audioPlayer.pause()
-        
-        Playing = false
-        /*
-         Task.detached {
-             await MainActor.run {
-                 self.CurrentPosition = Player.audioPlayer.currentTime().seconds
-             }
-         }
-          */
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(playerDidFinishPlaying),
+                                               name: .AVPlayerItemDidPlayToEndTime,
+                                               object: audioPlayer.currentItem)
+        return nil
     }
     
-    func play() {
-        if Player.audioPlayer.timeControlStatus == .playing {
-            return
-        }
-        /*
-         if Stopped {
-             if playFromLastIndex { playItem(Playlist.count - 1) }
-             else { playItem(0) }
-             return
-         }
-          */
-        Task.detached {
-            await MainActor.run {
-                Player.audioPlayer.play()
-            }
-            
-            let cur = Player.audioPlayer.currentTime().seconds
-        }
-    }
-
-    func playpause() {
-        if Player.audioPlayer.timeControlStatus == .playing {
-            pause()
-        } else {
-            play()
-        }
-    }
+    private var eventSink: FlutterEventSink?
     
-    func seek(_ second: Int) {
-        print("seek to: ", second)
-        Player.audioPlayer.seek(to: CMTime(seconds: Double(second), preferredTimescale: CMTimeScale(1000)), completionHandler: { [self]
-            _ in
-                CurrentPosition = Player.audioPlayer.currentItem?.currentTime().seconds ?? 0
-        })
-        
-        Task {
-            do {
-                print("d: ", try await Player.audioPlayer.currentItem!.asset.load(.duration).seconds)
-            } catch {}
-        }
-    }
-
-    @objc func playerDidFinishPlaying() {
-        /* emit a stopped signal ? */
-                
-        /*
-         if currentIndex+1 > Playlist.count {
-             Stopped = true
-             return
-         }
-         self.currentIndex += 1
-         playItem(self.currentIndex)
-          */
-    }
-    
-    deinit {
+    public func onCancel(withArguments arguments: Any?) -> FlutterError? {
         NotificationCenter.default.removeObserver(self)
+        eventSink = nil
+        return nil
     }
     
-    override private init() {
-        super.init()
-        #if os(iOS)
-        let audioSession = AVAudioSession.sharedInstance()
-        do {
-            try audioSession.setCategory(.playback)
-        } catch {
-            print(error)
-        }
-        #endif
-        
-        NotificationCenter.default
-            .addObserver(self,
-                         selector: #selector(playerDidFinishPlaying),
-                         name: .AVPlayerItemDidPlayToEndTime,
-                         object: Player.audioPlayer.currentItem)
-         
-        Player.audioPlayer.audiovisualBackgroundPlaybackPolicy = .continuesIfPossible
-        // if cacheMusic {  }
-        
-        // add binding volume
-        volume = Binding(get: {
-            Double(Player.audioPlayer.volume)
-        }, set: {
-            Player.audioPlayer.volume = Float($0)
-            UserDefaults.standard.set($0, forKey: "volume")
-        })
-
-        Player.audioPlayer.addObserver(self,
-                                       forKeyPath: #keyPath(AVPlayer.currentItem),
-                                       options: [.old, .new],
-                                       context: &playerItemContext)
-    }
     
-    private var playerItemContext = 0
-    
-    func playItem(_ url: String, cacheMusic: Bool) {
-        if Player.audioPlayer.timeControlStatus == .playing {
-            Player.audioPlayer.pause()
-        }
-            
+    // audio player
+    // music player
+    func replaceCurrent(url: String, result: FlutterResult, cacheMusic: Bool) {
         var item: AVPlayerItem
         if cacheMusic {
             item = CachingPlayerItem(url: URL(string: url)!, customFileExtension: "wav") // just set a common extension anyway coz seem avplayeritem will auto recognize it
@@ -167,15 +58,145 @@ class Player: NSObject{
             item = AVPlayerItem(url: URL(string: url)!)
         }
         let i = item
-        Player.audioPlayer.replaceCurrentItem(with: i)
-        Player.audioPlayer.automaticallyWaitsToMinimizeStalling = false
-        // if cacheMusic { Player.audioPlayer.automaticallyWaitsToMinimizeStalling = false }
-        Player.audioPlayer.play()
-            
-        if Player.audioPlayer.error != nil {
-            print("Player error: \(Player.audioPlayer.error!)")
-        }
+        audioPlayer.replaceCurrentItem(with: i)
+        audioPlayer.automaticallyWaitsToMinimizeStalling = false
+        result(nil)
     }
+    
+    func play(result: FlutterResult) {
+        print("play pressed")
+        // if cacheMusic { audioPlayer.automaticallyWaitsToMinimizeStalling = false }
+        playAudio()
+        result(nil)
+    }
+    
+    public func pause(result: FlutterResult) {
+        print("pause pressed")
+        pause()
+        result(nil)
+    }
+    
+    public func stop(result: FlutterResult) {
+        audioPlayer.pause()
+        Stopped = true
+        Playing = false
+        updateStatus()
+        result(nil)
+    }
+    
+    public func seek(to: Int, result: FlutterResult) {
+        seek(to)
+        updateStatus()
+        result(nil)
+    }
+    
+    private func updateStatus() {
+        guard let eventSink = eventSink else {
+            return
+        }
+        
+        let data: [String: Any] = [
+            "duration": Duration,
+            "position": CurrentPosition,
+            "playing": Playing,
+            "stopped": Stopped,
+            "format": format,
+            "sampleRate": sampleRate,
+            "bitRate": bitDepth,
+            "volume": volume,
+        ]
+        print(data)
+        eventSink(data)
+    }
+    
+    // For in-App control
+    func pause() {
+        if audioPlayer.currentTime().seconds.rounded(.awayFromZero) != 0 {
+            CurrentPosition = audioPlayer.currentTime().seconds
+        }
+        
+        audioPlayer.pause()
+        
+        Playing = false
+        updateStatus()
+        /*
+         Task.detached {
+         await MainActor.run {
+         self.CurrentPosition = audioPlayer.currentTime().seconds
+         }
+         }
+         */
+    }
+    
+    func playAudio() {
+        if audioPlayer.timeControlStatus == .playing {
+            return
+        }
+        /*
+         if Stopped {
+         if playFromLastIndex { playItem(Playlist.count - 1) }
+         else { playItem(0) }
+         return
+         }
+         */
+        audioPlayer.play()
+        
+        CurrentPosition = audioPlayer.currentTime().seconds
+        Playing = true
+        Stopped = false
+        updateStatus()
+    }
+    
+    func seek(_ second: Int) {
+        print("seek to: ", second)
+        audioPlayer.seek(to: CMTime(seconds: Double(second), preferredTimescale: CMTimeScale(1000)), completionHandler: {
+            _ in
+            self.CurrentPosition = self.audioPlayer.currentItem?.currentTime().seconds ?? 0
+            self.updateStatus()
+        })
+    }
+    
+    @objc func playerDidFinishPlaying() {
+        /* emit a stopped signal ? */
+        Stopped = true
+        updateStatus()
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+    
+    override init() {
+        super.init()
+        
+        
+#if os(iOS)
+        let audioSession = AVAudioSession.sharedInstance()
+        do {
+            try audioSession.setCategory(.playback)
+        } catch {
+            print(error)
+        }
+#else
+#endif
+        NotificationCenter.default
+            .addObserver(self,
+                         selector: #selector(playerDidFinishPlaying),
+                         name: .AVPlayerItemDidPlayToEndTime,
+                         object: audioPlayer.currentItem)
+        
+        audioPlayer.audiovisualBackgroundPlaybackPolicy = .continuesIfPossible
+        // if cacheMusic {  }
+        
+        // add binding volume
+        
+        audioPlayer.addObserver(self,
+                                forKeyPath: #keyPath(AVPlayer.currentItem),
+                                options: [.old, .new],
+                                context: &playerItemContext)
+    }
+    
+    private var playerItemContext = 0
     
     override func observeValue(forKeyPath keyPath: String?,
                                of object: Any?,
@@ -202,40 +223,115 @@ class Player: NSObject{
             }
             // Switch over status value
             print("value: \(item)")
-                
+            
             Duration = 1 // set a 1 min timeout for fetching real duration from metadata
             Stopped = false
-                
-            let metadataTask = Task.detached { () -> Double in
+            
+            Task.detached {
                 do {
-                    let formatInfo = try await Player.audioPlayer.currentItem?.asset.loadTracks(withMediaType: .audio)[0].load(.formatDescriptions)[0]
+                    let formatInfo = try await self.audioPlayer.currentItem?.asset.loadTracks(withMediaType: .audio)[0].load(.formatDescriptions).first
                     if formatInfo != nil {
                         self.format = formatInfo?.mediaSubType.description.trimmingCharacters(in:
-                            .punctuationCharacters) ?? "Unknown"
+                                .punctuationCharacters) ?? "Unknown"
                         let info: AudioStreamBasicDescription? = CMAudioFormatDescriptionGetStreamBasicDescription(formatInfo!)?.pointee
                         self.sampleRate = info?.mSampleRate ?? 44100
-                        self.bitRate = Int(info?.mBitsPerChannel ?? 16)
+                        self.changeOutputFormat()
                     }
-                    // print("rate: ",try await Player.audioPlayer.currentItem!.asset.load(.preferredRate))
-                        
-                    print("accurate: ", try await Player.audioPlayer.currentItem!.asset.load(.providesPreciseDurationAndTiming))
+                    // print("rate: ",try await audioPlayer.currentItem!.asset.load(.preferredRate))
                     
-                    let duration = try await Player.audioPlayer.currentItem!.asset.load(.duration).seconds
-                    print(duration)
-                    self.Duration = Int(duration)
+                    print("accurate: ", try await self.audioPlayer.currentItem!.asset.load(.providesPreciseDurationAndTiming))
+                    
+                    let duration = try await self.audioPlayer.currentItem!.asset.load(.duration).seconds
+                    self.Duration = duration
+                    self.updateStatus()
                 } catch {
                     print("❌ media metadata read error: ", error)
                 }
-                return 0.0
             }
             
             self.CurrentPosition = 0
-            // self.current = Int(Player.audioPlayer.currentTime().seconds.isNaN ? 0 : Player.audioPlayer.currentTime().seconds) //fetch second from player to calibrate
-                        
+            // self.current = Int(Player.audioPlayer.currentTime().seconds.isNaN ? 0 : audioPlayer.currentTime().seconds) //fetch second from player to calibrate
+            
             // self.current = Int(Player.audioPlayer.currentTime().seconds) //fetch second from player to calibrate
             Playing = true
-                    
-            Player.last = Date()
+        }
+    }
+    
+    func getAllAudioDevices() -> [AudioDeviceID] {
+        var propertyAddress = AudioObjectPropertyAddress(
+            mSelector: kAudioHardwarePropertyDevices,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        
+        var dataSize: UInt32 = 0
+        var deviceCount: UInt32 = 0
+        var deviceIds: [AudioDeviceID] = []
+        
+        // Get the required data size
+        let error = AudioObjectGetPropertyDataSize(
+            AudioObjectID(kAudioObjectSystemObject),
+            &propertyAddress,
+            0,
+            nil,
+            &dataSize
+        )
+        
+        if error != 0 {
+            return []
+        }
+        
+        // Calculate the number of devices
+        deviceCount = dataSize / UInt32(MemoryLayout<AudioDeviceID>.size)
+        
+        // Allocate memory for the device IDs
+        deviceIds = [AudioDeviceID](repeating: AudioDeviceID(), count: Int(deviceCount))
+        
+        return deviceIds
+    }
+    
+    public func changeOutputFormat() {
+        print("b: \(bitDepth) r: \(sampleRate)")
+        var outputDeviceID = AudioDeviceID(0)
+        var dataSize = UInt32(MemoryLayout<AudioDeviceID>.size)
+        
+        let audioObjectID = AudioObjectID(kAudioObjectSystemObject)
+        var propertyAddress = AudioObjectPropertyAddress(
+            mSelector: kAudioHardwarePropertyDefaultOutputDevice,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        
+        // Get the ID of the default output device
+        let status = AudioObjectGetPropertyData(
+            audioObjectID,
+            &propertyAddress,
+            0,
+            nil,
+            &dataSize,
+            &outputDeviceID
+        )
+        
+        if status == noErr {
+            // Set the sample rate of the output device to 48000 Hz
+            
+            propertyAddress.mSelector = kAudioDevicePropertyNominalSampleRate
+            dataSize = UInt32(MemoryLayout<Float64>.size)
+            var status = AudioObjectSetPropertyData(
+                outputDeviceID,
+                &propertyAddress,
+                0,
+                nil,
+                dataSize,
+                &sampleRate
+            )
+            
+            if status != noErr {
+                print("Error setting sample rate: \(status)")
+            }
+            
+        } else {
+            print("Error getting default output device ID: \(status)")
         }
     }
 }
