@@ -39,6 +39,8 @@ class AppDelegate: FlutterAppDelegate {
                     mp?.seek(to: call.arguments as! Int, result: result)
                 case "stop":
                     mp?.stop(result: result)
+                case "getPosition":
+                    mp?.getPosition(result: result)
                 default:
                     result(FlutterMethodNotImplemented)
                     return

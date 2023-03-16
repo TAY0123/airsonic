@@ -19,7 +19,7 @@ Future<AudioHandler> initAudioService() async {
 // this handler work for iOS macOS Android
 class MyAudioHandler extends BaseAudioHandler {
   //final _player = AudioPlayer();
-  final _player = CustomMediaPlayer();
+  final _player = CustomMediaPlayer.instance;
 
   MyAudioHandler() {
     _loadEmptyPlaylist();

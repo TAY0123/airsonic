@@ -1,12 +1,18 @@
+import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
+import 'package:airsonic/utils/airsonic_connection.dart';
+import 'package:audio_service/audio_service.dart';
+import 'package:http/http.dart' as http;
 import 'package:nsd/nsd.dart';
+import 'package:rxdart/rxdart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LocalDiscovery {
   bool enabled = false;
   final preferences = SharedPreferences.getInstance();
-  List<Service> devices = [];
+  StreamController<List<Service>> devices = StreamController.broadcast();
 
   Registration? registration;
   HttpServer? server;
@@ -16,15 +22,57 @@ class LocalDiscovery {
       final storage = await preferences;
       if (storage.getBool("localDiscovery") ?? false) {
         start();
+        scan();
       }
     }();
+  }
+
+  Future<bool> send(List<MediaItem> item, Service device) async {
+    try {
+      await http.post(Uri.http(device.host ?? "", '/'),
+          body: jsonEncode(item.map((e) => e.toJson()).toList()));
+    } catch (e) {
+      return false;
+    }
+    return true;
   }
 
   void start() async {
     server = await HttpServer.bind(InternetAddress.anyIPv6, 56000);
     await server?.forEach((HttpRequest request) {
-      request.response.write('Hello, world!');
-      request.response.close();
+      () async {
+        final content = await utf8.decodeStream(request);
+        final res = jsonDecode(content);
+        if (res == null) {
+          request.response.write(jsonEncode({"status": false}));
+        } else {
+          List<dynamic> objects = res;
+          final List<MediaItem> result = [];
+          for (var element in objects) {
+            try {
+              result.add(MediaItem(
+                  id: element["id"],
+                  title: element["title"],
+                  artist: element["artist"],
+                  album: element["album"],
+                  artUri: Uri.parse(element["artUri"]),
+                  duration: Duration(seconds: element["duration"]),
+                  extras: {
+                    "songId": element["extras.songId"],
+                    "coverArt": element["extras.coverArt"],
+                    "duration": element["extras.duration"],
+                  }));
+            } catch (e) {
+              continue;
+            }
+          }
+          request.response.write(jsonEncode({"status": true}));
+          final mp = await MediaPlayer.instance.futurePlayer;
+          await mp.updateQueue(result);
+          mp.play();
+        }
+        request.response.close();
+      }();
     });
 
     registration = await register(
@@ -35,8 +83,7 @@ class LocalDiscovery {
     final discovery = await startDiscovery('_http._tcp');
     discovery.addListener(() {
       // discovery.services contains discovered services
-      devices = discovery.services;
-      print(discovery.services.last.name);
+      devices.add(discovery.services);
     });
 
     //stop after 10 seconds

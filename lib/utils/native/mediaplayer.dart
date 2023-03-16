@@ -36,7 +36,7 @@ class CustomMediaPlayer {
   var stopped = true;
 
   bool playing = false;
-  CustomMediaPlayer() {
+  CustomMediaPlayer._() {
     status = event.receiveBroadcastStream().map((e) => PlayerStatus(
           playing: e["playing"],
           stopped: e["stopped"],
@@ -56,6 +56,9 @@ class CustomMediaPlayer {
       }
     });
   }
+
+  /// the one and only instance of this singleton
+  static final instance = CustomMediaPlayer._();
 
   void next() {
     if (playlist.length - 1 == index) {

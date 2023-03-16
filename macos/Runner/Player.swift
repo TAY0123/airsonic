@@ -63,15 +63,17 @@ class MediaPlayer: NSObject, FlutterStreamHandler {
         result(nil)
     }
     
+    func getPosition(result: FlutterResult){
+        result(audioPlayer.currentItem?.currentTime().seconds)
+    }
+    
     func play(result: FlutterResult) {
-        print("play pressed")
         // if cacheMusic { audioPlayer.automaticallyWaitsToMinimizeStalling = false }
         playAudio()
         result(nil)
     }
     
     public func pause(result: FlutterResult) {
-        print("pause pressed")
         pause()
         result(nil)
     }

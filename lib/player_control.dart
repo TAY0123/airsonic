@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:airsonic/pages/splitview.dart';
 import 'package:airsonic/utils/airsonic_connection.dart';
+import 'package:airsonic/utils/localdiscovery.dart';
 import 'package:airsonic/utils/utils.dart';
 import 'package:airsonic/widgets/card.dart';
 import 'package:audio_service/audio_service.dart';
@@ -309,18 +310,88 @@ class _PlayBackControlState extends State<PlayBackControl>
                                       ),
                                     ),
                                   ),
-                                  IconButton(
-                                      onPressed: () async {
-                                        final p = await mp.futurePlayer;
-                                        if (playing) {
-                                          p.pause();
-                                        } else {
-                                          p.play();
-                                        }
-                                      },
-                                      icon: AnimatedIcon(
-                                          icon: AnimatedIcons.play_pause,
-                                          progress: _playBtn)),
+                                  Padding(
+                                    padding: const EdgeInsets.all(4.0),
+                                    child: IconButton(
+                                        onPressed: () {
+                                          final c = LocalDiscovery.instance;
+                                          c.scan();
+                                          showDialog(
+                                            context: context,
+                                            barrierColor: Colors.transparent,
+                                            builder: (context) {
+                                              return Dialog(
+                                                alignment: AlignmentDirectional
+                                                    .bottomEnd,
+                                                child: SizedBox(
+                                                  width: 20,
+                                                  height: 240,
+                                                  child: Padding(
+                                                    padding:
+                                                        const EdgeInsets.all(
+                                                            8.0),
+                                                    child: Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        ListTile(
+                                                          title:
+                                                              Text("Devices:"),
+                                                        ),
+                                                        Flexible(
+                                                          child: StreamBuilder(
+                                                            stream: c
+                                                                .devices.stream,
+                                                            builder: (context,
+                                                                snapshot) {
+                                                              if (snapshot
+                                                                  .hasData) {
+                                                                return ListView(
+                                                                  children: snapshot
+                                                                      .requireData
+                                                                      .map((e) =>
+                                                                          ListTile(
+                                                                            title:
+                                                                                Text(e.name ?? ""),
+                                                                            onTap:
+                                                                                () {
+                                                                              c.send(current, e);
+                                                                            },
+                                                                          ))
+                                                                      .toList(),
+                                                                );
+                                                              } else {
+                                                                return Placeholder();
+                                                              }
+                                                            },
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                              );
+                                            },
+                                          );
+                                        },
+                                        icon: Icon(Icons.share)),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.all(4.0),
+                                    child: IconButton(
+                                        onPressed: () async {
+                                          final p = await mp.futurePlayer;
+                                          if (playing) {
+                                            p.pause();
+                                          } else {
+                                            p.play();
+                                          }
+                                        },
+                                        icon: AnimatedIcon(
+                                            icon: AnimatedIcons.play_pause,
+                                            progress: _playBtn)),
+                                  ),
                                   const Padding(padding: EdgeInsets.all(4)),
                                 ],
                               );

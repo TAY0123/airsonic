@@ -53,18 +53,22 @@ class MediaPlayer {
       data ?? "[]",
     );
     for (var element in objects) {
-      result.add(MediaItem(
-          id: element["id"],
-          title: element["title"],
-          artist: element["artist"],
-          album: element["album"],
-          artUri: Uri.parse(element["artUri"]),
-          duration: Duration(seconds: element["duration"]),
-          extras: {
-            "songId": element["extras.songId"],
-            "coverArt": element["extras.coverArt"],
-            "duration": element["extras.duration"],
-          }));
+      try {
+        result.add(MediaItem(
+            id: element["id"],
+            title: element["title"],
+            artist: element["artist"],
+            album: element["album"],
+            artUri: Uri.parse(element["artUri"]),
+            duration: Duration(seconds: element["duration"]),
+            extras: {
+              "songId": element["extras.songId"],
+              "coverArt": element["extras.coverArt"],
+              "duration": element["extras.duration"],
+            }));
+      } catch (e) {
+        continue;
+      }
     }
 
     //optional: load previous queue to mediaplayer
@@ -917,7 +921,7 @@ extension ToJSON on MediaItem {
       'duration': duration?.inSeconds,
       'extras.songId': extras?["songId"],
       'extras.coverArt': extras?["coverArt"],
-      'extras.duration': extras?["duration"],
+      'extras.duration': extras?["duration"] as int,
     };
   }
 }

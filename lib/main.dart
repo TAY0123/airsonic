@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:airsonic/utils/desktop_init.dart';
 import 'package:airsonic/pages/login.dart';
 import 'package:airsonic/pages/splitview.dart';
-import 'package:airsonic/utils/native/mediaplayer.dart';
+import 'package:airsonic/utils/localdiscovery.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -14,6 +14,10 @@ void main() async {
   // Must add this line.
   if (!kIsWeb && (Platform.isLinux || Platform.isMacOS || Platform.isWindows)) {
     await desktopWindowManagerInit();
+  }
+
+  if (!kIsWeb) {
+    final c = LocalDiscovery.instance;
   }
 
   runApp(const MyApp());
