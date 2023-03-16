@@ -18,7 +18,7 @@ class PlayBackControl extends StatefulWidget {
 
 class _PlayBackControlState extends State<PlayBackControl>
     with TickerProviderStateMixin {
-  late AnimationController _controller;
+  late AnimationController _playBtnController;
 
   bool playing = false;
 
@@ -30,15 +30,15 @@ class _PlayBackControlState extends State<PlayBackControl>
 
   final speed = const Duration(milliseconds: 250);
 
-  late Animation _animation;
   late AnimationController _barController;
-  bool _animating = false;
 
-  late Animation<double> _playBtn;
-  late Animation<double> _playbackBar;
+  bool _animating = false;
   bool _dragging = false;
 
   Duration seekTo = Duration.zero;
+
+  late Animation<double> _playBtn;
+  late Animation<double> _playbackBar;
 
   @override
   void initState() {
@@ -46,18 +46,17 @@ class _PlayBackControlState extends State<PlayBackControl>
     _listenToChangesInSong();
     _listenToChangeInPosition();
     _listenToPlayerStatus();
-    _controller = AnimationController(vsync: this, duration: speed);
-    _animation = CurvedAnimation(
-      parent: _controller,
+    _playBtnController = AnimationController(vsync: this, duration: speed);
+
+    final playBtnanimation = CurvedAnimation(
+      parent: _playBtnController,
       curve: Curves.easeInOutCubic,
     );
-    _playBtn = _animation.drive(Tween(begin: 1, end: 0));
 
-    _barController = AnimationController(vsync: this);
-    _playbackBar = _barController.drive(Tween(begin: 0, end: 1));
+    _playBtn = playBtnanimation.drive(Tween(begin: 1, end: 0));
 
-    _controller.addListener(() {
-      if (_controller.isCompleted || _controller.isDismissed) {
+    _playBtnController.addListener(() {
+      if (_playBtnController.isCompleted || _playBtnController.isDismissed) {
         setState(() {
           animationEnded = true;
         });
@@ -68,6 +67,9 @@ class _PlayBackControlState extends State<PlayBackControl>
         }
       } else {}
     });
+
+    _barController = AnimationController(vsync: this);
+    _playbackBar = _barController.drive(Tween(begin: 0, end: 1));
   }
 
   void updateProgressBar() async {
@@ -97,11 +99,11 @@ class _PlayBackControlState extends State<PlayBackControl>
     currentStatusSubscriber = (await mp.playerStatus).listen((event) {
       playing = event.playing;
       if (event.playing) {
-        _controller.reverse();
+        _playBtnController.reverse();
         //start animation
         updateProgressBar();
       } else {
-        _controller.forward();
+        _playBtnController.forward();
         _barController.stop();
       }
     });
@@ -114,7 +116,7 @@ class _PlayBackControlState extends State<PlayBackControl>
   @override
   void dispose() {
     currentStatusSubscriber.cancel();
-    _controller.dispose();
+    _playBtnController.dispose();
     _barController.dispose();
     super.dispose();
   }
@@ -131,6 +133,7 @@ class _PlayBackControlState extends State<PlayBackControl>
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final colorScheme = Theme.of(context).colorScheme;
+
     final bar = Stack(
       children: [
         AnimatedBuilder(
@@ -149,6 +152,23 @@ class _PlayBackControlState extends State<PlayBackControl>
             builder: (context, snapshot) {
               if (snapshot.hasData && snapshot.requireData != null) {
                 final current = snapshot.requireData!;
+                final info1 = current.album ?? "";
+                final info2 = current.extras?["format"] ?? "";
+                final info3 = Text(
+                  current.artist ?? "",
+                  style: textTheme.bodySmall
+                      ?.copyWith(color: colorScheme.onPrimaryContainer),
+                  key: ValueKey<String>(current.artist ?? ""),
+                );
+                final info4 = Text(
+                  "${current.extras?["sampleRate"] ?? ""}",
+                  style: textTheme.bodySmall
+                      ?.copyWith(color: colorScheme.onPrimaryContainer),
+                  key: ValueKey<String>(
+                      "${current.extras?["sampleRate"] ?? ""}"),
+                );
+                String cinfo = info1;
+                var dinfo = info3;
 
                 switchlayout(
                     Widget? currentChild, List<Widget> previousChildren) {
@@ -198,22 +218,16 @@ class _PlayBackControlState extends State<PlayBackControl>
                             layoutBuilder: switchlayout,
                             duration: const Duration(milliseconds: 250),
                             child: Text(
-                              current.album ?? "",
+                              cinfo,
                               style: textTheme.bodySmall?.copyWith(
                                   color: colorScheme.onPrimaryContainer),
-                              key: ValueKey<String>(current.album ?? ""),
+                              key: ValueKey<String>(cinfo),
                             ),
                           ),
                           AnimatedSwitcher(
-                            layoutBuilder: switchlayout,
-                            duration: const Duration(milliseconds: 250),
-                            child: Text(
-                              current.artist ?? "",
-                              style: textTheme.bodySmall?.copyWith(
-                                  color: colorScheme.onPrimaryContainer),
-                              key: ValueKey<String>(current.artist ?? ""),
-                            ),
-                          ),
+                              layoutBuilder: switchlayout,
+                              duration: const Duration(milliseconds: 250),
+                              child: dinfo),
                         ],
                       ),
                     ),

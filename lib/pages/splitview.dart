@@ -92,14 +92,14 @@ class SplitView extends StatelessWidget {
                               // use Expanded to take up the remaining horizontal space
                               Expanded(
                                   child: Stack(children: [
-                                Align(
-                                    alignment: Alignment.bottomCenter,
-                                    child: PlayBackControl()),
                                 Padding(
                                   padding: const EdgeInsets.only(
                                       bottom: bottomHeight),
                                   child: nav,
                                 ),
+                                Align(
+                                    alignment: Alignment.bottomCenter,
+                                    child: PlayBackControl()),
                               ]))
                             ],
                           ),
@@ -219,12 +219,16 @@ class AppNavigator extends StatelessWidget {
                   page = AlbumInfo(settings.arguments as Album);
                 } */
                 break;
-              case "playlist":
+              case "song":
                 index.value = 3;
+                page = const Placeholder();
+                break;
+              case "playlist":
+                index.value = 4;
                 page = const PlayListView();
                 break;
               case "setting":
-                index.value = 4;
+                index.value = 5;
                 page = const SettingPage();
                 break;
               default:

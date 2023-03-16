@@ -19,7 +19,6 @@ Future<AudioHandler> initAudioService() async {
 // this handler work for iOS macOS Android
 class MyAudioHandler extends BaseAudioHandler {
   //final _player = AudioPlayer();
-  var _playlist = List<String>.empty(growable: true);
   final _player = CustomMediaPlayer();
 
   MyAudioHandler() {
@@ -38,10 +37,10 @@ class MyAudioHandler extends BaseAudioHandler {
   }
 
   void _notifyAudioHandlerAboutPlaybackEvents() {
-    _player.status().listen((event) {
+    _player.status.listen((event) {
       late MediaControl btn;
       bool playing = event.playing;
-      if (!event.playing) {
+      if (event.playing) {
         btn = MediaControl.pause;
       } else {
         btn = MediaControl.play;
@@ -69,14 +68,23 @@ class MyAudioHandler extends BaseAudioHandler {
         updatePosition: event.position,
       ));
 
-      final index = 0;
+      final playlist = queue.value;
+      if (event.stopped || playlist.isEmpty) return;
+      mediaItem.add(playlist[event.index]);
+
       final newQueue = queue.value;
-      if (index == null || newQueue.isEmpty || newQueue.length - 1 < index) {
+      if (event.stopped ||
+          newQueue.isEmpty ||
+          newQueue.length - 1 < event.index) {
         return;
       }
-      final oldMediaItem = newQueue[index];
-      final newMediaItem = oldMediaItem.copyWith(duration: event.duration);
-      newQueue[index] = newMediaItem;
+      final oldMediaItem = newQueue[event.index];
+      var newMediaItem = oldMediaItem.copyWith(duration: event.duration);
+      newMediaItem.extras?["sampleRate"] = event.sampleRate;
+      newMediaItem.extras?["bitRate"] = event.bitRate;
+      newMediaItem.extras?["format"] = event.format;
+
+      newQueue[event.index] = newMediaItem;
       queue.add(newQueue);
       mediaItem.add(newMediaItem);
     });
@@ -139,7 +147,7 @@ class MyAudioHandler extends BaseAudioHandler {
     }
     */
     final source = mediaItems.map((e) => e.id);
-    _playlist.addAll(source);
+    _player.playlist.addAll(source);
     // notify system
     final newQueue = queue.value..addAll(mediaItems);
     //final newQueue = mediaItems;
@@ -149,7 +157,7 @@ class MyAudioHandler extends BaseAudioHandler {
   @override
   Future<void> addQueueItem(MediaItem mediaItem) async {
     // manage Just Audio
-    _playlist.add(mediaItem.id);
+    _player.playlist.add(mediaItem.id);
     // notify system
     final newQueue = queue.value..add(mediaItem);
     //final newQueue = mediaItems;
@@ -169,19 +177,12 @@ class MyAudioHandler extends BaseAudioHandler {
     */
 
     //clear playlist
-    _playlist.clear();
-    _playlist.addAll(mediaItems.map((e) => e.id));
+    _player.playlist.clear();
+    _player.playlist.addAll(mediaItems.map((e) => e.id));
     // notify system
     //final newQueue = queue.value..addAll(mediaItems);
     final newQueue = mediaItems;
     queue.add(newQueue);
-  }
-
-  UriAudioSource _createAudioSource(MediaItem mediaItem) {
-    return AudioSource.uri(
-      Uri.parse(mediaItem.id),
-      tag: mediaItem,
-    );
   }
 
   void _listenForCurrentSongIndexChanges() {
@@ -196,7 +197,7 @@ class MyAudioHandler extends BaseAudioHandler {
 
   @override
   Future<void> play() async {
-    _player.play(_playlist.take(1).first);
+    await _player.play();
   }
 
   @override
@@ -206,14 +207,12 @@ class MyAudioHandler extends BaseAudioHandler {
 
   @override
   Future<void> skipToNext() async {
-    await _player.play(_playlist.take(1).first);
+    _player.next();
   }
 
   @override
   Future<void> skipToQueueItem(int index) async {
-    /*
-    await _player.seek(Duration.zero, index: index);
-    */
+    await _player.seekIndex(index);
   }
 
   @override
@@ -225,6 +224,7 @@ class MyAudioHandler extends BaseAudioHandler {
 
   @override
   Future<void> skipToPrevious() async {
+    _player.previous();
     /*
     await _player.seekToPrevious();
     if (_player.processingState == ProcessingState.completed) {

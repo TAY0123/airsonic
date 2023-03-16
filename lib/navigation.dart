@@ -94,14 +94,17 @@ class NavRail extends StatelessWidget {
                         ?.pushNamedAndRemoveUntil("/artist", (route) => false);
                     break;
                   case 3:
+                    rootNavigatorKey?.currentState
+                        ?.pushNamedAndRemoveUntil("/song", (route) => false);
+                    break;
+                  case 4:
                     rootNavigatorKey?.currentState?.pushNamedAndRemoveUntil(
                         "/playlist", (route) => false);
                     break;
-                  case 4:
+                  case 5:
                     rootNavigatorKey?.currentState
                         ?.pushNamedAndRemoveUntil("/setting", (route) => false);
                     break;
-
                   default:
                 }
               },
@@ -117,6 +120,8 @@ class NavRail extends StatelessWidget {
                     icon: Icon(Icons.album), label: Text("Albums")),
                 NavigationRailDestination(
                     icon: Icon(Icons.people), label: Text("Artists")),
+                NavigationRailDestination(
+                    icon: Icon(Icons.library_music), label: Text("Songs")),
                 NavigationRailDestination(
                     icon: Icon(Icons.playlist_play), label: Text("Playlist")),
                 NavigationRailDestination(

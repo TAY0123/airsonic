@@ -62,7 +62,8 @@ class MediaPlayer {
           duration: Duration(seconds: element["duration"]),
           extras: {
             "songId": element["extras.songId"],
-            "coverArt": element["extras.coverArt"]
+            "coverArt": element["extras.coverArt"],
+            "duration": element["extras.duration"],
           }));
     }
 
@@ -418,9 +419,6 @@ class MediaPlayer {
   }
 
   void playPlaylist(List<Song> playlist, {int index = 0}) async {
-    DateTime _now = DateTime.now();
-    print(
-        'timestamp: ${_now.hour}:${_now.minute}:${_now.second}.${_now.millisecond}');
     final fplayer = await futurePlayer;
     final c = fplayer.stop();
     List<MediaItem> res = [];
@@ -432,10 +430,6 @@ class MediaPlayer {
     await fplayer.updateQueue(res);
     await fplayer.skipToQueueItem(index);
     fplayer.play();
-
-    _now = DateTime.now();
-    print(
-        'timestamp: ${_now.hour}:${_now.minute}:${_now.second}.${_now.millisecond}');
   }
 
   Future<XMLResult> getPlaylist(String id) async {
@@ -635,7 +629,7 @@ class Song {
         duration: Duration(seconds: duration),
         artist: artist?.name ?? album?.artist?.name ?? "Unknown",
         album: album?.name ?? "test album",
-        extras: {"songId": id, "coverArt": coverArt});
+        extras: {"songId": id, "coverArt": coverArt, "duration": duration});
   }
 
   factory Song.fromAlbum(Album album, XmlElement element) {
@@ -922,7 +916,8 @@ extension ToJSON on MediaItem {
       'artUri': artUri.toString(),
       'duration': duration?.inSeconds,
       'extras.songId': extras?["songId"],
-      'extras.coverArt': extras?["coverArt"]
+      'extras.coverArt': extras?["coverArt"],
+      'extras.duration': extras?["duration"],
     };
   }
 }

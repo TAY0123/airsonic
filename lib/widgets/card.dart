@@ -444,6 +444,7 @@ class CoverImage extends StatelessWidget {
                 frameBuilder: fadeInDuration == null ? null : fadeInEffect,
                 image: snapshot.requireData!,
                 fit: fit,
+                errorBuilder: (context, error, stackTrace) => ph,
                 filterQuality: fit == ImageSize.grid
                     ? FilterQuality.high
                     : FilterQuality.low,
