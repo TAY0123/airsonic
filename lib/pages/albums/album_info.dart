@@ -164,10 +164,10 @@ class _AlbumInfoState extends State<AlbumInfo>
               },
             ),
     );
-    final loadingPlaceholder = Center(
+    final loadingPlaceholder = const Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        children: const [
+        children: [
           CircularProgressIndicator(),
           Padding(
             padding: EdgeInsets.only(top: 8.0),
@@ -488,7 +488,15 @@ class _AlbumInfoListTileState extends State<AlbumInfoListTile> {
           },
           leading: Column(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: const [Icon(Icons.play_arrow_rounded)],
+            children: [
+              selected
+                  ? const Icon(
+                      Icons.play_arrow,
+                    )
+                  : const Icon(
+                      Icons.play_arrow_outlined,
+                    )
+            ],
           ),
           trailing: Column(
               mainAxisAlignment: MainAxisAlignment.center,

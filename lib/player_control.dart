@@ -45,6 +45,7 @@ class _PlayBackControlState extends State<PlayBackControl>
     _listenToChangesInSong();
     _listenToChangeInPosition();
     _listenToPlayerStatus();
+
     _playBtnController = AnimationController(vsync: this, duration: speed);
     _dragging.value = false;
 
@@ -57,6 +58,15 @@ class _PlayBackControlState extends State<PlayBackControl>
 
     _barController = AnimationController(vsync: this);
     _playbackBar = _barController.drive(Tween(begin: 0, end: 1));
+  }
+
+  @override
+  void dispose() {
+    currentStatusSubscriber.cancel();
+    _playBtnController.dispose();
+    _barController.dispose();
+    _dragging.dispose();
+    super.dispose();
   }
 
   void updateProgressBar() async {
@@ -100,18 +110,11 @@ class _PlayBackControlState extends State<PlayBackControl>
 
   void _listenToChangeInPosition() async {}
 
-  @override
-  void dispose() {
-    currentStatusSubscriber.cancel();
-    _playBtnController.dispose();
-    _barController.dispose();
-    super.dispose();
-  }
-
   var animationEnded = true;
   var curves = Curves.linear;
   var dragFinish = true;
   double progress = 0.0;
+  double pos = 0.0;
 
   //param
   var startPt = 0.0;
@@ -129,23 +132,35 @@ class _PlayBackControlState extends State<PlayBackControl>
               builder: (context, constraints) {
                 return GestureDetector(
                   behavior: HitTestBehavior.opaque,
+                  //horizontal gesture
                   onHorizontalDragStart: (details) {
-                    startPt = details.localPosition.dx;
+                    startPt = constraints.maxWidth * _barController.value;
+                    _barController.stop();
+                    _dragging.value = true;
+
+                    pos = details.localPosition.dx;
+                    final ratio = max<double>(
+                        0,
+                        min<double>(1,
+                            details.localPosition.dx / constraints.maxWidth));
+                    if (_barController.duration != null) {
+                      setState(() {
+                        seekTo = Duration(
+                            milliseconds:
+                                (_barController.duration!.inMilliseconds *
+                                        ratio)
+                                    .round());
+                      });
+                    }
+
+                    _barController.animateTo(ratio, duration: Duration.zero);
                   },
                   onHorizontalDragCancel: () {
                     _dragging.value = false;
                     updateProgressBar();
                   },
                   onHorizontalDragUpdate: (details) {
-                    if (!_dragging.value) {
-                      if (details.localPosition.dx - startPt > 2 ||
-                          details.localPosition.dx - startPt < -2) {
-                        _barController.stop();
-                        _dragging.value = true;
-                      } else {
-                        return;
-                      }
-                    }
+                    pos = details.localPosition.dx;
                     final ratio = max<double>(
                         0,
                         min<double>(1,
@@ -163,13 +178,25 @@ class _PlayBackControlState extends State<PlayBackControl>
                     _barController.animateTo(ratio, duration: Duration.zero);
                   },
                   onHorizontalDragEnd: (details) async {
-                    if (_dragging.value) {
-                      _dragging.value = false;
+                    _dragging.value = false;
+                    if (pos - startPt > 2 || pos - startPt < -2) {
                       final p = await mp.futurePlayer;
                       p.seek(seekTo);
+                    } else {
+                      return;
                     }
 
                     updateProgressBar();
+                  },
+                  //vertical gesture
+                  onVerticalDragEnd: (details) async {
+                    if (details.velocity.pixelsPerSecond.dy < -10) {
+                      final p = await mp.futurePlayer;
+                      p.skipToNext();
+                    } else if (details.velocity.pixelsPerSecond.dy > 10) {
+                      final p = await mp.futurePlayer;
+                      p.skipToPrevious();
+                    }
                   },
                   child: Stack(
                     children: [
@@ -191,7 +218,6 @@ class _PlayBackControlState extends State<PlayBackControl>
                             if (snapshot.hasData &&
                                 snapshot.requireData != null) {
                               final current = snapshot.requireData!;
-                              print(current);
                               final info1 = current.album ?? "";
                               final info2 = current.extras?["format"] ?? "";
                               final info4 =
@@ -228,57 +254,61 @@ class _PlayBackControlState extends State<PlayBackControl>
                                     bottomLeft: const Radius.circular(5),
                                     bottomRight: const Radius.circular(5),
                                   ),
-                                  Padding(
-                                    padding: const EdgeInsets.only(left: 4.0),
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        AnimatedSwitcher(
-                                          layoutBuilder: switchlayout,
-                                          duration:
-                                              const Duration(milliseconds: 250),
-                                          child: Text(
-                                            current.title,
-                                            key:
-                                                ValueKey<String>(current.title),
-                                            style: textTheme.bodyMedium,
-                                            overflow: TextOverflow.ellipsis,
+                                  Flexible(
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(left: 4.0),
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          AnimatedSwitcher(
+                                            layoutBuilder: switchlayout,
+                                            duration: const Duration(
+                                                milliseconds: 250),
+                                            child: Text(
+                                              current.title,
+                                              key: ValueKey<String>(
+                                                  current.title),
+                                              style: textTheme.bodyMedium,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
                                           ),
-                                        ),
-                                        AnimatedSwitcher(
-                                          layoutBuilder: switchlayout,
-                                          duration:
-                                              const Duration(milliseconds: 250),
-                                          child: Text(
-                                            cinfo,
-                                            style: textTheme.bodySmall
-                                                ?.copyWith(
-                                                    color: colorScheme
-                                                        .onPrimaryContainer),
-                                            key: ValueKey<String>(cinfo),
-                                            overflow: TextOverflow.ellipsis,
+                                          AnimatedSwitcher(
+                                            layoutBuilder: switchlayout,
+                                            duration: const Duration(
+                                                milliseconds: 250),
+                                            child: Text(
+                                              cinfo,
+                                              style: textTheme.bodySmall
+                                                  ?.copyWith(
+                                                      color: colorScheme
+                                                          .onPrimaryContainer),
+                                              key: ValueKey<String>(cinfo),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
                                           ),
-                                        ),
-                                        AnimatedSwitcher(
-                                          layoutBuilder: switchlayout,
-                                          duration:
-                                              const Duration(milliseconds: 250),
-                                          child: Text(
-                                            dinfo,
-                                            style: textTheme.bodySmall
-                                                ?.copyWith(
-                                                    color: colorScheme
-                                                        .onPrimaryContainer),
-                                            key: ValueKey<String>(dinfo),
-                                            overflow: TextOverflow.ellipsis,
+                                          AnimatedSwitcher(
+                                            layoutBuilder: switchlayout,
+                                            duration: const Duration(
+                                                milliseconds: 250),
+                                            child: Text(
+                                              dinfo,
+                                              style: textTheme.bodySmall
+                                                  ?.copyWith(
+                                                      color: colorScheme
+                                                          .onPrimaryContainer),
+                                              key: ValueKey<String>(dinfo),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
                                           ),
-                                        ),
-                                      ],
+                                        ],
+                                      ),
                                     ),
                                   ),
-                                  const Spacer(),
                                   IconButton(
                                       onPressed: () async {
                                         final p = await mp.futurePlayer;
@@ -310,9 +340,14 @@ class _PlayBackControlState extends State<PlayBackControl>
                           }
                         },
                         child: Center(
-                            child: FilledButton(
-                          onPressed: null,
-                          child: Text(printDuration(seekTo)),
+                            child: Opacity(
+                          opacity: 0.75,
+                          child: Card(
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Text(printDuration(seekTo)),
+                            ),
+                          ),
                         )),
                       ),
                     ],
