@@ -237,7 +237,7 @@ class MediaPlayer: NSObject, FlutterStreamHandler {
                                 .punctuationCharacters) ?? "Unknown"
                         let info: AudioStreamBasicDescription? = CMAudioFormatDescriptionGetStreamBasicDescription(formatInfo!)?.pointee
                         self.sampleRate = info?.mSampleRate ?? 44100
-                        self.changeOutputFormat()
+                        self.changeOutputSampleRate()
                     }
                     // print("rate: ",try await audioPlayer.currentItem!.asset.load(.preferredRate))
                     
@@ -292,7 +292,7 @@ class MediaPlayer: NSObject, FlutterStreamHandler {
         return deviceIds
     }
     
-    public func changeOutputFormat() {
+    public func changeOutputSampleRate() {
         print("b: \(bitDepth) r: \(sampleRate)")
         var outputDeviceID = AudioDeviceID(0)
         var dataSize = UInt32(MemoryLayout<AudioDeviceID>.size)
@@ -319,6 +319,7 @@ class MediaPlayer: NSObject, FlutterStreamHandler {
             
             propertyAddress.mSelector = kAudioDevicePropertyNominalSampleRate
             dataSize = UInt32(MemoryLayout<Float64>.size)
+            /*
             var status = AudioObjectSetPropertyData(
                 outputDeviceID,
                 &propertyAddress,
@@ -327,6 +328,7 @@ class MediaPlayer: NSObject, FlutterStreamHandler {
                 dataSize,
                 &sampleRate
             )
+             */
             
             if status != noErr {
                 print("Error setting sample rate: \(status)")

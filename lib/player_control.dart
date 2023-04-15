@@ -356,7 +356,9 @@ class _PlayBackControlState extends State<PlayBackControl>
                                                                                 Text(e.name ?? ""),
                                                                             onTap:
                                                                                 () {
-                                                                              c.send(current, e);
+                                                                              c.send([
+                                                                                current
+                                                                              ], e);
                                                                             },
                                                                           ))
                                                                       .toList(),

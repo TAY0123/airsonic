@@ -2,8 +2,10 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
+import 'package:airsonic/utils/localdiscovery.dart';
 import 'package:airsonic/utils/player/shared.dart';
 import 'package:audio_service/audio_service.dart';
+import 'package:collection/collection.dart';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
@@ -89,6 +91,7 @@ class MediaPlayer {
     queue = () async {
       final player = await futurePlayer;
       player.queue.listen((playlist) async {
+        LocalDiscovery.instance.updateRegister(playlist.firstOrNull);
         if (playlist.isNotEmpty) {
           final storage = await preferenceStorage;
           storage.setString(
