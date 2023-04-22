@@ -74,11 +74,15 @@ class _PlayBackControlState extends State<PlayBackControl>
     if (_dragging.value) {
       return;
     }
-    final current = await currentItemPosition?.first;
-    if (current != null && _barController.duration != null) {
-      final progress =
-          current.inMilliseconds / _barController.duration!.inMilliseconds;
-      _barController.forward(from: progress);
+    if (playing) {
+      final current = await currentItemPosition?.first;
+      if (current != null && _barController.duration != null) {
+        final progress =
+            current.inMilliseconds / _barController.duration!.inMilliseconds;
+        _barController.forward(from: progress);
+      }
+    } else {
+      _barController.stop();
     }
   }
 
@@ -99,11 +103,10 @@ class _PlayBackControlState extends State<PlayBackControl>
       if (event.playing) {
         _playBtnController.reverse();
         //start animation
-        updateProgressBar();
       } else {
         _playBtnController.forward();
-        _barController.stop();
       }
+      updateProgressBar();
     });
   }
 

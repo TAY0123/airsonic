@@ -26,6 +26,13 @@ class MediaPlayer: NSObject, FlutterStreamHandler {
     
     var volume: Double = 1.0
     
+    class func shared() -> MediaPlayer { return sharedSoundManager }
+    
+    private static var sharedSoundManager: MediaPlayer = {
+        let manager = MediaPlayer()
+        
+        return manager
+    }()
     
     public func onListen(withArguments arguments: Any?,
                          eventSink: @escaping FlutterEventSink) -> FlutterError?

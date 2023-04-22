@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:airsonic/main.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';

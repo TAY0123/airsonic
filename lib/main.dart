@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:airsonic/utils/desktop_init.dart';
 import 'package:airsonic/pages/login.dart';
 import 'package:airsonic/pages/splitview.dart';
 import 'package:airsonic/utils/localdiscovery.dart';
@@ -13,7 +12,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // Must add this line.
   if (!kIsWeb && (Platform.isLinux || Platform.isMacOS || Platform.isWindows)) {
-    await desktopWindowManagerInit();
+    //await desktopWindowManagerInit();
   }
 
   if (!kIsWeb) {

@@ -1,13 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:airsonic/utils/airsonic_connection.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:nsd/nsd.dart';
-import 'package:rxdart/rxdart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LocalDiscovery {
@@ -77,20 +75,13 @@ class LocalDiscovery {
     });
 
     print("start register");
+    registration = await register(
+        Service(name: "AirSonic-Test", type: '_http._tcp', port: 56000));
+    print(registration.toString());
     updateRegister(null);
   }
 
-  void updateRegister(MediaItem? current) async {
-    registration = await register(Service(
-        name: "AirSonic-Test",
-        type: '_http._tcp',
-        txt: <String, Uint8List>{
-          "song": Uint8List.fromList(current?.title.codeUnits ?? []),
-          "album": Uint8List.fromList(current?.album?.codeUnits ?? [])
-        },
-        port: 56000));
-    print(registration.toString());
-  }
+  void updateRegister(MediaItem? current) async {}
 
   Future<void> scan() async {
     final discovery = await startDiscovery('_http._tcp');
