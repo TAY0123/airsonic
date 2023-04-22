@@ -1,10 +1,9 @@
 import 'dart:io';
 
-import 'package:airsonic/pages/playlists/playlist_view.dart';
+import 'package:airsonic/views/playlists/playlist_view.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:window_manager/window_manager.dart';
 
 import '../const.dart';
 import '../player_control.dart';
@@ -56,10 +55,8 @@ class SplitView extends StatelessWidget {
                               onDoubleTap: () {
                                 if (_maximize) {
                                   _maximize = false;
-                                  windowManager.unmaximize();
                                 } else {
                                   _maximize = true;
-                                  windowManager.maximize();
                                 }
                               },
                               child: Container(

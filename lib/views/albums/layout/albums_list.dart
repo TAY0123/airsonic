@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:airsonic/pages/albums/layout/albums_grid.dart';
+import 'package:airsonic/views/albums/layout/albums_grid.dart';
 import 'package:airsonic/utils/airsonic_connection.dart';
 import 'package:airsonic/layout.dart';
 import 'package:airsonic/widgets/animatedwave.dart';

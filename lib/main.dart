@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:airsonic/pages/login.dart';
-import 'package:airsonic/pages/splitview.dart';
+import 'package:airsonic/views/login.dart';
+import 'package:airsonic/views/splitview.dart';
 import 'package:airsonic/utils/localdiscovery.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';

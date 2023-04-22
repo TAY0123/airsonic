@@ -1,6 +1,6 @@
 import 'package:airsonic/utils/airsonic_connection.dart';
 import 'package:airsonic/widgets/animatedwave.dart';
-import 'package:airsonic/pages/splitview.dart';
+import 'package:airsonic/views/splitview.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

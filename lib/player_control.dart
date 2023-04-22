@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:airsonic/pages/splitview.dart';
+import 'package:airsonic/views/splitview.dart';
 import 'package:airsonic/utils/airsonic_connection.dart';
 import 'package:airsonic/utils/localdiscovery.dart';
 import 'package:airsonic/utils/utils.dart';

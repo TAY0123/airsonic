@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:airsonic/pages/albums/album_info.dart';
-import 'package:airsonic/pages/albums/layout/albums_list.dart';
+import 'package:airsonic/views/albums/album_info.dart';
+import 'package:airsonic/views/albums/layout/albums_list.dart';
 import 'package:airsonic/utils/airsonic_connection.dart';
 import 'package:airsonic/layout.dart';
 import 'package:airsonic/widgets/card.dart';

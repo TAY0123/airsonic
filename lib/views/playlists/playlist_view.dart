@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:airsonic/pages/playlists/playlist_info.dart';
+import 'package:airsonic/views/playlists/playlist_info.dart';
 import 'package:airsonic/utils/airsonic_connection.dart';
 import 'package:airsonic/layout.dart';
 import 'package:airsonic/widgets/card.dart';
