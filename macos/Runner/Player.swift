@@ -9,6 +9,7 @@ import AudioToolbox
 import AVFoundation
 import CoreAudio
 import FlutterMacOS
+import Opus
 class MediaPlayer: NSObject, FlutterStreamHandler {
     
     // audio player
@@ -26,11 +27,12 @@ class MediaPlayer: NSObject, FlutterStreamHandler {
     
     var volume: Double = 1.0
     
+    var playlist: [String] = []
+    
     class func shared() -> MediaPlayer { return sharedSoundManager }
     
     private static var sharedSoundManager: MediaPlayer = {
         let manager = MediaPlayer()
-        
         return manager
     }()
     
@@ -99,6 +101,11 @@ class MediaPlayer: NSObject, FlutterStreamHandler {
         result(nil)
     }
     
+    public func addToPlaylist(url: String, result: FlutterResult){
+        playlist.append(url)
+        result(nil)
+    }
+    
     private func updateStatus() {
         guard let eventSink = eventSink else {
             return
@@ -116,6 +123,12 @@ class MediaPlayer: NSObject, FlutterStreamHandler {
         ]
         print(data)
         eventSink(data)
+    }
+    
+    func update(result: FlutterResult) {
+        CurrentPosition = audioPlayer.currentTime().seconds.isNaN ? 0 : audioPlayer.currentTime().seconds
+        updateStatus()
+        result(nil)
     }
     
     // For in-App control
@@ -231,7 +244,6 @@ class MediaPlayer: NSObject, FlutterStreamHandler {
                 return
             }
             // Switch over status value
-            print("value: \(item)")
             
             Duration = 1 // set a 1 min timeout for fetching real duration from metadata
             Stopped = false

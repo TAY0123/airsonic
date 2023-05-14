@@ -55,6 +55,7 @@ class CustomMediaPlayer {
         next();
       }
     });
+    update();
   }
 
   /// the one and only instance of this singleton
@@ -80,6 +81,11 @@ class CustomMediaPlayer {
 
   Future<void> _add(String url) async {
     await platform.invokeMethod("add", url);
+    return;
+  }
+
+  Future<void> update() async {
+    await platform.invokeMethod("update");
     return;
   }
 

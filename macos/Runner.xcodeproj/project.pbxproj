@@ -26,6 +26,8 @@
 		33CC10F32044A3C60003C045 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 33CC10F22044A3C60003C045 /* Assets.xcassets */; };
 		33CC10F62044A3C60003C045 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 33CC10F42044A3C60003C045 /* MainMenu.xib */; };
 		33CC11132044BFA00003C045 /* MainFlutterWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33CC11122044BFA00003C045 /* MainFlutterWindow.swift */; };
+		650E1CF029F776DB00876AB1 /* Copus in Frameworks */ = {isa = PBXBuildFile; productRef = 650E1CEF29F776DB00876AB1 /* Copus */; };
+		650E1CF229F776DB00876AB1 /* Opus in Frameworks */ = {isa = PBXBuildFile; productRef = 650E1CF129F776DB00876AB1 /* Opus */; };
 		655302D129BE23620021901B /* CachingPlayerItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 655302D029BE23620021901B /* CachingPlayerItem.swift */; };
 		655302D329C2F3B00021901B /* Player.swift in Sources */ = {isa = PBXBuildFile; fileRef = 655302D229BE43510021901B /* Player.swift */; };
 		845FB2D4BAA86DBAEC9EF2D1 /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 830C77DB61FB122B586FE4F2 /* Pods_Runner.framework */; };
@@ -85,6 +87,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				845FB2D4BAA86DBAEC9EF2D1 /* Pods_Runner.framework in Frameworks */,
+				650E1CF029F776DB00876AB1 /* Copus in Frameworks */,
+				650E1CF229F776DB00876AB1 /* Opus in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -197,6 +201,10 @@
 				33CC11202044C79F0003C045 /* PBXTargetDependency */,
 			);
 			name = Runner;
+			packageProductDependencies = (
+				650E1CEF29F776DB00876AB1 /* Copus */,
+				650E1CF129F776DB00876AB1 /* Opus */,
+			);
 			productName = Runner;
 			productReference = 33CC10ED2044A3C60003C045 /* airsonic.app */;
 			productType = "com.apple.product-type.application";
@@ -236,6 +244,9 @@
 				Base,
 			);
 			mainGroup = 33CC10E42044A3C60003C045;
+			packageReferences = (
+				650E1CEE29F776DB00876AB1 /* XCRemoteSwiftPackageReference "swift-opus" */,
+			);
 			productRefGroup = 33CC10EE2044A3C60003C045 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -638,6 +649,30 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		650E1CEE29F776DB00876AB1 /* XCRemoteSwiftPackageReference "swift-opus" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/alta/swift-opus.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.0.2;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		650E1CEF29F776DB00876AB1 /* Copus */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 650E1CEE29F776DB00876AB1 /* XCRemoteSwiftPackageReference "swift-opus" */;
+			productName = Copus;
+		};
+		650E1CF129F776DB00876AB1 /* Opus */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 650E1CEE29F776DB00876AB1 /* XCRemoteSwiftPackageReference "swift-opus" */;
+			productName = Opus;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 33CC10E52044A3C60003C045 /* Project object */;
 }

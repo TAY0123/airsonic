@@ -2,9 +2,25 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:window_manager/window_manager.dart';
 
 Future<void> desktopWindowManagerInit() async {
-  if (Platform.isLinux || Platform.isMacOS || Platform.isWindows && !kIsWeb) {
+  if (Platform.isLinux || Platform.isWindows && !kIsWeb) {
+    await windowManager.ensureInitialized();
+
+    WindowOptions windowOptions = const WindowOptions(
+      size: Size(1280, 720),
+      minimumSize: Size(450, 800),
+      center: true,
+      backgroundColor: Colors.transparent,
+      skipTaskbar: false,
+      titleBarStyle: TitleBarStyle.normal,
+    );
+    windowManager.waitUntilReadyToShow(windowOptions, () async {
+      await windowManager.show();
+      await windowManager.focus();
+    });
+
     //windowManager.addListener(MyWindowHandler());
   }
 }

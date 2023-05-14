@@ -53,6 +53,7 @@ dependencies:
   dart_vlc: ^0.4.0
   flutter_local_notifications: ^13.0.0
   nsd: ^2.3.0
+  window_manager: ^0.3.2
 
 dev_dependencies:
   flutter_test:

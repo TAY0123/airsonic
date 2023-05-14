@@ -6,13 +6,15 @@ import SwiftUI
 @main
 struct FlutterApp: App {
     @NSApplicationDelegateAdaptor(FlutterAppDelegate.self) var appDelegate
-    
+
     var body: some Scene {
         WindowGroup {
-            MyView()
+            
+            MyView().ignoresSafeArea(.all)
                 .frame(minWidth: 499, idealWidth: 960, minHeight: 600, idealHeight: 600)
+            
         }
-        .windowStyle(.hiddenTitleBar).windowToolbarStyle(.unified)
+        .windowStyle(HiddenTitleBarWindowStyle())
     }
 }
 
@@ -21,13 +23,12 @@ struct MyView: NSViewControllerRepresentable {
     
     typealias NSViewControllerType = NSViewController
     
-    var close: (() -> Void)?
-    
     func makeNSViewController(context: Context) -> NSViewController {
         // Return MyViewController instance
         let mp = MediaPlayer.shared()
-        var c = FlutterDependencies()
-        let controller = FlutterViewController(engine: c.flutterEngine, nibName: nil, bundle: nil)
+        let flutterEngine = FlutterEngine(name: "flutterEngine", project: nil)
+        flutterEngine.run(withEntrypoint: nil)
+        let controller = FlutterViewController(engine: flutterEngine, nibName: nil, bundle: nil)
         RegisterGeneratedPlugins(registry: controller)
         let batteryChannel = FlutterMethodChannel(name: "samples.flutter.dev/mediaplayer",
                                                   binaryMessenger: controller.engine.binaryMessenger)
@@ -52,32 +53,19 @@ struct MyView: NSViewControllerRepresentable {
                 mp?.stop(result: result)
             case "getPosition":
                 mp?.getPosition(result: result)
+            case "update":
+                mp?.update(result: result)
             default:
                 result(FlutterMethodNotImplemented)
                 return
             }
         }
-        
         return controller
     }
     
     static func dismantleNSViewController(_ nsViewController: Self.NSViewControllerType, coordinator: Self.Coordinator) {
-        let c = nsViewController as! FlutterViewController
-        c.engine.shutDownEngine()
-    }
-}
-
-class AppDelegate: FlutterAppDelegate {}
-
-class FlutterDependencies: ObservableObject {
-    var flutterEngine = FlutterEngine(name: "flutterEngine", project: nil)
-    init() {
-        print("engine: ", flutterEngine.run(withEntrypoint: nil))
-    }
-
-    func re() {
-        flutterEngine = FlutterEngine(name: "flutterEngine", project: nil)
-        print("engine: ", flutterEngine.run(withEntrypoint: nil))
+        let controller = nsViewController as! FlutterViewController
+        controller.engine.shutDownEngine()
     }
 }
 

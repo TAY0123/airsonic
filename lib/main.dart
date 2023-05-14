@@ -8,11 +8,13 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'utils/desktop_init.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // Must add this line.
-  if (!kIsWeb && (Platform.isLinux || Platform.isMacOS || Platform.isWindows)) {
-    //await desktopWindowManagerInit();
+  if (!kIsWeb && (Platform.isLinux || Platform.isWindows)) {
+    await desktopWindowManagerInit();
   }
 
   if (!kIsWeb) {
@@ -40,7 +42,7 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Flutter Airsonic ${kReleaseMode ? "" : "(Debug)"}',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
           brightness: Brightness.light,

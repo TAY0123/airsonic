@@ -64,7 +64,8 @@ class SplitView extends StatelessWidget {
                                     .colorScheme
                                     .primaryContainer,
                                 child: const Center(
-                                  child: Text("Airsonic"),
+                                  child: Text(
+                                      'Flutter Airsonic ${kReleaseMode ? "" : "(Debug)"}'),
                                 ),
                               ),
                             ),

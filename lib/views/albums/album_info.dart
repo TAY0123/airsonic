@@ -1,13 +1,13 @@
 import 'dart:async';
 
+import 'package:airsonic/layout.dart';
+import 'package:airsonic/main.dart';
 import 'package:airsonic/utils/airsonic_connection.dart';
 import 'package:airsonic/utils/utils.dart';
 import 'package:airsonic/widgets/card.dart';
-import 'package:airsonic/layout.dart';
-import 'package:airsonic/main.dart';
 import 'package:audio_service/audio_service.dart';
-import 'package:flutter/material.dart';
 import 'package:collection/collection.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:rxdart/rxdart.dart';
 
@@ -49,33 +49,31 @@ class _AlbumInfoState extends State<AlbumInfo>
   Widget build(BuildContext context) {
     final albumCover = Hero(
         tag: "${widget.album.id}-Cover}",
-        child: Center(
-          child: AspectRatio(
-            aspectRatio: 1,
-            child: widget.album.image != null
-                ? CoverImage.fromAlbum(
-                    widget.album,
-                    fit: BoxFit.contain,
-                    size: ImageSize.original,
-                  )
-                : FutureBuilder(
-                    future: albumFetchStatus,
-                    builder: (context, snapshot) {
-                      if (snapshot.hasData) {
-                        final currentAlbum = widget.album;
-                        return CoverImage.fromAlbum(
-                          currentAlbum,
-                          fit: BoxFit.contain,
-                          size: ImageSize.original,
-                        );
-                      } else {
-                        return Container(
-                          color: Colors.transparent,
-                        );
-                      }
-                    },
-                  ),
-          ),
+        child: AspectRatio(
+          aspectRatio: 1,
+          child: widget.album.image != null
+              ? CoverImage.fromAlbum(
+                  widget.album,
+                  fit: BoxFit.contain,
+                  size: ImageSize.original,
+                )
+              : FutureBuilder(
+                  future: albumFetchStatus,
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData) {
+                      final currentAlbum = widget.album;
+                      return CoverImage.fromAlbum(
+                        currentAlbum,
+                        fit: BoxFit.contain,
+                        size: ImageSize.original,
+                      );
+                    } else {
+                      return Container(
+                        color: Colors.transparent,
+                      );
+                    }
+                  },
+                ),
         ));
     final artistButton = FilledButton.tonalIcon(
       onLongPress: () {
@@ -164,7 +162,7 @@ class _AlbumInfoState extends State<AlbumInfo>
               },
             ),
     );
-    final loadingPlaceholder = const Center(
+    const loadingPlaceholder = Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -205,12 +203,19 @@ class _AlbumInfoState extends State<AlbumInfo>
                     Expanded(
                       flex: 7,
                       child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        mainAxisAlignment: MainAxisAlignment.start,
                         children: [
-                          albumCover,
+                          ConstrainedBox(
+                            constraints: BoxConstraints.loose(
+                                Size.fromWidth(constraints.maxWidth / 2)),
+                            child: albumCover,
+                          ),
                           const Padding(
                             padding: EdgeInsets.only(left: 16),
                           ),
-                          Expanded(
+                          Flexible(
+                            fit: FlexFit.tight,
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.start,
