@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:audio_service/audio_service.dart';
 import 'package:flutter/services.dart';
 
 class PlayerStatus {
@@ -31,7 +32,7 @@ class CustomMediaPlayer {
   static const event = EventChannel("samples.flutter.dev/mediaplayerStatus");
 
   late Stream<PlayerStatus> status;
-  var playlist = List<String>.empty(growable: true);
+  var playlist = List<MediaItem>.empty(growable: true);
   var index = 0;
   var stopped = true;
 
@@ -66,7 +67,7 @@ class CustomMediaPlayer {
       return;
     }
     index++;
-    _add(playlist[index]);
+    _next();
     play();
   }
 
@@ -75,12 +76,35 @@ class CustomMediaPlayer {
       return;
     }
     index--;
-    _add(playlist[index]);
+    _previous();
     play();
   }
 
-  Future<void> _add(String url) async {
-    await platform.invokeMethod("add", url);
+  Future<void> _replace(MediaItem item) async {
+    await platform.invokeMethod("add", {
+      "url": item.id,
+      "cover": item.artUri?.toString() ?? "",
+      "album": item.album ?? "",
+      "artist": item.artist ?? "",
+      "data": item.extras
+    });
+    return;
+  }
+
+  Future<void> add(MediaItem item) async {
+    await platform.invokeMethod("add", {
+      "url": item.id,
+      "title": item.title,
+      "cover": item.artUri?.toString() ?? "",
+      "album": item.album ?? "",
+      "artist": item.artist ?? "",
+      "data": item.extras
+    });
+    return;
+  }
+
+  Future<void> clear() async {
+    //await platform.invokeMethod("clear", null);
     return;
   }
 
@@ -89,10 +113,15 @@ class CustomMediaPlayer {
     return;
   }
 
+  Future<void> _next() async {
+    await platform.invokeMethod("next");
+  }
+
+  Future<void> _previous() async {
+    await platform.invokeMethod("previous");
+  }
+
   Future<void> play() async {
-    if (stopped) {
-      await _add(playlist[index]);
-    }
     await platform.invokeMethod("play");
     return;
   }
@@ -108,11 +137,19 @@ class CustomMediaPlayer {
   Future<void> seekIndex(int index) async {
     if (index > playlist.length - 1) return;
     this.index = index;
-    _add(playlist[index]);
+    await add(playlist[index]);
     play();
   }
 
   Future<void> seek(int second) async {
     await platform.invokeMethod("seek", second);
   }
+}
+
+class MacMediaItem {
+  String url = "";
+  String cover = "";
+  String album = "";
+  String artist = "";
+  Map<String, dynamic> data = {};
 }

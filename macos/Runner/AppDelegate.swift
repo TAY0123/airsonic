@@ -9,10 +9,8 @@ struct FlutterApp: App {
 
     var body: some Scene {
         WindowGroup {
-            
             MyView().ignoresSafeArea(.all)
                 .frame(minWidth: 499, idealWidth: 960, minHeight: 600, idealHeight: 600)
-            
         }
         .windowStyle(HiddenTitleBarWindowStyle())
     }
@@ -40,9 +38,20 @@ struct MyView: NSViewControllerRepresentable {
         batteryChannel.setMethodCallHandler {
             [weak mp] (call: FlutterMethodCall, result: @escaping FlutterResult) in
             // This method is invoked on the UI thread.
+            
             switch call.method {
             case "add":
-                mp?.replaceCurrent(url: call.arguments as! String, result: result, cacheMusic: false)
+                let t = call.arguments as! [String: Any]
+                let item = MediaItem(url: t["url"] as! String,
+                                     title: t["title"] as? String ?? "",
+                                     cover : t["cover"] as? String ?? "",
+                                     album: t["album"] as? String ?? "",
+                                     artist: t["artist"] as? String ?? "",
+                                     data: t["data"] as? [String: Any] ?? [:])
+                print(item)
+            
+                mp?.addToPlaylist(media: item, result: result)
+              
             case "play":
                 mp?.play(result: result)
             case "pause":
@@ -55,10 +64,13 @@ struct MyView: NSViewControllerRepresentable {
                 mp?.getPosition(result: result)
             case "update":
                 mp?.update(result: result)
+            case "clear":
+                result(nil)
             default:
                 result(FlutterMethodNotImplemented)
                 return
             }
+            mp?.updateStatus()
         }
         return controller
     }
@@ -68,4 +80,3 @@ struct MyView: NSViewControllerRepresentable {
         controller.engine.shutDownEngine()
     }
 }
-
