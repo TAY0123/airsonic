@@ -1,7 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:developer';
+import 'dart:math';
 
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/services.dart';
+import 'package:rxdart/rxdart.dart';
 
 class PlayerStatus {
   bool playing;
@@ -31,29 +35,46 @@ class CustomMediaPlayer {
   static const platform = MethodChannel('samples.flutter.dev/mediaplayer');
   static const event = EventChannel("samples.flutter.dev/mediaplayerStatus");
 
-  late Stream<PlayerStatus> status;
-  var playlist = List<MediaItem>.empty(growable: true);
+  final StreamController<MediaItem> _current = StreamController();
+
   var index = 0;
   var stopped = true;
+  List<MediaItem> queue = [];
+
+  late Stream<PlayerStatus> status;
+  late ValueStream<MediaItem?> currentItem;
 
   bool playing = false;
   CustomMediaPlayer._() {
-    status = event.receiveBroadcastStream().map((e) => PlayerStatus(
-          playing: e["playing"],
-          stopped: e["stopped"],
-          index: index,
-          duration: Duration(seconds: (e["duration"] as double).round()),
-          position: Duration(seconds: (e["position"] as double).round()),
-          format: e["format"],
-          sampleRate: e["sampleRate"],
-          bitRate: e["bitRate"],
-          volume: e["volume"],
-        ));
+    currentItem = ValueConnectableStream(_current.stream);
+    status = event.receiveBroadcastStream().map((e) {
+      queue = (e["queue"] as List<dynamic>).map((e) {
+        return MediaItem(
+            id: e["url"],
+            title: e["title"] ?? "",
+            album: e["album"] ?? "",
+            artUri: Uri.file(e["cover"] ?? ""),
+            artist: e["artist"] ?? "",
+            extras: Map<String, dynamic>.from(e["data"]));
+      }).toList();
+      return PlayerStatus(
+        playing: e["playing"],
+        stopped: e["stopped"],
+        index: e["index"],
+        duration: Duration(seconds: (e["duration"] as double).round()),
+        position: Duration(seconds: (e["position"] as double).round()),
+        format: e["format"],
+        sampleRate: e["sampleRate"],
+        bitRate: e["bitRate"],
+        volume: e["volume"],
+      );
+    });
     status.listen((event) {
       playing = event.playing;
       stopped = event.stopped;
-      if (event.stopped && event.playing) {
-        next();
+      if (playing && index != event.index) {
+        index = event.index;
+        _current.add(queue[index]);
       }
     });
     update();
@@ -63,10 +84,6 @@ class CustomMediaPlayer {
   static final instance = CustomMediaPlayer._();
 
   void next() {
-    if (playlist.length - 1 == index) {
-      return;
-    }
-    index++;
     _next();
     play();
   }
@@ -81,6 +98,7 @@ class CustomMediaPlayer {
   }
 
   Future<void> _replace(MediaItem item) async {
+    await clear();
     await platform.invokeMethod("add", {
       "url": item.id,
       "cover": item.artUri?.toString() ?? "",
@@ -103,8 +121,14 @@ class CustomMediaPlayer {
     return;
   }
 
+  Future<void> addPlaylist(List<MediaItem> items) async {
+    for (var element in items) {
+      add(element);
+    }
+  }
+
   Future<void> clear() async {
-    //await platform.invokeMethod("clear", null);
+    await platform.invokeMethod("clear", null);
     return;
   }
 
@@ -135,9 +159,8 @@ class CustomMediaPlayer {
   }
 
   Future<void> seekIndex(int index) async {
-    if (index > playlist.length - 1) return;
-    this.index = index;
-    await add(playlist[index]);
+    if (index > queue.length - 1) return;
+    await platform.invokeMethod("seekIndex", index);
     play();
   }
 

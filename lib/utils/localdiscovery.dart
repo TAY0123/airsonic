@@ -37,7 +37,11 @@ class LocalDiscovery {
   }
 
   void start() async {
-    server = await HttpServer.bind(InternetAddress.anyIPv6, 56000);
+    try {
+      server = await HttpServer.bind(InternetAddress.anyIPv6, 56005);
+    } catch (e) {
+      print(e);
+    }
     server?.forEach((HttpRequest request) {
       () async {
         final content = await utf8.decodeStream(request);

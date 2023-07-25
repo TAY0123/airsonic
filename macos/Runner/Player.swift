@@ -8,6 +8,7 @@
 import AudioToolbox
 import AVFoundation
 import CoreAudio
+import SwiftUI
 
 import MediaPlayer
 
@@ -25,6 +26,7 @@ struct MediaItem {
     func toDictionary() -> [String: Any] {
         return [
             "url": url,
+            "title": title,
             "cover": cover,
             "album": album,
             "artist": artist,
@@ -33,7 +35,87 @@ struct MediaItem {
     }
 }
 
-class MediaPlayer: NSObject, FlutterStreamHandler {
+class mpWrapper: NSObject, FlutterStreamHandler {
+    private var eventSink: FlutterEventSink?
+    
+    private var mp = MediaPlayer.shared()
+    
+    public func onListen(withArguments arguments: Any?,
+                         eventSink: @escaping FlutterEventSink) -> FlutterError?
+    {
+        
+        self.eventSink = eventSink
+        mp.engineClosed = false
+        mp.reg(es: eventSink)
+        
+        return nil
+    }
+    
+    public func onCancel(withArguments arguments: Any?) -> FlutterError? {
+        mp.engineClosed = true
+        mp.reg(es: nil)
+        
+        eventSink = nil
+        return nil
+    }
+    
+    func play(result: FlutterResult) {
+        // if cacheMusic { audioPlayer.automaticallyWaitsToMinimizeStalling = false }
+        mp.play()
+        result(nil)
+    }
+    
+    public func pause(result: FlutterResult) {
+        mp.pause()
+        result(nil)
+    }
+    
+    public func stop(result: FlutterResult) {
+        mp.stop()
+        result(nil)
+    }
+    
+    // seek to a index
+    public func seekIndex(index: Int, result: FlutterResult) {
+        mp.seekIndex(index: index)
+        result(nil)
+    }
+    
+    public func addToPlaylist(media: MediaItem, index: Int = -1, result: FlutterResult) {
+        mp.addToPlaylist(media: media, index: index)
+        result(nil)
+    }
+    
+    // seek to a position (seconds)
+    public func seek(to: Int, result: FlutterResult) {
+        mp.seek(to)
+        result(nil)
+    }
+    
+    //change to update in future
+    func getPosition(result: FlutterResult) {
+        result(mp.audioPlayer.currentItem?.currentTime().seconds)
+    }
+    
+    func update(result: FlutterResult) {
+        mp.updateStatus()
+        result(nil)
+    }
+    
+    func update() {
+        mp.updateStatus()
+    }
+    
+    public func clearPlaylist(result: FlutterResult) {
+        mp.clearPlaylist()
+        result(nil)
+    }
+}
+
+class MediaPlayer: NSObject {
+    // shared
+    public var engineClosed = false
+    
     // audio player
     let audioPlayer: AVPlayer = .init()
     
@@ -57,8 +139,9 @@ class MediaPlayer: NSObject, FlutterStreamHandler {
     
     private let mp = MPNowPlayingInfoCenter.default()
     private let remoteCommandCenter = MPRemoteCommandCenter.shared()
-    private var eventSink: FlutterEventSink?
+   
     private var playerItemContext = 0
+    private var eventSink:FlutterEventSink?
     
     class func shared() -> MediaPlayer { return sharedSoundManager }
     
@@ -66,6 +149,10 @@ class MediaPlayer: NSObject, FlutterStreamHandler {
         let manager = MediaPlayer()
         return manager
     }()
+    
+    public func reg (es: FlutterEventSink?){
+        eventSink = es
+    }
     
     override init() {
         super.init()
@@ -79,11 +166,6 @@ class MediaPlayer: NSObject, FlutterStreamHandler {
         }
 #else
 #endif
-        NotificationCenter.default
-            .addObserver(self,
-                         selector: #selector(playerDidFinishPlaying),
-                         name: .AVPlayerItemDidPlayToEndTime,
-                         object: audioPlayer.currentItem)
         
         audioPlayer.audiovisualBackgroundPlaybackPolicy = .continuesIfPossible
         // if cacheMusic {  }
@@ -148,23 +230,7 @@ class MediaPlayer: NSObject, FlutterStreamHandler {
         return MPRemoteCommandHandlerStatus.success
     }
     
-    public func onListen(withArguments arguments: Any?,
-                         eventSink: @escaping FlutterEventSink) -> FlutterError?
-    {
-        self.eventSink = eventSink
-        
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(playerDidFinishPlaying),
-                                               name: .AVPlayerItemDidPlayToEndTime,
-                                               object: audioPlayer.currentItem)
-        return nil
-    }
-    
-    public func onCancel(withArguments arguments: Any?) -> FlutterError? {
-        NotificationCenter.default.removeObserver(self)
-        eventSink = nil
-        return nil
-    }
+   
     
     // audio player
     func replaceCurrent(media: MediaItem, result: FlutterResult) {
@@ -186,6 +252,7 @@ class MediaPlayer: NSObject, FlutterStreamHandler {
         } else {
             item = AVPlayerItem(url: URL(string: media.url)!)
         }
+        item.seek(to: .zero, completionHandler: nil)
         audioPlayer.replaceCurrentItem(with: item)
         
         audioPlayer.automaticallyWaitsToMinimizeStalling = false
@@ -193,39 +260,18 @@ class MediaPlayer: NSObject, FlutterStreamHandler {
         audioPlayer.play()
     }
     
-    func getPosition(result: FlutterResult) {
-        result(audioPlayer.currentItem?.currentTime().seconds)
-    }
     
-    func play(result: FlutterResult) {
-        // if cacheMusic { audioPlayer.automaticallyWaitsToMinimizeStalling = false }
-        play()
-        result(nil)
-    }
     
-    public func pause(result: FlutterResult) {
-        pause()
-        result(nil)
-    }
-    
-    public func stop(result: FlutterResult) {
-        stop()
-        result(nil)
-    }
-    
-    private func stop() {
+
+    func stop() {
         audioPlayer.pause()
         Stopped = true
         Playing = false
     }
     
-    // seek to a index
-    public func seekIndex(index: Int, result: FlutterResult) {
-        seekIndex(index: index)
-        result(nil)
-    }
     
-    private func seekIndex(index: Int) {
+    
+    func seekIndex(index: Int) {
         if index > playlist.count - 1 {
             return
         }
@@ -237,17 +283,17 @@ class MediaPlayer: NSObject, FlutterStreamHandler {
             item = AVPlayerItem(url: URL(string: media.url)!)
         }
         audioPlayer.replaceCurrentItem(with: item)
+        audioPlayer.seek(to: CMTime(seconds: Double(0), preferredTimescale: CMTimeScale(1000)), completionHandler: {
+            _ in
+            self.updateStatus()
+        })
         currentIndex = index
     }
     
-    // seek to a position (seconds)
-    public func seek(to: Int, result: FlutterResult) {
-        seek(to)
-        result(nil)
-    }
+    
     
     // default will append to the last of the playlist
-    public func addToPlaylist(media: MediaItem, index: Int = -1, result: FlutterResult) {
+    public func addToPlaylist(media: MediaItem, index: Int = -1) {
         if index == -1 {
             playlist.append(media)
         } else {
@@ -256,12 +302,10 @@ class MediaPlayer: NSObject, FlutterStreamHandler {
             }
             playlist.insert(media, at: index)
         }
-        result(nil)
     }
     
-    public func clearPlaylist(result: FlutterResult) {
+    public func clearPlaylist() {
         playlist = []
-        result(nil)
     }
     
     public func removeFromPlaylist(index: Int, result: FlutterResult) {
@@ -274,9 +318,14 @@ class MediaPlayer: NSObject, FlutterStreamHandler {
     
     // should be private ?
     public func updateStatus() {
+        if engineClosed {
+            return
+        }
         guard let eventSink = eventSink else {
             return
         }
+        
+        CurrentPosition = audioPlayer.currentTime().seconds.isNaN ? 0 : audioPlayer.currentTime().seconds
         
         let data: [String: Any] = [
             "duration": Duration,
@@ -287,38 +336,13 @@ class MediaPlayer: NSObject, FlutterStreamHandler {
             "sampleRate": sampleRate,
             "bitRate": bitDepth,
             "volume": volume,
+            "index": currentIndex,
             "queue": playlist.map { e in e.toDictionary() },
         ]
         eventSink(data)
-        if !playlist.isEmpty {
-            var nowPlayingInfo = mp.nowPlayingInfo ?? [String: Any]()
-            nowPlayingInfo[MPMediaItemPropertyTitle] = playlist[currentIndex].title
-            nowPlayingInfo[MPMediaItemPropertyArtist] = playlist[currentIndex].artist
-            nowPlayingInfo[MPMediaItemPropertyAlbumTitle] = playlist[currentIndex].album
-            
-            nowPlayingInfo[MPNowPlayingInfoPropertyIsLiveStream] = false
-            nowPlayingInfo[MPNowPlayingInfoPropertyMediaType] = MPNowPlayingInfoMediaType.audio.rawValue
-            nowPlayingInfo[MPNowPlayingInfoPropertyPlaybackRate] = Float(1.0)
-            nowPlayingInfo[MPNowPlayingInfoPropertyDefaultPlaybackRate] = Float(1.0)
-        
-            mp.nowPlayingInfo = nowPlayingInfo
-            if Playing {
-                mp.playbackState = .playing
-            } else if !Stopped {
-                mp.playbackState = .paused
-            } else {
-                mp.playbackState = .stopped
-            }
-        }
-        
-        print(data)
     }
     
-    func update(result: FlutterResult) {
-        CurrentPosition = audioPlayer.currentTime().seconds.isNaN ? 0 : audioPlayer.currentTime().seconds
-        updateStatus()
-        result(nil)
-    }
+    
     
     // For in-App control
     func pause() {
@@ -327,6 +351,7 @@ class MediaPlayer: NSObject, FlutterStreamHandler {
         }
         
         audioPlayer.pause()
+        mp.playbackState = .paused
         
         Playing = false
         updateStatus()
@@ -355,10 +380,13 @@ class MediaPlayer: NSObject, FlutterStreamHandler {
             } else {
                 item = AVPlayerItem(url: URL(string: media.url)!)
             }
+            item.seek(to: .zero, completionHandler: nil)
             audioPlayer.replaceCurrentItem(with: item)
         }
         
         audioPlayer.play()
+        
+        mp.playbackState = .playing
         
         CurrentPosition = audioPlayer.currentTime().seconds
         Playing = true
@@ -377,7 +405,13 @@ class MediaPlayer: NSObject, FlutterStreamHandler {
     
     @objc func playerDidFinishPlaying() {
         /* emit a stopped signal ? */
-        Stopped = true
+        Playing = false
+        if currentIndex + 1 == playlist.count {
+            Stopped = true
+            mp.playbackState = .stopped
+        } else {
+            nextTrack()
+        }
         updateStatus()
     }
     
@@ -407,9 +441,7 @@ class MediaPlayer: NSObject, FlutterStreamHandler {
         }
         
         if keyPath == #keyPath(AVPlayer.currentItem) {
-            let item: AVPlayerItem?
             if let statusitem = change?[.newKey] as? AVPlayerItem {
-                item = statusitem
             } else {
                 print("Stopped")
                 Stopped = true
@@ -419,8 +451,14 @@ class MediaPlayer: NSObject, FlutterStreamHandler {
             
             Duration = 1 // set a 1 min timeout for fetching real duration from metadata
             Stopped = false
+            mp.playbackState = .playing
             
-            Task.detached {
+            NotificationCenter.default.addObserver(self,
+                                                   selector: #selector(playerDidFinishPlaying),
+                                                   name: .AVPlayerItemDidPlayToEndTime,
+                                                   object: audioPlayer.currentItem)
+            
+            Task.detached { [self] in
                 do {
                     let formatInfo = try await self.audioPlayer.currentItem?.asset.loadTracks(withMediaType: .audio)[0].load(.formatDescriptions).first
                     if formatInfo != nil {
@@ -436,6 +474,36 @@ class MediaPlayer: NSObject, FlutterStreamHandler {
                     
                     let duration = try await self.audioPlayer.currentItem!.asset.load(.duration).seconds
                     self.Duration = duration
+                    
+                    var nowPlayingInfo = mp.nowPlayingInfo ?? [String: Any]()
+                    nowPlayingInfo[MPMediaItemPropertyTitle] = playlist[currentIndex].title
+                    nowPlayingInfo[MPMediaItemPropertyArtist] = playlist[currentIndex].artist
+                    nowPlayingInfo[MPMediaItemPropertyAlbumTitle] = playlist[currentIndex].album
+                    
+                    nowPlayingInfo[MPNowPlayingInfoPropertyIsLiveStream] = false
+                    nowPlayingInfo[MPNowPlayingInfoPropertyMediaType] = MPNowPlayingInfoMediaType.audio.rawValue
+                    nowPlayingInfo[MPNowPlayingInfoPropertyPlaybackRate] = Float(1.0)
+                    nowPlayingInfo[MPNowPlayingInfoPropertyDefaultPlaybackRate] = Float(1.0)
+                    nowPlayingInfo[MPNowPlayingInfoPropertyElapsedPlaybackTime] = audioPlayer.currentItem?.currentTime().seconds ?? 0
+                    nowPlayingInfo[MPMediaItemPropertyPlaybackDuration] = Duration
+                    
+                    if playlist[currentIndex].cover != "" {
+                        nowPlayingInfo[MPMediaItemPropertyArtwork] =
+                            MPMediaItemArtwork(boundsSize: CGSize(width: 50, height: 50), requestHandler: { [self]
+                                _ in
+                                    NSImage(byReferencingFile: playlist[currentIndex].cover.deletingPrefix("file://"))!
+                            })
+                    }
+                
+                    mp.nowPlayingInfo = nowPlayingInfo
+                    if Playing {
+                        mp.playbackState = .playing
+                    } else if !Stopped {
+                        mp.playbackState = .paused
+                    } else {
+                        mp.playbackState = .stopped
+                    }
+                    
                     self.updateStatus()
                     
                 } catch {
@@ -529,5 +597,12 @@ class MediaPlayer: NSObject, FlutterStreamHandler {
         } else {
             print("Error getting default output device ID: \(status)")
         }
+    }
+}
+
+extension String {
+    func deletingPrefix(_ prefix: String) -> String {
+        guard hasPrefix(prefix) else { return self }
+        return String(dropFirst(prefix.count))
     }
 }

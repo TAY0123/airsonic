@@ -21,13 +21,7 @@ Future<AudioHandler> initAudioService() async {
       builder: () => VlcAudioHandler(),
     );
   } else {
-    return await AudioService.init(
-      builder: () => MyAudioHandler(),
-      config: const AudioServiceConfig(
-        androidNotificationChannelId: 'com.mycompany.myapp.audio',
-        androidNotificationChannelName: 'Audio Service Demo',
-      ),
-    );
+    return await initAppleAudioService();
   }
 }
 

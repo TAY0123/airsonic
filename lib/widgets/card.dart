@@ -1012,7 +1012,7 @@ class DashboardCoverCard extends StatelessWidget {
                       arguments: a.album);
                       */
                   final player = await mp.futurePlayer;
-                  player.addQueueItems([currentItem]);
+                  player.updateQueue([currentItem]);
                   player.play();
                 },
                 //label: Text("Continue"),

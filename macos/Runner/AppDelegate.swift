@@ -23,7 +23,7 @@ struct MyView: NSViewControllerRepresentable {
     
     func makeNSViewController(context: Context) -> NSViewController {
         // Return MyViewController instance
-        let mp = MediaPlayer.shared()
+        let mp = mpWrapper()
         let flutterEngine = FlutterEngine(name: "flutterEngine", project: nil)
         flutterEngine.run(withEntrypoint: nil)
         let controller = FlutterViewController(engine: flutterEngine, nibName: nil, bundle: nil)
@@ -48,7 +48,6 @@ struct MyView: NSViewControllerRepresentable {
                                      album: t["album"] as? String ?? "",
                                      artist: t["artist"] as? String ?? "",
                                      data: t["data"] as? [String: Any] ?? [:])
-                print(item)
             
                 mp?.addToPlaylist(media: item, result: result)
               
@@ -65,18 +64,26 @@ struct MyView: NSViewControllerRepresentable {
             case "update":
                 mp?.update(result: result)
             case "clear":
-                result(nil)
+                mp?.clearPlaylist(result: result)
+            case "seekIndex":
+                mp?.seekIndex(index: call.arguments as! Int, result: result)
             default:
                 result(FlutterMethodNotImplemented)
                 return
             }
-            mp?.updateStatus()
+            mp?.update()
         }
         return controller
     }
     
     static func dismantleNSViewController(_ nsViewController: Self.NSViewControllerType, coordinator: Self.Coordinator) {
+        
+        //should find a more elegant way to do this
+        let mp = MediaPlayer.shared()
+        mp.engineClosed = true
+        mp.reg(es: nil)
         let controller = nsViewController as! FlutterViewController
         controller.engine.shutDownEngine()
+        
     }
 }

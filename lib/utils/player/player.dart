@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:airsonic/utils/native/mediaplayer.dart';
@@ -5,7 +6,7 @@ import 'package:audio_service/audio_service.dart';
 import 'package:just_audio/just_audio.dart';
 
 //this initalizer is for web only
-Future<AudioHandler> initAudioService() async {
+Future<AudioHandler> initAppleAudioService() async {
   if (Platform.isMacOS) {
     return MyAudioHandler();
   } else {
@@ -25,57 +26,18 @@ class MyAudioHandler extends BaseAudioHandler {
   //final _player = AudioPlayer();
   final _player = CustomMediaPlayer.instance;
 
-  void _notifyAudioHandlerAboutPlaybackEvents() {
+  MyAudioHandler() {
     _player.status.listen((event) {
-      late MediaControl btn;
-      bool playing = event.playing;
-      if (event.playing) {
-        btn = MediaControl.pause;
-      } else {
-        btn = MediaControl.play;
-      }
+      playbackState.add(PlaybackState(
+          playing: event.playing, updatePosition: event.position));
 
-      playbackState.add(playbackState.value.copyWith(
-        controls: [
-          MediaControl.skipToPrevious,
-          btn,
-          MediaControl.stop,
-          MediaControl.skipToNext,
-        ],
-        systemActions: const {
-          MediaAction.seek,
-        },
-        androidCompactActionIndices: const [0, 1, 3],
-        processingState: const {
-          ProcessingState.idle: AudioProcessingState.idle,
-          ProcessingState.loading: AudioProcessingState.loading,
-          ProcessingState.buffering: AudioProcessingState.buffering,
-          ProcessingState.ready: AudioProcessingState.ready,
-          ProcessingState.completed: AudioProcessingState.completed,
-        }[ProcessingState.ready]!,
-        playing: playing,
-        updatePosition: event.position,
-      ));
-
-      final playlist = queue.value;
+      final playlist = _player.queue;
       if (event.stopped || playlist.isEmpty) return;
-      mediaItem.add(playlist[event.index]);
-
-      final newQueue = queue.value;
-      if (event.stopped ||
-          newQueue.isEmpty ||
-          newQueue.length - 1 < event.index) {
-        return;
+      if (_player.currentItem.hasValue) {
+        inspect(_player.currentItem.value);
+        mediaItem.add(_player.currentItem.value);
       }
-      final oldMediaItem = newQueue[event.index];
-      var newMediaItem = oldMediaItem.copyWith(duration: event.duration);
-      newMediaItem.extras?["sampleRate"] = event.sampleRate;
-      newMediaItem.extras?["bitRate"] = event.bitRate;
-      newMediaItem.extras?["format"] = event.format;
-
-      newQueue[event.index] = newMediaItem;
-      queue.add(newQueue);
-      mediaItem.add(newMediaItem);
+      queue.add(_player.queue);
     });
   }
 

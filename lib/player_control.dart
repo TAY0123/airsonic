@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 import 'dart:math';
 
 import 'package:airsonic/views/splitview.dart';
@@ -99,6 +100,7 @@ class _PlayBackControlState extends State<PlayBackControl>
 
   void _listenToPlayerStatus() async {
     currentStatusSubscriber = (await mp.playerStatus).listen((event) {
+      inspect(event);
       playing = event.playing;
       if (event.playing) {
         _playBtnController.reverse();
