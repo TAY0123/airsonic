@@ -1,8 +1,5 @@
 import 'dart:io';
 
-import 'package:ffmpeg_kit_flutter/ffmpeg_kit.dart';
-import 'package:ffmpeg_kit_flutter/ffprobe_kit.dart';
-import 'package:ffmpeg_kit_flutter/media_information_session.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 
@@ -27,7 +24,7 @@ class medeia with ChangeNotifier {
           notifyListeners();
           break;
         default:
-          print(p.extension(element.path));
+          debugPrint(p.extension(element.path));
       }
     });
   }

@@ -2,10 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
-import 'package:airsonic/utils/localdiscovery.dart';
-import 'package:airsonic/utils/player/shared.dart';
-import 'package:audio_service/audio_service.dart';
-import 'package:collection/collection.dart';
+import 'package:airsonic/utils/native/mediaplayer.dart';
+import 'package:airsonic/utils/utils.dart';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
@@ -28,10 +26,9 @@ String generateMd5(String input) {
 }
 
 class MediaPlayer {
-  late Future<ValueStream<MediaItem?>> currentItem;
-  late Future<ValueStream<List<MediaItem>>> queue;
-  late Future<Stream<Duration>> currentPosition;
-  late Future<ValueStream<PlaybackState>> playerStatus;
+  late ValueStream<MediaItem?> currentItem;
+  late ValueStream<List<MediaItem>> queue;
+  late ValueStream<PlayerStatus> status;
   final preferenceStorage = SharedPreferences.getInstance();
 
   late Future<List<MediaItem>> previousQueue;
@@ -41,10 +38,10 @@ class MediaPlayer {
     () async {
       _listenToChangesInSong();
       _listenToChangesInPlaylist();
-      _listenToCurrentPosition();
       _listenToPlayerStatus();
       previousQueue = _loadPreviousQueue();
     }();
+    status = ValueConnectableStream(futurePlayer.status);
   }
 
   Future<List<MediaItem>> _loadPreviousQueue() async {
@@ -81,39 +78,20 @@ class MediaPlayer {
   }
 
   void _listenToChangesInSong() {
-    currentItem = () async {
-      final player = await futurePlayer;
-      return player.mediaItem;
-    }();
+    currentItem = futurePlayer.currentItem;
   }
 
   void _listenToChangesInPlaylist() {
-    queue = () async {
-      final player = await futurePlayer;
-      player.queue.listen((playlist) async {
-        LocalDiscovery.instance.updateRegister(playlist.firstOrNull);
-        if (playlist.isNotEmpty) {
-          final storage = await preferenceStorage;
-          storage.setString(
-              "queue", jsonEncode(playlist.map((e) => e.toJson()).toList()));
-        }
-      });
-      return player.queue;
-    }();
-  }
-
-  void _listenToCurrentPosition() {
-    currentPosition = () async {
-      await futurePlayer;
-      return AudioService.position;
-    }();
+    queue = futurePlayer.queue;
   }
 
   void _listenToPlayerStatus() {
+    /*
     playerStatus = () async {
       final player = await futurePlayer;
       return player.playbackState;
     }();
+      */
   }
 
   ValueNotifier<Duration> currentPos = ValueNotifier(Duration.zero);
@@ -129,7 +107,7 @@ class MediaPlayer {
   List<String> _segments = [];
   Map<String, dynamic> _param = {};
   late final Future<bool> _inited = init(); //initalize the information
-  late final Future<AudioHandler> futurePlayer = initAudioService();
+  late final CustomMediaPlayer futurePlayer = CustomMediaPlayer.instance;
 
   Future<XMLResult> login(
       {String domain = "", String username = "", String password = ""}) async {
@@ -426,7 +404,7 @@ class MediaPlayer {
   }
 
   void playPlaylist(List<Song> playlist, {int index = 0}) async {
-    final fplayer = await futurePlayer;
+    final fplayer = futurePlayer;
     final c = fplayer.stop();
     List<MediaItem> res = [];
     for (Song song in playlist) {
@@ -434,8 +412,9 @@ class MediaPlayer {
     }
 
     await c;
-    await fplayer.updateQueue(res);
-    await fplayer.skipToQueueItem(index);
+    await fplayer.clear();
+    await fplayer.addPlaylist(res);
+    await fplayer.seekIndex(index);
     fplayer.play();
   }
 
@@ -449,8 +428,8 @@ class MediaPlayer {
 
   ///Skip to indexed if current playlist is the album
   Future<void> skipToIndexed(int index) async {
-    final player = await futurePlayer;
-    await player.skipToQueueItem(index);
+    final player = futurePlayer;
+    await player.seekIndex(index);
   }
 }
 

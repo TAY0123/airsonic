@@ -128,7 +128,7 @@ class MediaPlayer: NSObject {
     var Duration: Double = 0
     var CurrentPosition: Double = 0.0
     
-    var cache: Bool = false
+    var cache: Bool = true
     
     var volume: Double = 1.0
     

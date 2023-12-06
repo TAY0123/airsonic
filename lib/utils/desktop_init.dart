@@ -32,7 +32,7 @@ class MyWindowHandler extends WindowListener {
 
   @override
   void onWindowEvent(String eventName) {
-    print('[WindowManager] onWindowEvent: $eventName');
+   debugPrint('[WindowManager] onWindowEvent: $eventName');
   }
 
   @override
@@ -47,7 +47,7 @@ class MyWindowHandler extends WindowListener {
 
   @override
   void onWindowRestore() {
-    print("restored");
+   debugPrint("restored");
     rootNavigatorKey?.currentState?.pushNamed("/dashboard");
   }
 

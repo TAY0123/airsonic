@@ -44,12 +44,9 @@ dependencies:
   dismissible_page: ^1.0.2
   transparent_image: ^2.0.0
   collection: ^1.17.0
-  audio_service: ^0.18.9
-  audio_session: ^0.1.13
   rxdart: ^0.27.7
   text_scroll: ^0.2.0
   simple_animations: ^5.0.0+3
-  dart_vlc: ^0.4.0
   nsd: ^2.3.0
   window_manager: ^0.3.2
 

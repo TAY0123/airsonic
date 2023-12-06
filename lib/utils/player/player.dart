@@ -1,43 +1,36 @@
+import 'dart:async';
 import 'dart:developer';
 import 'dart:io';
 
 import 'package:airsonic/utils/native/mediaplayer.dart';
-import 'package:audio_service/audio_service.dart';
-import 'package:just_audio/just_audio.dart';
+import 'package:airsonic/utils/utils.dart';
 
 //this initalizer is for web only
-Future<AudioHandler> initAppleAudioService() async {
+NativeAudioHandler initAppleAudioService() {
   if (Platform.isMacOS) {
-    return MyAudioHandler();
+    return NativeAudioHandler();
   } else {
-    return await AudioService.init(
-      builder: () => MyAudioHandler(),
-      config: const AudioServiceConfig(
-        androidNotificationChannelId: 'com.mycompany.myapp.audio',
-        androidNotificationChannelName: 'Audio Service Demo',
-      ),
-    );
+    throw "Unsupported platform";
   }
 }
 
 //TODO: prev info not correct
 // this handler work for iOS macOS Android
-class MyAudioHandler extends BaseAudioHandler {
-  //final _player = AudioPlayer();
+class NativeAudioHandler {
   final _player = CustomMediaPlayer.instance;
 
-  MyAudioHandler() {
-    _player.status.listen((event) {
-      playbackState.add(PlaybackState(
-          playing: event.playing, updatePosition: event.position));
+  final StreamController<PlayerStatus> status = StreamController();
 
-      final playlist = _player.queue;
-      if (event.stopped || playlist.isEmpty) return;
+  NativeAudioHandler() {
+    _player.status.listen((event) {
+      status.add(event);
+      final playlist = _player.queue.valueOrNull;
+      if (event.stopped || playlist == null || playlist.isEmpty) return;
       if (_player.currentItem.hasValue) {
         inspect(_player.currentItem.value);
-        mediaItem.add(_player.currentItem.value);
+        //mediaItem.add(_player.currentItem.value);
       }
-      queue.add(_player.queue);
+      //queue.add(_player.queue);
     });
   }
 
@@ -50,7 +43,7 @@ class MyAudioHandler extends BaseAudioHandler {
 
   @override
   Future<void> addQueueItem(MediaItem mediaItem) async {
-    print(mediaItem);
+    inspect(mediaItem);
     _player.add(mediaItem);
   }
 
@@ -58,7 +51,7 @@ class MyAudioHandler extends BaseAudioHandler {
   // ignore: avoid_renaming_method_parameters
   Future<void> updateQueue(List<MediaItem> mediaItems) async {
     //clear playlist
-    print(mediaItems.length);
+    inspect(mediaItems.length);
     _player.clear();
     for (var element in mediaItems) {
       _player.add(element);

@@ -5,7 +5,6 @@ import 'package:airsonic/main.dart';
 import 'package:airsonic/utils/airsonic_connection.dart';
 import 'package:airsonic/utils/utils.dart';
 import 'package:airsonic/widgets/card.dart';
-import 'package:audio_service/audio_service.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -464,13 +463,13 @@ class _AlbumInfoListTileState extends State<AlbumInfoListTile> {
           },
           onTap: () async {
             if (widget.songs[widget.index].id ==
-                current?.value?.extras?["songId"]) return;
+                current?.valueOrNull?.extras?["songId"]) return;
             setState(() {
               selected = true;
             });
             () async {
-              final c = await mp.queue;
-              final currentQueue = c.value;
+              final c = mp.queue;
+              final currentQueue = c.valueOrNull ?? [];
               final indexed = currentQueue.elementAtOrNull(widget.index);
               if (indexed != null &&
                   indexed.extras?["songId"] == widget.songs[widget.index].id) {

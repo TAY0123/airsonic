@@ -1,6 +1,4 @@
-import 'package:audio_service/audio_service.dart';
-import 'package:just_audio/just_audio.dart';
-
+/*
 //this initalizer is for web only
 Future<AudioHandler> initAudioService() async {
   return await AudioService.init(
@@ -29,13 +27,13 @@ class MyAudioHandler extends BaseAudioHandler {
     try {
       await _player.setAudioSource(_playlist);
     } catch (e) {
-      print("Error: $e");
+     debugPrint("Error: $e");
     }
   }
 
   void _notifyAudioHandlerAboutPlaybackEvents() {
     _player.playerStateStream.listen((event) {
-      print(event.processingState.name);
+     debugPrint(event.processingState.name);
       late MediaControl btn;
       bool playing = event.playing;
       if (event.processingState == ProcessingState.completed) {
@@ -131,7 +129,7 @@ class MyAudioHandler extends BaseAudioHandler {
     try {
       await _player.load();
     } catch (e) {
-      print(e);
+     debugPrint(e);
     }
   }
 
@@ -146,7 +144,7 @@ class MyAudioHandler extends BaseAudioHandler {
     try {
       await _player.load();
     } catch (e) {
-      print(e);
+     debugPrint(e);
     }
   }
 
@@ -169,7 +167,7 @@ class MyAudioHandler extends BaseAudioHandler {
     try {
       await _player.load();
     } catch (e) {
-      print(e);
+     debugPrint(e);
     }
   }
 
@@ -229,3 +227,4 @@ class MyAudioHandler extends BaseAudioHandler {
   @override
   Future<void> seek(Duration position) => _player.seek(position);
 }
+*/

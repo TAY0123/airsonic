@@ -71,7 +71,7 @@ class _SearchingBarState extends State<SearchingBar> {
                     local.complete();
                     if (status.isCompleted) {
                       () async {
-                        final r = await mp.search3(keywords);
+                        final r = mp.search3(keywords);
                         widget.result.add(r);
                       }();
                     }

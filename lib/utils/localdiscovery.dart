@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:airsonic/utils/airsonic_connection.dart';
-import 'package:audio_service/audio_service.dart';
+import 'package:airsonic/utils/utils.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:nsd/nsd.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -40,7 +42,7 @@ class LocalDiscovery {
     try {
       server = await HttpServer.bind(InternetAddress.anyIPv6, 56005);
     } catch (e) {
-      print(e);
+      inspect(e);
     }
     server?.forEach((HttpRequest request) {
       () async {
@@ -71,17 +73,17 @@ class LocalDiscovery {
           }
           request.response.write(jsonEncode({"status": true}));
           final mp = await MediaPlayer.instance.futurePlayer;
-          await mp.updateQueue(result);
+          //await mp.updateQueue(result);
           mp.play();
         }
         request.response.close();
       }();
     });
 
-    print("start register");
+    debugPrint("start register");
     registration = await register(
         Service(name: "AirSonic-Test", type: '_http._tcp', port: 56000));
-    print(registration.toString());
+    debugPrint(registration.toString());
     updateRegister(null);
   }
 

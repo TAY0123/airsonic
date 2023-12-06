@@ -255,7 +255,7 @@ class _AlbumViewListState extends State<AlbumViewList>
                       ? "/"
                       : "/album/${widget.display?.id ?? ""}",
                   onGenerateRoute: (settings) {
-                    print(settings.name);
+                    debugPrint(settings.name);
                     Widget page =
                         LayoutBuilder(builder: (context, constraints) {
                       return Column(

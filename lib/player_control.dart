@@ -1,13 +1,12 @@
 import 'dart:async';
-import 'dart:developer';
 import 'dart:math';
 
+import 'package:airsonic/utils/native/mediaplayer.dart';
 import 'package:airsonic/views/splitview.dart';
 import 'package:airsonic/utils/airsonic_connection.dart';
 import 'package:airsonic/utils/localdiscovery.dart';
 import 'package:airsonic/utils/utils.dart';
 import 'package:airsonic/widgets/card.dart';
-import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:rxdart/rxdart.dart';
 
@@ -27,8 +26,7 @@ class _PlayBackControlState extends State<PlayBackControl>
   final mp = MediaPlayer.instance;
 
   ValueStream<MediaItem?>? currentItemSubscriber;
-  Stream<Duration>? currentItemPosition;
-  late StreamSubscription<PlaybackState> currentStatusSubscriber;
+  late StreamSubscription currentStatusSubscriber;
 
   final speed = const Duration(milliseconds: 250);
 
@@ -71,13 +69,13 @@ class _PlayBackControlState extends State<PlayBackControl>
     super.dispose();
   }
 
-  void updateProgressBar() async {
+  void updateProgressBar(PlayerStatus event) async {
     if (_dragging.value) {
       return;
     }
     if (playing) {
-      final current = await currentItemPosition?.first;
-      if (current != null && _barController.duration != null) {
+      final current = event.duration;
+      if (_barController.duration != null) {
         final progress =
             current.inMilliseconds / _barController.duration!.inMilliseconds;
         _barController.forward(from: progress);
@@ -88,19 +86,19 @@ class _PlayBackControlState extends State<PlayBackControl>
   }
 
   Future<void> init() async {
-    currentItemSubscriber = (await mp.currentItem);
+    currentItemSubscriber = mp.currentItem;
     currentItemSubscriber?.listen((event) {
-      if (event?.duration != null && event?.duration?.inMilliseconds != 0) {
-        _barController.duration = event?.duration!;
-        updateProgressBar();
+      if (event != null &&
+          event.duration != null &&
+          event.duration?.inMilliseconds != 0) {
+        _barController.duration = event.duration!;
+        //updateProgressBar();
       }
     });
-    currentItemPosition = (await mp.currentPosition);
   }
 
   void _listenToPlayerStatus() async {
-    currentStatusSubscriber = (await mp.playerStatus).listen((event) {
-      inspect(event);
+    currentStatusSubscriber = mp.status.listen((event) {
       playing = event.playing;
       if (event.playing) {
         _playBtnController.reverse();
@@ -108,7 +106,7 @@ class _PlayBackControlState extends State<PlayBackControl>
       } else {
         _playBtnController.forward();
       }
-      updateProgressBar();
+      updateProgressBar(event);
     });
   }
 
@@ -163,7 +161,7 @@ class _PlayBackControlState extends State<PlayBackControl>
                   },
                   onHorizontalDragCancel: () {
                     _dragging.value = false;
-                    updateProgressBar();
+                    //updateProgressBar();
                   },
                   onHorizontalDragUpdate: (details) {
                     pos = details.localPosition.dx;
@@ -186,22 +184,22 @@ class _PlayBackControlState extends State<PlayBackControl>
                   onHorizontalDragEnd: (details) async {
                     _dragging.value = false;
                     if (pos - startPt > 2 || pos - startPt < -2) {
-                      final p = await mp.futurePlayer;
-                      p.seek(seekTo);
+                      final p = mp.futurePlayer;
+                      p.seek(seekTo.inSeconds);
                     } else {
                       return;
                     }
 
-                    updateProgressBar();
+                    //updateProgressBar();
                   },
                   //vertical gesture
                   onVerticalDragEnd: (details) async {
                     if (details.velocity.pixelsPerSecond.dy < -10) {
-                      final p = await mp.futurePlayer;
-                      p.skipToNext();
+                      final p = mp.futurePlayer;
+                      p.next();
                     } else if (details.velocity.pixelsPerSecond.dy > 10) {
-                      final p = await mp.futurePlayer;
-                      p.skipToPrevious();
+                      final p = mp.futurePlayer;
+                      p.previous();
                     }
                   },
                   child: Stack(
@@ -388,7 +386,7 @@ class _PlayBackControlState extends State<PlayBackControl>
                                     padding: const EdgeInsets.all(4.0),
                                     child: IconButton(
                                         onPressed: () async {
-                                          final p = await mp.futurePlayer;
+                                          final p = mp.futurePlayer;
                                           if (playing) {
                                             p.pause();
                                           } else {

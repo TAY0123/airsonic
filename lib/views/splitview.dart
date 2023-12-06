@@ -114,12 +114,16 @@ class SplitView extends StatelessWidget {
                       Platform.isMacOS || Platform.isLinux || Platform.isWindows
                           ? const EdgeInsets.only(top: 30, bottom: bottomHeight)
                           : const EdgeInsets.only(bottom: bottomHeight),
-                  child: Center(
-                    child: nav,
+                  child: SafeArea(
+                    child: Center(
+                      child: nav,
+                    ),
                   ),
                 ),
                 // use SizedBox to contrain the AppMenu to a fixed width
-                drawer: NavDrawer(),
+                drawer: NavDrawer(
+                  index: index,
+                ),
               );
             }
           });
@@ -155,7 +159,7 @@ class AppNavigator extends StatelessWidget {
         initialRoute: "/",
         reportsRouteUpdateToEngine: true,
         onGenerateRoute: (settings) {
-          print(settings.name);
+          debugPrint(settings.name);
 
           double uiSize = MediaQuery.of(context).size.width;
           if (kIsWeb || !(Platform.isAndroid || Platform.isIOS)) {

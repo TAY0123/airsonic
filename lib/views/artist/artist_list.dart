@@ -307,7 +307,7 @@ class _ArtistViewListState extends State<ArtistViewList>
                             }
                             break;
                           default:
-                            print("default");
+                            debugPrint("default");
 
                             break;
                         }

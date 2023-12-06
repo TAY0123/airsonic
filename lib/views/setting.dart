@@ -17,6 +17,7 @@ class _SettingPageState extends State<SettingPage> {
   bool albumStyle = false;
   bool hideDuplicate = false;
   bool localDiscovery = false;
+  bool cacheAudioFile = false;
   String format = "mp3";
 
   @override
@@ -29,6 +30,7 @@ class _SettingPageState extends State<SettingPage> {
       hideDuplicate = storage.getBool("hideDuplicate") ?? false;
       localDiscovery = storage.getBool("localDiscovery") ?? false;
       format = storage.getString("format") ?? "mp3";
+      cacheAudioFile = storage.getBool("cacheAudioFile") ?? false;
       return storage;
     }();
   }

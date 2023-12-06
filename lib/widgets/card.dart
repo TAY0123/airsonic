@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:airsonic/utils/after_layout.dart';
-import 'package:audio_service/audio_service.dart';
+import 'package:airsonic/utils/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:simple_animations/simple_animations.dart';
 import 'package:transparent_image/transparent_image.dart';
@@ -1012,7 +1012,8 @@ class DashboardCoverCard extends StatelessWidget {
                       arguments: a.album);
                       */
                   final player = await mp.futurePlayer;
-                  player.updateQueue([currentItem]);
+                  player.clear();
+                  player.addPlaylist([currentItem]);
                   player.play();
                 },
                 //label: Text("Continue"),
